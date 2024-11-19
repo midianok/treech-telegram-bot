@@ -15,15 +15,17 @@ builder.Services.AddOptions<OperationOptions>()
     .BindConfiguration(nameof(OperationOptions))
     .ValidateDataAnnotations();
 
-builder.Services.AddDbContext<SaturnContext>(options =>
+builder.Services.AddDbContextFactory<SaturnContext>(options =>
 {
     var connectionString = builder.Configuration.GetSection("CONNECTION_STRING").Value;
     if (string.IsNullOrWhiteSpace(connectionString))
     {
         throw new Exception("Env variable CONNECTION_STRING not presented");
     }
-    options.UseNpgsql(connectionString);
-});
+    options.UseNpgsql(connectionString)
+        .UseSnakeCaseNamingConvention();
+}, ServiceLifetime.Transient);
+
 
 builder.Services.AddSingleton<TelegramBotClient>(_ =>
 {
@@ -35,11 +37,6 @@ builder.Services.AddSingleton<TelegramBotClient>(_ =>
     return new TelegramBotClient(botToken);
 });
 
-builder.Services.AddSingleton<CountOperation>();
-builder.Services.AddSingleton<ShowChatLinkOperation>();
-builder.Services.AddSingleton(GetEnabledOperations);
-
-
 builder.Services.AddHttpClient<IImageManipulationServiceClient, ImageManipulationServiceClient>(x =>
 {
     var imageManipulationServiceUrl = builder.Configuration.GetSection("IMAGE_MANIPULATION_SERVICE_URL").Value;
@@ -49,6 +46,11 @@ builder.Services.AddHttpClient<IImageManipulationServiceClient, ImageManipulatio
     }
     x.BaseAddress = new Uri(imageManipulationServiceUrl);
 });
+
+
+builder.Services.AddSingleton<CountOperation>();
+builder.Services.AddSingleton<ShowChatLinkOperation>();
+builder.Services.AddSingleton(GetEnabledOperations);
 
 builder.Services.AddHostedService<HostedService>();
 
