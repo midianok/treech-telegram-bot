@@ -10,7 +10,6 @@ public sealed class SaturnContext : DbContext
 
     public SaturnContext(DbContextOptions<SaturnContext> options) : base(options)
     {
-        Database.Migrate();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

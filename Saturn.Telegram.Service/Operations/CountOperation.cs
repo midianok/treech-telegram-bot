@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Database;
 using Saturn.Bot.Service.Extension;
 using Saturn.Bot.Service.Operations.Abstractions;
@@ -11,27 +12,27 @@ namespace Saturn.Bot.Service.Operations;
 
 public class CountOperation : OperationBase
 {
-    private readonly SemaphoreSlim _semaphoreSlim = new(1);
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly SaturnContext _db;
     private readonly ILogger<CountOperation> _logger;
+    private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public CountOperation(TelegramBotClient telegramBotClient, SaturnContext db, ILogger<CountOperation> logger) : base(logger)
+    public CountOperation(TelegramBotClient telegramBotClient, ILogger<CountOperation> logger, IDbContextFactory<SaturnContext> contextFactory) : base(logger)
     {
         _telegramBotClient = telegramBotClient;
-        _db = db;
         _logger = logger;
+        _contextFactory = contextFactory;
     }
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        _db.Messages.Add(new MessageEntity
+        await using var db = await _contextFactory.CreateDbContextAsync();
+        await db.Messages.AddAsync(new MessageEntity
         {
             Id = Guid.NewGuid(),
             Type = (int) msg.Type,
             Text = msg.Text,
             MessageDate = msg.Date,
-            StickerId = msg.Sticker?.FileUniqueId,
+            StickerId = msg.Sticker?.FileId,
             FromUserId = msg.From?.Id,
             FromUsername = msg.From?.Username,
             FromFirstName = msg.From?.FirstName,
@@ -41,22 +42,44 @@ public class CountOperation : OperationBase
             ChatName = msg.Chat.Username,
             UpdateData = msg.ToJson()
         });
-        await _semaphoreSlim.WaitAsync();
 
-        try
-        {
-            await _db.SaveChangesAsync();
-        }
-        finally
-        {
-            _semaphoreSlim.Release();
-        }
+        await db.SaveChangesAsync();
 
-        if (type == UpdateType.Message && msg.Text == "стата")
+
+        if (type == UpdateType.Message && msg.Text?.ToLower() == "стата")
         {
-            var messageCount = _db.Messages.Count(x => x.ChatId == msg.Chat.Id && x.FromUserId == msg.From!.Id);
-            await _telegramBotClient.SendMessage(msg.Chat, $"Кол-во сообщений: {messageCount}", ParseMode.None,
+            var messageTypes = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == msg.From!.Id)
+                .Select(x => x.Type).ToListAsync();
+
+            var replyMessage = $"""
+                                Кол-во сообщений: {messageTypes.Count}
+                                🎧 Голосовых: {messageTypes.Count(x => x == (int) MessageType.Voice)}
+                                📽️ Кружков: {messageTypes.Count(x => x == (int) MessageType.VideoNote)}
+                                📷️ Фото: {messageTypes.Count(x => x == (int) MessageType.Photo)}
+                                🖼️ Стикеров: {messageTypes.Count(x => x == (int) MessageType.Sticker)}
+                                """;
+            await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None,
                 new ReplyParameters {MessageId = msg.Id});
+
+        }
+
+        if (type == UpdateType.Message && msg.Text?.ToLower() == "любимый стикер")
+        {
+            var userStickers = await db.Messages
+                .Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == msg.From!.Id &&
+                            x.Type == (int) MessageType.Sticker)
+                .ToListAsync();
+
+            var favSticker = userStickers.GroupBy(x => x.StickerId)
+                .OrderByDescending(grp => grp.Count())
+                .FirstOrDefault();
+
+            if (favSticker?.Key == null)
+            {
+                return;
+            }
+
+            await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters {MessageId = msg.Id});
         }
     }
 }

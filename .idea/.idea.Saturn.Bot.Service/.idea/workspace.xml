@@ -7,30 +7,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c65da3bd-5f17-4734-8d7a-f19e850a8631" name="Changes" comment="init">
-      <change afterPath="$PROJECT_DIR$/.dockerignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.Saturn.Bot.Service/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Database/Configurations/MessageConfiguration.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Database/Entities/MessageEntity.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Database/SaturnContext.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/DbContextFactory.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Extension/JsonExtension.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Extension/TelegramBotClientExtension.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/HostedService.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/HttpClients/ImageManipulationServiceClient.generated.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Operations/Abstractions/IOperation.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Operations/Abstractions/OperationBase.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Operations/CountOperation.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Operations/ImageDistortionOperation.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Operations/ShowChatLinkOperation.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Options/OperationOptions.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Program.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Properties/launchSettings.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Saturn.Telegram.Service.csproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Saturn.Telegram.sln" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
+    <list default="true" id="c65da3bd-5f17-4734-8d7a-f19e850a8631" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Saturn.Bot.Service/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Saturn.Bot.Service/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Saturn.Telegram.Service/Operations/CountOperation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Saturn.Telegram.Service/Operations/CountOperation.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -43,6 +22,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;midianok&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/midianok/Saturn.git&quot;,
+    &quot;accountId&quot;: &quot;7708ae8b-0ee4-4071-83d3-1339548cc718&quot;
+  }
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/432945db5c4c780cddadd3ebb8c6e4cff6517d5f6723914405e4fad87b877/ReplyParameters.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4af1c24f35f76241ad88a38831c364bfe7b4deb06015a4f419e1b56459f28/UpdateType.cs" root0="SKIP_HIGHLIGHTING" />
@@ -174,8 +165,17 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1731867350862</updated>
-      <workItem from="1731867351958" duration="39996000" />
+      <workItem from="1731867351958" duration="41429000" />
     </task>
+    <task id="LOCAL-00001" summary="init">
+      <option name="closed" value="true" />
+      <created>1731957277252</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1731957277252</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
@@ -193,5 +193,26 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+    <MESSAGE value="init" />
+    <option name="LAST_COMMIT_MESSAGE" value="init" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DotNet Breakpoints">
+          <url>file://$PROJECT_DIR$/Saturn.Telegram.Service/HostedService.cs</url>
+          <line>23</line>
+          <properties documentPath="C:\Users\Ilya\Projects\Saturn.Bot.Service\Saturn.Telegram.Service\HostedService.cs" containingFunctionPresentation="Method 'StartAsync'">
+            <startOffsets>
+              <option value="794" />
+            </startOffsets>
+            <endOffsets>
+              <option value="795" />
+            </endOffsets>
+          </properties>
+          <option name="timeStamp" value="42" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
