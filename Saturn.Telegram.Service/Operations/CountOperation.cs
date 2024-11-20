@@ -33,7 +33,7 @@ public class CountOperation : OperationBase
 
     private async Task ShowFavStick(Message msg, UpdateType type, SaturnContext db)
     {
-        var match = type == UpdateType.Message && msg.Text?.ToLower() == "стата";
+        var match = type == UpdateType.Message && msg.Text?.ToLower() == "любимый стикер";
         if (!match)
         {
             return;
@@ -78,7 +78,10 @@ public class CountOperation : OperationBase
                             📽️ Кружков: {messageTypes.Count(x => x.Type == (int) MessageType.VideoNote)}
                             📷️ Фото: {messageTypes.Count(x => x.Type == (int) MessageType.Photo)}
                             🖼️ Стикеров: {messageTypes.Count(x => x.Type == (int) MessageType.Sticker)}
+                            🪄 Гифок: {messageTypes.Count(x => x.Type == (int) MessageType.Animation)}
+                            📹 Видео: {messageTypes.Count(x => x.Type == (int) MessageType.Video)}
                             """;
+
         await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None,
             new ReplyParameters { MessageId = msg.Id } );
     }
