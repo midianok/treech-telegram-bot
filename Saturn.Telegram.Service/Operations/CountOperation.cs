@@ -25,7 +25,66 @@ public class CountOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        var db = await _contextFactory.CreateDbContextAsync();
+        await SaveMessage(msg, db);
+        await ShowStat(msg, type, db);
+        await ShowFavStick(msg, type, db);
+    }
+
+    private async Task ShowFavStick(Message msg, UpdateType type, SaturnContext db)
+    {
+        var match = type == UpdateType.Message && msg.Text?.ToLower() == "стата";
+        if (!match)
+        {
+            return;
+        }
+
+        var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
+
+        var userStickers = await db.Messages
+            .Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == userId &&
+                        x.Type == (int) MessageType.Sticker)
+            .ToListAsync();
+
+        var favSticker = userStickers.GroupBy(x => x.StickerId)
+            .OrderByDescending(grp => grp.Count())
+            .FirstOrDefault();
+
+        if (favSticker?.Key == null)
+        {
+            return;
+        }
+
+        await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters {MessageId = msg.Id});
+    }
+
+    private async Task ShowStat(Message msg, UpdateType type, SaturnContext db)
+    {
+        var match = type == UpdateType.Message && msg.Text?.ToLower() == "стата";
+        if (!match)
+        {
+            return;
+        }
+
+        var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
+
+        var messageTypes = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == userId)
+            .Select(x => new { x.Type, x.FromUsername }).ToListAsync();
+        var userName = messageTypes.FirstOrDefault()?.FromUsername;
+
+        var replyMessage = $"""
+                            Кол-во сообщений пользователя @{ userName ?? userId.ToString() } : {messageTypes.Count} 
+                            🎧 Голосовых: {messageTypes.Count(x => x.Type == (int) MessageType.Voice)}
+                            📽️ Кружков: {messageTypes.Count(x => x.Type == (int) MessageType.VideoNote)}
+                            📷️ Фото: {messageTypes.Count(x => x.Type == (int) MessageType.Photo)}
+                            🖼️ Стикеров: {messageTypes.Count(x => x.Type == (int) MessageType.Sticker)}
+                            """;
+        await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None,
+            new ReplyParameters { MessageId = msg.Id } );
+    }
+
+    private async Task SaveMessage(Message msg, SaturnContext db)
+    {
         await db.Messages.AddAsync(new MessageEntity
         {
             Id = Guid.NewGuid(),
@@ -42,44 +101,6 @@ public class CountOperation : OperationBase
             ChatName = msg.Chat.Username,
             UpdateData = msg.ToJson()
         });
-
         await db.SaveChangesAsync();
-
-
-        if (type == UpdateType.Message && msg.Text?.ToLower() == "стата")
-        {
-            var messageTypes = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == msg.From!.Id)
-                .Select(x => x.Type).ToListAsync();
-
-            var replyMessage = $"""
-                                Кол-во сообщений: {messageTypes.Count}
-                                🎧 Голосовых: {messageTypes.Count(x => x == (int) MessageType.Voice)}
-                                📽️ Кружков: {messageTypes.Count(x => x == (int) MessageType.VideoNote)}
-                                📷️ Фото: {messageTypes.Count(x => x == (int) MessageType.Photo)}
-                                🖼️ Стикеров: {messageTypes.Count(x => x == (int) MessageType.Sticker)}
-                                """;
-            await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None,
-                new ReplyParameters {MessageId = msg.Id});
-
-        }
-
-        if (type == UpdateType.Message && msg.Text?.ToLower() == "любимый стикер")
-        {
-            var userStickers = await db.Messages
-                .Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == msg.From!.Id &&
-                            x.Type == (int) MessageType.Sticker)
-                .ToListAsync();
-
-            var favSticker = userStickers.GroupBy(x => x.StickerId)
-                .OrderByDescending(grp => grp.Count())
-                .FirstOrDefault();
-
-            if (favSticker?.Key == null)
-            {
-                return;
-            }
-
-            await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters {MessageId = msg.Id});
-        }
     }
 }
