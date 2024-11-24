@@ -2,11 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Saturn.Bot.Service;
 using Saturn.Bot.Service.Database;
 using Saturn.Bot.Service.Extension;
-using Saturn.Bot.Service.Operations;
 using Saturn.Bot.Service.Operations.Abstractions;
 using Saturn.Bot.Service.Options;
 using Telegram.Bot;
@@ -15,6 +13,8 @@ var builder = Host.CreateApplicationBuilder();
 builder.Services.AddOptions<OperationOptions>()
     .BindConfiguration(nameof(OperationOptions))
     .ValidateDataAnnotations();
+
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 builder.Services.AddDbContextFactory<SaturnContext>(options =>
 {
@@ -34,20 +34,20 @@ builder.Services.AddHttpClient<IImageManipulationServiceClient, ImageManipulatio
     x.BaseAddress = new Uri(imageManipulationServiceUrl);
 });
 
+var s1 = builder.Configuration.GetSection("OperationOptions");
+var s5 = builder.Configuration.GetSection("OperationOptions:CountOperationEnabled");
+var s2 = builder.Configuration.GetSection("OperationOptions").GetChildren();
+var s3 = builder.Configuration.GetSection("CountOperationEnabled");
 
-builder.Services.AddSingleton<CountOperation>();
-builder.Services.AddSingleton<ShowChatLinkOperation>();
-builder.Services.AddSingleton(GetEnabledOperations);
 
+var operations = typeof(Program).Assembly.GetTypes()
+    .Where(x => x is { IsAbstract: false, IsClass: true } && x.GetInterface(nameof(IOperation)) == typeof(IOperation)).ToList();
+foreach (var rule in operations)
+{
+    builder.Services.Add(new ServiceDescriptor(rule, rule, ServiceLifetime.Singleton));
+}
+builder.Services.AddSingleton<IEnumerable<IOperation>>(serviceProvider => operations.Select(serviceProvider.GetRequiredService).Cast<IOperation>());
 builder.Services.AddHostedService<HostedService>();
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var app = builder.Build();
 app.Run();
-return;
-
-IEnumerable<IOperation> GetEnabledOperations(IServiceProvider services)
-{
-    var options = services.GetRequiredService<IOptions<OperationOptions>>().Value;
-    if (options.CountOperationEnabled) yield return services.GetRequiredService<CountOperation>();
-    if (options.ShowChatLinkOperationEnabled) yield return services.GetRequiredService<ShowChatLinkOperation>();
-}

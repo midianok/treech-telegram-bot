@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Operations.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -10,7 +11,7 @@ public class ShowChatLinkOperation : OperationBase
 {
     private readonly TelegramBotClient _telegramBotClient;
 
-    public ShowChatLinkOperation(TelegramBotClient telegramBotClient, ILogger<ShowChatLinkOperation> logger) : base(logger)
+    public ShowChatLinkOperation(TelegramBotClient telegramBotClient, ILogger<ShowChatLinkOperation> logger, IConfiguration configuration) : base(logger, configuration)
     {
         _telegramBotClient = telegramBotClient;
     }
