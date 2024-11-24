@@ -6,6 +6,8 @@ namespace Saturn.Bot.Service.Operations.Abstractions;
 
 public interface IOperation
 {
+    bool Enabled();
+
     Task OnMessageAsync(Message msg, UpdateType type);
 
     Task OnUpdateAsync(Update update);

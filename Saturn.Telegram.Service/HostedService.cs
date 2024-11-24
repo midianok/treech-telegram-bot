@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Saturn.Bot.Service.Database;
-using Saturn.Bot.Service.Extension;
 using Saturn.Bot.Service.Operations.Abstractions;
 using Telegram.Bot;
 
@@ -27,7 +26,7 @@ public class HostedService : IHostedService
         await db.Database.EnsureCreatedAsync(cancellationToken);
         await db.Database.MigrateAsync(cancellationToken);
 
-        foreach (var operation in _operations)
+        foreach (var operation in _operations.Where(x => x.Enabled()))
         {
             _telegramBotClient.OnError += operation.OnErrorAsync;
             _telegramBotClient.OnMessage += operation.OnMessageAsync;

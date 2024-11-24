@@ -8,8 +8,12 @@
         "BOT_TOKEN": "1169135083:AAHvx71WMyn7nj1JWTj92o9tJwkiYJe20xo",
         "CONNECTION_STRING" : "Host=localhost;Port=5432;Database=saturn;Username=postgres;Password=mysecretpassword",
         "IMAGE_MANIPULATION_SERVICE_URL": "http://localhost:5187",
-        "OperationOptions__CountOperationEnabled" : "true",
-        "OperationOptions__ShowChatLinkOperationEnabled" : "true"
+        "ImageDistortionOperationEnabled" : "true",
+        "SaveMessageOperationEnabled" : "true",
+        "ShowChatLinkOperationEnabled" : "true",
+        "ShowFavStickOperationEnabled" : "true",
+        "ShowTopStatOperationEnabled" : "true",
+        "ShowUserStatOperationEnabled" : "true"
       }
     }
   }
