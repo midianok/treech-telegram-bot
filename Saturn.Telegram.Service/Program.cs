@@ -40,7 +40,7 @@ builder.Services.AddSingleton<ShowChatLinkOperation>();
 builder.Services.AddSingleton(GetEnabledOperations);
 
 builder.Services.AddHostedService<HostedService>();
-
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 var app = builder.Build();
 app.Run();
 return;
