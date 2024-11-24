@@ -27,21 +27,21 @@ namespace HttpClients
     {
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task DistortImageAsync(DistortDto body);
+        System.Threading.Tasks.Task<ImageDistortionQueryResult> DistortImageAsync(DistortDto body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task DistortImageAsync(DistortDto body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<ImageDistortionQueryResult> DistortImageAsync(DistortDto body, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task DistortVideoAsync(DistortDto body);
+        System.Threading.Tasks.Task<VideoDistortionQueryResult> DistortVideoAsync(DistortDto body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task DistortVideoAsync(DistortDto body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<VideoDistortionQueryResult> DistortVideoAsync(DistortDto body, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -79,7 +79,7 @@ namespace HttpClients
 
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task DistortImageAsync(DistortDto body)
+        public virtual System.Threading.Tasks.Task<ImageDistortionQueryResult> DistortImageAsync(DistortDto body)
         {
             return DistortImageAsync(body, System.Threading.CancellationToken.None);
         }
@@ -87,7 +87,7 @@ namespace HttpClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task DistortImageAsync(DistortDto body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<ImageDistortionQueryResult> DistortImageAsync(DistortDto body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -100,6 +100,7 @@ namespace HttpClients
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("text/plain"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
 
@@ -131,7 +132,12 @@ namespace HttpClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            var objectResponse_ = await ReadObjectResponseAsync<ImageDistortionQueryResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
                         }
                         else
                         {
@@ -155,7 +161,7 @@ namespace HttpClients
 
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task DistortVideoAsync(DistortDto body)
+        public virtual System.Threading.Tasks.Task<VideoDistortionQueryResult> DistortVideoAsync(DistortDto body)
         {
             return DistortVideoAsync(body, System.Threading.CancellationToken.None);
         }
@@ -163,7 +169,7 @@ namespace HttpClients
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task DistortVideoAsync(DistortDto body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<VideoDistortionQueryResult> DistortVideoAsync(DistortDto body, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -176,6 +182,7 @@ namespace HttpClients
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("text/plain"));
 
                     var urlBuilder_ = new System.Text.StringBuilder();
 
@@ -207,7 +214,12 @@ namespace HttpClients
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            var objectResponse_ = await ReadObjectResponseAsync<VideoDistortionQueryResult>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
                         }
                         else
                         {
@@ -298,7 +310,7 @@ namespace HttpClients
                     var field = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field, typeof(System.Runtime.Serialization.EnumMemberAttribute))
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -310,7 +322,7 @@ namespace HttpClients
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool)
+            else if (value is bool) 
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -344,6 +356,24 @@ namespace HttpClients
 
         [System.Text.Json.Serialization.JsonPropertyName("base64")]
         public string Base64 { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.1.0.0 (NJsonSchema v11.0.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ImageDistortionQueryResult
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("base64")]
+        public byte[] Base64 { get; set; }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.1.0.0 (NJsonSchema v11.0.2.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class VideoDistortionQueryResult
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("base64")]
+        public byte[] Base64 { get; set; }
 
     }
 

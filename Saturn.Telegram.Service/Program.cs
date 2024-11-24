@@ -32,13 +32,8 @@ builder.Services.AddHttpClient<IImageManipulationServiceClient, ImageManipulatio
 {
     var imageManipulationServiceUrl = builder.Configuration.GetSectionOrThrow("IMAGE_MANIPULATION_SERVICE_URL");
     x.BaseAddress = new Uri(imageManipulationServiceUrl);
+    x.Timeout = TimeSpan.FromMinutes(5);
 });
-
-var s1 = builder.Configuration.GetSection("OperationOptions");
-var s5 = builder.Configuration.GetSection("OperationOptions:CountOperationEnabled");
-var s2 = builder.Configuration.GetSection("OperationOptions").GetChildren();
-var s3 = builder.Configuration.GetSection("CountOperationEnabled");
-
 
 var operations = typeof(Program).Assembly.GetTypes()
     .Where(x => x is { IsAbstract: false, IsClass: true } && x.GetInterface(nameof(IOperation)) == typeof(IOperation)).ToList();
