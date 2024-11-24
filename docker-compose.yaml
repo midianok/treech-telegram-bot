@@ -8,11 +8,11 @@
       BOT_TOKEN: ${BOT_TOKEN}
       CONNECTION_STRING: ${CONNECTION_STRING}
       IMAGE_MANIPULATION_SERVICE_URL: ${IMAGE_MANIPULATION_SERVICE_URL}
-      ImageDistortionOperationEnabled: ${ImageDistortionOperationEnabled},
-      SaveMessageOperationEnabled: ${SaveMessageOperationEnabled},
-      ShowChatLinkOperationEnabled: ${ShowChatLinkOperationEnabled},
-      ShowFavStickOperationEnabled: ${ShowFavStickOperationEnabled},
-      ShowTopStatOperationEnabled: ${ShowTopStatOperationEnabled},
+      ImageDistortionOperationEnabled: ${ImageDistortionOperationEnabled}
+      SaveMessageOperationEnabled: ${SaveMessageOperationEnabled}
+      ShowChatLinkOperationEnabled: ${ShowChatLinkOperationEnabled}
+      ShowFavStickOperationEnabled: ${ShowFavStickOperationEnabled}
+      ShowTopStatOperationEnabled: ${ShowTopStatOperationEnabled}
       ShowUserStatOperationEnabled: ${ShowUserStatOperationEnabled}
     depends_on:
       - db
