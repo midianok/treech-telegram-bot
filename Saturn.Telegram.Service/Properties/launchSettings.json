@@ -13,7 +13,8 @@
         "ShowChatLinkOperationEnabled" : "true",
         "ShowFavStickOperationEnabled" : "true",
         "ShowTopStatOperationEnabled" : "true",
-        "ShowUserStatOperationEnabled" : "true"
+        "ShowUserStatOperationEnabled" : "true",
+        "RollOperationEnabled": "true"
       }
     }
   }
