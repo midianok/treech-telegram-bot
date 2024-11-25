@@ -14,7 +14,8 @@
         "ShowFavStickOperationEnabled" : "true",
         "ShowTopStatOperationEnabled" : "true",
         "ShowUserStatOperationEnabled" : "true",
-        "RollOperationEnabled": "true"
+        "RollOperationEnabled": "true",
+        "WhoTodayOperationEnabled": "true"
       }
     }
   }
