@@ -25,9 +25,9 @@ public class WhoTodayOperation : OperationBase
         var db = await _contextFactory.CreateDbContextAsync();
         var randomUser = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id && x.MessageDate > DateTime.Now.Date && x.FromUsername != null)
-            .OrderBy(_ => Guid.NewGuid())
             .Select(x => x.FromUsername)
             .Distinct()
+            .OrderBy(_ => Guid.NewGuid())
             .FirstOrDefaultAsync();
 
         if (randomUser == null)
