@@ -6,6 +6,7 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "BOT_TOKEN": "1169135083:AAHvx71WMyn7nj1JWTj92o9tJwkiYJe20xo",
+        "OPEN_AI_KEY": "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",
         "CONNECTION_STRING" : "Host=localhost;Port=5432;Database=saturn;Username=postgres;Password=mysecretpassword",
         "IMAGE_MANIPULATION_SERVICE_URL": "http://localhost:5187",
         "ImageDistortionOperationEnabled" : "true",
