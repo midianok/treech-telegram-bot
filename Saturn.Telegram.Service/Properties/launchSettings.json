@@ -15,7 +15,9 @@
         "ShowTopStatOperationEnabled" : "true",
         "ShowUserStatOperationEnabled" : "true",
         "RollOperationEnabled": "true",
-        "WhoTodayOperationEnabled": "true"
+        "WhoTodayOperationEnabled": "true",
+        "ChatGenerationOperationEnabled": "true",
+        "ImageGenerationOperationEnabled": "true"
       }
     }
   }

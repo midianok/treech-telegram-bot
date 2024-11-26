@@ -36,12 +36,12 @@ public class WhoTodayOperation : OperationBase
             return;
         }
 
-        var todayMessage = msg.Text!.Replace("трич кто сегодня ", string.Empty);
+        var todayMessage = msg.Text!.ToLower().Replace("кто сегодня ", string.Empty);
         await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
     }
 
     protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
      type == UpdateType.Message &&
      !string.IsNullOrEmpty(msg.Text) &&
-     msg.Text.StartsWith("трич кто сегодня ", StringComparison.CurrentCultureIgnoreCase);
+     msg.Text.StartsWith("кто сегодня ", StringComparison.CurrentCultureIgnoreCase);
 }

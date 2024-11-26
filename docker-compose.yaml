@@ -8,6 +8,7 @@
       BOT_TOKEN: ${BOT_TOKEN}
       CONNECTION_STRING: ${CONNECTION_STRING}
       IMAGE_MANIPULATION_SERVICE_URL: ${IMAGE_MANIPULATION_SERVICE_URL}
+      OPEN_AI_KEY: ${OPEN_AI_KEY}
       ImageDistortionOperationEnabled: ${ImageDistortionOperationEnabled}
       SaveMessageOperationEnabled: ${SaveMessageOperationEnabled}
       ShowChatLinkOperationEnabled: ${ShowChatLinkOperationEnabled}
@@ -16,6 +17,8 @@
       ShowUserStatOperationEnabled: ${ShowUserStatOperationEnabled}
       RollOperationEnabled: ${RollOperationEnabled}
       WhoTodayOperationEnabled: ${WhoTodayOperationEnabled}
+      ChatGenerationOperationEnabled: ${ChatGenerationOperationEnabled}
+      ImageGenerationOperationEnabled: ${ImageGenerationOperationEnabled}
     depends_on:
       - db
       - image-manipulation-service
