@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Images;
@@ -12,10 +13,12 @@ public class ImageGenerationOperation : OperationBase
 {
     private readonly TelegramBotClient _telegramBotClient;
     private readonly ImageClient _chatClient;
+    private readonly IMemoryCache _memoryCache;
 
-    public ImageGenerationOperation(ILogger<IOperation> logger, IConfiguration configuration, TelegramBotClient telegramBotClient) : base(logger, configuration)
+    public ImageGenerationOperation(ILogger<IOperation> logger, IConfiguration configuration, TelegramBotClient telegramBotClient, IMemoryCache memoryCache) : base(logger, configuration)
     {
         _telegramBotClient = telegramBotClient;
+        _memoryCache = memoryCache;
         _chatClient = new ImageClient("dall-e-3", configuration.GetSection("OPEN_AI_KEY").Value);
     }
 
@@ -27,7 +30,14 @@ public class ImageGenerationOperation : OperationBase
             await _telegramBotClient.SendMessage(msg.Chat.Id, "Только тричане с лычками могут генерировать пикчи", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
             return;
         }
-
+        if (_memoryCache.TryGetValue(msg.From.Id, out DateTime cooldownTime))
+        {
+            var elapsed = cooldownTime - DateTime.Now;
+            await _telegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed.Minutes} минут {elapsed.Seconds} секунд", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
+            return;
+        }
+        _memoryCache.Set(msg.From.Id, DateTime.Now.AddMinutes(5), TimeSpan.FromMinutes(5));
+        
         var request = msg.Text!.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи  ", string.Empty);
         var clientResult = _chatClient.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes } );
 

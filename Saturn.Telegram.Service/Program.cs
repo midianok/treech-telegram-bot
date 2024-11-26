@@ -15,7 +15,7 @@ builder.Services.AddOptions<OperationOptions>()
     .ValidateDataAnnotations();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
+builder.Services.AddMemoryCache();
 builder.Services.AddDbContextFactory<SaturnContext>(options =>
 {
     var connectionString = builder.Configuration.GetSectionOrThrow("CONNECTION_STRING");
