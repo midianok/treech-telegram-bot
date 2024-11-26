@@ -24,7 +24,6 @@
       - image-manipulation-service
 
   image-manipulation-service:
-    build: .
     image: midianok/image-manipulation-service:latest
     restart: always
     environment:
