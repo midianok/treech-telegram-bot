@@ -25,9 +25,9 @@ public class ImageGenerationOperation : OperationBase
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
         var user = await _telegramBotClient.GetChatMember(msg.Chat.Id, msg.From!.Id);
-        if (user.Status == ChatMemberStatus.Member)
+        if (user.Status == ChatMemberStatus.Member && msg.From.Username != "nkess")
         {
-            await _telegramBotClient.SendMessage(msg.Chat.Id, "Только тричане с лычками могут генерировать пикчи", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
+            await _telegramBotClient.SendMessage(msg.Chat.Id, "Только тричане с лычками и Любимая Настя могут генерировать пикчи", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
             return;
         }
         if (_memoryCache.TryGetValue(msg.From.Id, out DateTime cooldownTime))
