@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
@@ -12,15 +13,25 @@ public class ChatGenerationOperation : OperationBase
 {
     private readonly TelegramBotClient _telegramBotClient;
     private readonly ChatClient _chatClient;
+    private readonly IMemoryCache _memoryCache;
 
-    public ChatGenerationOperation(ILogger<IOperation> logger, IConfiguration configuration, TelegramBotClient telegramBotClient) : base(logger, configuration)
+    public ChatGenerationOperation(ILogger<IOperation> logger, IConfiguration configuration, TelegramBotClient telegramBotClient, IMemoryCache memoryCache) : base(logger, configuration)
     {
         _chatClient = new ChatClient(model: "gpt-4o-mini", apiKey: configuration.GetSection("OPEN_AI_KEY").Value);
         _telegramBotClient = telegramBotClient;
+        _memoryCache = memoryCache;
     }
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
+        if (_memoryCache.TryGetValue(msg.From!.Id, out DateTime cooldownTime))
+        {
+            var elapsed = cooldownTime - DateTime.Now;
+            await _telegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed.Minutes} минут {elapsed.Seconds} секунд", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
+            return;
+        }
+        _memoryCache.Set(msg.From.Id, DateTime.Now.AddMinutes(2), TimeSpan.FromMinutes(2));
+        
         var request = msg.Text!.ToLower().Replace("трич ", string.Empty);
         var clientResult = _chatClient.CompleteChatAsync(request);
 
