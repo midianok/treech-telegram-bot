@@ -1,3 +1,5 @@
+using System.Globalization;
+using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -24,10 +26,11 @@ public class ChatGenerationOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        if (_memoryCache.TryGetValue(msg.From!.Id, out DateTime cooldownTime))
+        var user = await _telegramBotClient.GetChatMember(msg.Chat.Id, msg.From!.Id);
+        if (_memoryCache.TryGetValue(msg.From!.Id, out DateTime cooldownTime) && user.Status != ChatMemberStatus.Administrator)
         {
-            var elapsed = cooldownTime - DateTime.Now;
-            await _telegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed.Minutes} минут {elapsed.Seconds} секунд", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
+            var elapsed = (cooldownTime - DateTime.Now).Humanize(2, culture: new CultureInfo("ru-RU"), collectionSeparator: " ");
+            await _telegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed}", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
             return;
         }
         _memoryCache.Set(msg.From.Id, DateTime.Now.AddMinutes(2), TimeSpan.FromMinutes(2));
