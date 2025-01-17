@@ -1,3 +1,5 @@
+using System.Globalization;
+using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -32,8 +34,8 @@ public class ImageGenerationOperation : OperationBase
         }
         if (_memoryCache.TryGetValue(msg.From.Id, out DateTime cooldownTime))
         {
-            var elapsed = cooldownTime - DateTime.Now;
-            await _telegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed.Minutes} минут {elapsed.Seconds} секунд", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
+            var elapsed = (cooldownTime - DateTime.Now).Humanize(2, culture: new CultureInfo("ru-RU"), collectionSeparator: " ");
+            await _telegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed}", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
             return;
         }
         _memoryCache.Set(msg.From.Id, DateTime.Now.AddMinutes(5), TimeSpan.FromMinutes(5));
