@@ -46,6 +46,7 @@ public class ImageGenerationOperation : OperationBase
         while (!clientResult.IsCompleted)
         {
             await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
+            await Task.Delay(TimeSpan.FromSeconds(1));
         }
         await Task.WhenAll(clientResult);
         var result = clientResult.Result.Value.ImageBytes.ToArray();
