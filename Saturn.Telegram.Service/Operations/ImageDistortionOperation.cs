@@ -1,7 +1,7 @@
 ﻿using HttpClients;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Operations.Abstractions;
+using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;

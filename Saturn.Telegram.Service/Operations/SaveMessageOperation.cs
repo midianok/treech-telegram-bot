@@ -3,10 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Database;
 using Saturn.Bot.Service.Extension;
-using Saturn.Bot.Service.Operations.Abstractions;
+using Saturn.Telegram.Db;
+using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using MessageEntity = Saturn.Bot.Service.Database.Entities.MessageEntity;
+using MessageEntity = Saturn.Telegram.Db.Entities.MessageEntity;
 
 namespace Saturn.Bot.Service.Operations;
 
