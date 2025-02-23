@@ -19,6 +19,7 @@
       WhoTodayOperationEnabled: ${WhoTodayOperationEnabled}
       ChatGenerationOperationEnabled: ${ChatGenerationOperationEnabled}
       ImageGenerationOperationEnabled: ${ImageGenerationOperationEnabled}
+      LinaWorkTimeOperationEnabled: ${LinaWorkTimeOperationEnabled}
     depends_on:
       - db
       - image-manipulation-service
