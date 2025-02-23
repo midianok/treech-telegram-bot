@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Operations.Abstractions;
+using Saturn.Telegram.Lib.Operation;
 
 namespace Saturn.Bot.Service.Operations;
 
