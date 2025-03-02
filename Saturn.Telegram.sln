@@ -10,11 +10,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Lib", "..\Saturn.Telegram.Lib\Saturn.Telegram.Lib\Saturn.Telegram.Lib.csproj", "{EDA7CEB4-C116-4076-A09C-70954B204CC3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Lib", "Saturn.Telegram.Lib\Saturn.Telegram.Lib.csproj", "{FBE38E9E-0F9E-43A9-956A-CE888B9A65E3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Db", "..\Saturn.Telegram.Db\Saturn.Telegram.Db\Saturn.Telegram.Db.csproj", "{107889C5-95CE-4858-A6B4-7A82347710E0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Infrastructure", "Saturn.Telegram.Infrastructure\Saturn.Telegram.Infrastructure.csproj", "{BD1FF1AA-1108-42C8-B42C-49EB0F7CB1A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Infrastructure", "..\Saturn.Telegram.Infrastructure\Saturn.Telegram.Infrastructure\Saturn.Telegram.Infrastructure.csproj", "{293B64E2-7A0D-47A6-B17A-DB28B9C3DD20}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Db", "Saturn.Telegram.Db\Saturn.Telegram.Db.csproj", "{90331CA8-24ED-4BC0-969F-FB8A231865A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,17 +26,17 @@ Global
 		{DB58A1C5-10B1-484A-9D3F-4E2C8CB7C933}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB58A1C5-10B1-484A-9D3F-4E2C8CB7C933}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB58A1C5-10B1-484A-9D3F-4E2C8CB7C933}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EDA7CEB4-C116-4076-A09C-70954B204CC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EDA7CEB4-C116-4076-A09C-70954B204CC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EDA7CEB4-C116-4076-A09C-70954B204CC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EDA7CEB4-C116-4076-A09C-70954B204CC3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{107889C5-95CE-4858-A6B4-7A82347710E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{107889C5-95CE-4858-A6B4-7A82347710E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{107889C5-95CE-4858-A6B4-7A82347710E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{107889C5-95CE-4858-A6B4-7A82347710E0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{293B64E2-7A0D-47A6-B17A-DB28B9C3DD20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{293B64E2-7A0D-47A6-B17A-DB28B9C3DD20}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{293B64E2-7A0D-47A6-B17A-DB28B9C3DD20}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{293B64E2-7A0D-47A6-B17A-DB28B9C3DD20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBE38E9E-0F9E-43A9-956A-CE888B9A65E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBE38E9E-0F9E-43A9-956A-CE888B9A65E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBE38E9E-0F9E-43A9-956A-CE888B9A65E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBE38E9E-0F9E-43A9-956A-CE888B9A65E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD1FF1AA-1108-42C8-B42C-49EB0F7CB1A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD1FF1AA-1108-42C8-B42C-49EB0F7CB1A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD1FF1AA-1108-42C8-B42C-49EB0F7CB1A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD1FF1AA-1108-42C8-B42C-49EB0F7CB1A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90331CA8-24ED-4BC0-969F-FB8A231865A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90331CA8-24ED-4BC0-969F-FB8A231865A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90331CA8-24ED-4BC0-969F-FB8A231865A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90331CA8-24ED-4BC0-969F-FB8A231865A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
