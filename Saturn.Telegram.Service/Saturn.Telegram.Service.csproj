@@ -18,9 +18,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Saturn.Telegram.Db\Saturn.Telegram.Db\Saturn.Telegram.Db.csproj" />
-      <ProjectReference Include="..\..\Saturn.Telegram.Infrastructure\Saturn.Telegram.Infrastructure\Saturn.Telegram.Infrastructure.csproj" />
-      <ProjectReference Include="..\..\Saturn.Telegram.Lib\Saturn.Telegram.Lib\Saturn.Telegram.Lib.csproj" />
+      <ProjectReference Include="..\Saturn.Telegram.Db\Saturn.Telegram.Db.csproj" />
+      <ProjectReference Include="..\Saturn.Telegram.Infrastructure\Saturn.Telegram.Infrastructure.csproj" />
+      <ProjectReference Include="..\Saturn.Telegram.Lib\Saturn.Telegram.Lib.csproj" />
     </ItemGroup>
 
 </Project>
