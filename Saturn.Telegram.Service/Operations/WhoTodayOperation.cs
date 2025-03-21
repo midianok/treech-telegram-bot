@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Database;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -12,12 +9,10 @@ namespace Saturn.Bot.Service.Operations;
 
 public class WhoTodayOperation : OperationBase
 {
-    private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public WhoTodayOperation(ILogger<IOperation> logger, IConfiguration configuration, TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory) : base(logger, configuration)
+    public WhoTodayOperation(IDbContextFactory<SaturnContext> contextFactory)
     {
-        _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;
     }
 
@@ -33,12 +28,12 @@ public class WhoTodayOperation : OperationBase
 
         if (randomUser == null)
         {
-            await _telegramBotClient.SendMessage(msg.Chat, "Ты!", ParseMode.None, new ReplyParameters { MessageId = msg.Id } );
+            await TelegramBotClient.SendMessage(msg.Chat, "Ты!", ParseMode.None, new ReplyParameters { MessageId = msg.Id } );
             return;
         }
 
         var todayMessage = msg.Text!.ToLower().Replace("кто сегодня ", string.Empty);
-        await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
+        await TelegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
     }
 
     protected override bool ValidateOnMessage(Message msg, UpdateType type) =>

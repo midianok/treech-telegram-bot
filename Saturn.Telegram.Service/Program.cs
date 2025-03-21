@@ -11,7 +11,7 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddMemoryCache();
 
 var botToken = builder.Configuration.GetSectionOrThrow("BOT_TOKEN");
-builder.Services.AddTelegramBotClient<Program>(botToken);
+builder.Services.AddTelegramBotClient<Program>(botToken, builder.Configuration);
 var connectionString = builder.Configuration.GetSectionOrThrow("CONNECTION_STRING");
 builder.Services.AddSaturnContext(connectionString);
 

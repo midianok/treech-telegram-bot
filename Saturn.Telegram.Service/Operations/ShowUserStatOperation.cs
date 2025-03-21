@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Database;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -12,13 +9,11 @@ namespace Saturn.Bot.Service.Operations;
 
 public class ShowUserStatOperation : OperationBase
 {
-    private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ShowUserStatOperation(ILogger<ShowUserStatOperation> logger, IDbContextFactory<SaturnContext> contextFactory, TelegramBotClient telegramBotClient, IConfiguration configuration) : base(logger, configuration)
+    public ShowUserStatOperation(IDbContextFactory<SaturnContext> contextFactory)
     {
         _contextFactory = contextFactory;
-        _telegramBotClient = telegramBotClient;
     }
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
@@ -42,7 +37,7 @@ public class ShowUserStatOperation : OperationBase
                             📹 Видео: {messageTypes.Count(x => x.Type == (int) MessageType.Video)}
                             """;
 
-        await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None, new ReplyParameters { MessageId = msg.Id } );
+        await TelegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None, new ReplyParameters { MessageId = msg.Id } );
     }
 
     protected override bool ValidateOnMessage(Message msg, UpdateType type) =>

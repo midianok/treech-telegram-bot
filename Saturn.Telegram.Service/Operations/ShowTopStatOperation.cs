@@ -1,8 +1,5 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Database;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -13,12 +10,10 @@ namespace Saturn.Bot.Service.Operations;
 
 public class ShowTopStatOperation : OperationBase
 {
-    private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ShowTopStatOperation(TelegramBotClient telegramBotClient, ILogger<ShowTopStatOperation> logger, IDbContextFactory<SaturnContext> contextFactory, IConfiguration configuration) : base(logger, configuration)
+    public ShowTopStatOperation(IDbContextFactory<SaturnContext> contextFactory)
     {
-        _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;
     }
 
@@ -49,7 +44,7 @@ public class ShowTopStatOperation : OperationBase
             replyMessage.Append($"{emoji} {user.FirstName} {user.LastName} (@{userName}): {user.MessageCount}\n");
         }
 
-        await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
+        await TelegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
             new ReplyParameters { MessageId = msg.Id } );
     }
 
