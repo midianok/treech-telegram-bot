@@ -19,7 +19,8 @@
         "WhoTodayOperationEnabled": "true",
         "ChatGenerationOperationEnabled": "true",
         "ImageGenerationOperationEnabled": "true",
-        "LinaWorkTimeOperationEnabled": "true"
+        "LinaWorkTimeOperationEnabled": "true",
+        "SummaryGenerationOperationEnabled": "true"
       }
     }
   }

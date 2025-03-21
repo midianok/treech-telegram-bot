@@ -15,7 +15,7 @@ public class ChatGenerationOperation : OperationBase
     private readonly ChatClient _chatClient;
     public ChatGenerationOperation(IConfiguration configuration)
     {
-        _chatClient = new ChatClient("dall-e-3", configuration.GetSection("OPEN_AI_KEY").Value);
+        _chatClient = new ChatClient("gpt-4o", configuration.GetSection("OPEN_AI_KEY").Value);
     }
     
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
