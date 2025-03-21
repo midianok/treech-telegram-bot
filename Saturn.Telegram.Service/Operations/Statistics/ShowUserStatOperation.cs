@@ -5,7 +5,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.Statistics;
 
 public class ShowUserStatOperation : OperationBase
 {
@@ -21,11 +21,11 @@ public class ShowUserStatOperation : OperationBase
         var db = await _contextFactory.CreateDbContextAsync();
         var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
 
-        var messageTypes = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == userId)
-            .Select(x => new { x.Type, x.FromUsername })
+        var messageTypes = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.UserId == userId)
+            .Select(x => new { x.Type, x.User!.Username })
             .ToListAsync();
 
-        var userName = messageTypes.FirstOrDefault()?.FromUsername;
+        var userName = messageTypes.FirstOrDefault()?.Username;
 
         var replyMessage = $"""
                             Кол-во сообщений пользователя @{ userName ?? userId.ToString() } : {messageTypes.Count} 
