@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Database;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -12,12 +9,10 @@ namespace Saturn.Bot.Service.Operations;
 
 public class ShowFavStickOperation : OperationBase
 {
-    private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ShowFavStickOperation(ILogger<ShowFavStickOperation> logger, TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory, IConfiguration configuration) : base(logger, configuration)
+    public ShowFavStickOperation(IDbContextFactory<SaturnContext> contextFactory)
     {
-        _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;
     }
 
@@ -40,7 +35,7 @@ public class ShowFavStickOperation : OperationBase
             return;
         }
 
-        await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters {MessageId = msg.Id});
+        await TelegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters {MessageId = msg.Id});
     }
 
     protected override bool ValidateOnMessage(Message msg, UpdateType type) =>

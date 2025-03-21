@@ -1,6 +1,4 @@
 ﻿using HttpClients;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -11,13 +9,11 @@ namespace Saturn.Bot.Service.Operations;
 public class ImageDistortionOperation : OperationBase
 {
     private readonly IImageManipulationServiceClient _imageManipulationService;
-    private readonly TelegramBotClient _telegramBotClient;
     private static readonly string[] triggerWords = ["жмыхни", "нука"];
 
-    public ImageDistortionOperation(ILogger<IOperation> logger, IConfiguration configuration, IImageManipulationServiceClient imageManipulationService, TelegramBotClient telegramBotClient) : base(logger, configuration)
+    public ImageDistortionOperation(IImageManipulationServiceClient imageManipulationService)
     {
         _imageManipulationService = imageManipulationService;
-        _telegramBotClient = telegramBotClient;
     }
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
@@ -28,14 +24,14 @@ public class ImageDistortionOperation : OperationBase
             return;
         }
 
-        var file = await _telegramBotClient.GetFile(fileId);
+        var file = await TelegramBotClient.GetFile(fileId);
         if (string.IsNullOrEmpty(file.FilePath))
         {
             return;
         }
 
         using var downloadFileStream = new MemoryStream();
-        await _telegramBotClient.DownloadFile(file.FilePath, downloadFileStream);
+        await TelegramBotClient.DownloadFile(file.FilePath, downloadFileStream);
 
         if (msg.ReplyToMessage!.Type == MessageType.Photo)
         {
@@ -45,7 +41,7 @@ public class ImageDistortionOperation : OperationBase
             });
 
             using var sendFileStream = new MemoryStream(result.Base64);
-            await _telegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(sendFileStream), replyParameters: new ReplyParameters{MessageId = msg.MessageId});
+            await TelegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(sendFileStream), replyParameters: new ReplyParameters{MessageId = msg.MessageId});
         }
         else if (msg.ReplyToMessage!.Type == MessageType.Video || msg.ReplyToMessage!.Type == MessageType.Animation)
         {
@@ -54,7 +50,7 @@ public class ImageDistortionOperation : OperationBase
                 Base64 = Convert.ToBase64String(downloadFileStream.ToArray())
             });
             using var sendFileStream = new MemoryStream(result.Base64);
-            await _telegramBotClient.SendVideo(msg.Chat.Id, new InputFileStream(sendFileStream), replyParameters: new ReplyParameters{MessageId = msg.MessageId});
+            await TelegramBotClient.SendVideo(msg.Chat.Id, new InputFileStream(sendFileStream), replyParameters: new ReplyParameters{MessageId = msg.MessageId});
         }
     }
 

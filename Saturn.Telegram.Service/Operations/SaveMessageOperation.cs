@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Database;
 using Saturn.Bot.Service.Extension;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
@@ -15,7 +12,7 @@ public class SaveMessageOperation : OperationBase
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public SaveMessageOperation(IDbContextFactory<SaturnContext> contextFactory, ILogger<SaveMessageOperation> logger, IConfiguration configuration) : base(logger, configuration) =>
+    public SaveMessageOperation(IDbContextFactory<SaturnContext> contextFactory) =>
         _contextFactory = contextFactory;
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
