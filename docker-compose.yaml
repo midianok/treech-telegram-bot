@@ -20,6 +20,7 @@
       ChatGenerationOperationEnabled: ${ChatGenerationOperationEnabled}
       ImageGenerationOperationEnabled: ${ImageGenerationOperationEnabled}
       LinaWorkTimeOperationEnabled: ${LinaWorkTimeOperationEnabled}
+      SummaryGenerationOperationEnabled: ${SummaryGenerationOperationEnabled}
     depends_on:
       - db
       - image-manipulation-service
