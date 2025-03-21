@@ -6,7 +6,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.Statistics;
 
 public class ShowTopStatOperation : OperationBase
 {
@@ -27,9 +27,15 @@ public class ShowTopStatOperation : OperationBase
         var monday = GetMondayDate();
 
         var topUsersByMessageCount = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.MessageDate > monday && x.MessageDate < DateTime.Now)
-            .Where(x => x.FromUserId.HasValue)
-            .GroupBy(x => x.FromUserId)
-            .Select(x => new { UserId = x.Key, UserName = x.First().FromUsername, FirstName = x.First().FromFirstName, LastName = x.First().FromLastName, MessageCount = x.Count()})
+            .GroupBy(x => x.UserId)
+            .Select(x => new
+            {
+                UserId = x.Key, 
+                x.First().User!.Username, 
+                x.First().User!.FirstName, 
+                x.First().User!.LastName, 
+                MessageCount = x.Count()
+            })
             .OrderByDescending(x => x.MessageCount)
             .Take(10).ToListAsync();
 
@@ -38,10 +44,10 @@ public class ShowTopStatOperation : OperationBase
 
         foreach (var user in topUsersByMessageCount)
         {
-            var userName = !string.IsNullOrEmpty(user.UserName) ? user.UserName : user.UserId.ToString();
+            var userName = !string.IsNullOrEmpty(user.Username) ? $"@{user.Username}" : user.UserId.ToString();
 
             var emoji = GetEmoji(iterator++);
-            replyMessage.Append($"{emoji} {user.FirstName} {user.LastName} (@{userName}): {user.MessageCount}\n");
+            replyMessage.Append($"{emoji} {user.FirstName} {user.LastName} ({userName}): {user.MessageCount}\n");
         }
 
         await TelegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,

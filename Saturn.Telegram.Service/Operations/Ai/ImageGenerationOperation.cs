@@ -3,14 +3,13 @@ using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using OpenAI.Images;
-using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.Ai;
 
 public class ImageGenerationOperation : OperationBase
 {

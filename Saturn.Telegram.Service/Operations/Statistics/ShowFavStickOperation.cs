@@ -5,7 +5,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.Statistics;
 
 public class ShowFavStickOperation : OperationBase
 {
@@ -22,7 +22,7 @@ public class ShowFavStickOperation : OperationBase
 
         var db = await _contextFactory.CreateDbContextAsync();
         var userStickers = await db.Messages
-            .Where(x => x.ChatId == msg.Chat.Id && x.FromUserId == userId &&
+            .Where(x => x.ChatId == msg.Chat.Id && x.UserId == userId &&
                         x.Type == (int) MessageType.Sticker)
             .ToListAsync();
 
