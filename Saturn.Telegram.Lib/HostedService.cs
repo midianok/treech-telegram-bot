@@ -14,7 +14,11 @@ public class HostedService : IHostedService
     private readonly ILogger<OperationBase> _logger;
     private readonly IMemoryCache _memoryCache;
 
-    public HostedService(TelegramBotClient telegramBotClient, IEnumerable<IOperation> operations, ILogger<OperationBase> logger, IMemoryCache memoryCache)
+    public HostedService(
+        TelegramBotClient telegramBotClient,
+        IEnumerable<IOperation> operations,
+        ILogger<OperationBase> logger,
+        IMemoryCache memoryCache)
     {
         _operations = operations;
         _logger = logger;
@@ -27,16 +31,13 @@ public class HostedService : IHostedService
         foreach (var operation in _operations)
         {
             var type = operation.GetType();
-            type
-                .GetField("TelegramBotClient", BindingFlags.Instance | BindingFlags.NonPublic)?
+            type.GetField("TelegramBotClient", BindingFlags.Instance | BindingFlags.NonPublic)?
                 .SetValue(operation, _telegramBotClient);
             
-            type
-                .GetField("Logger", BindingFlags.Instance | BindingFlags.NonPublic)?
+            type.GetField("Logger", BindingFlags.Instance | BindingFlags.NonPublic)?
                 .SetValue(operation, _logger);
             
-            type
-                .GetField("MemoryCache", BindingFlags.Instance | BindingFlags.NonPublic)?
+            type.GetField("MemoryCache", BindingFlags.Instance | BindingFlags.NonPublic)?
                 .SetValue(operation, _memoryCache);
             
             _telegramBotClient.OnError += operation.OnErrorAsync;
