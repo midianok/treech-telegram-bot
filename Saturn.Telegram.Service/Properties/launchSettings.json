@@ -20,7 +20,8 @@
         "ChatGenerationOperationEnabled": "true",
         "ImageGenerationOperationEnabled": "true",
         "LinaWorkTimeOperationEnabled": "true",
-        "SummaryGenerationOperationEnabled": "true"
+        "SummaryGenerationOperationEnabled": "true",
+        "ShowAllTimeStatOperationEnabled": "true"
       }
     }
   }
