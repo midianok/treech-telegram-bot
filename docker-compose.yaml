@@ -22,6 +22,10 @@
       LinaWorkTimeOperationEnabled: ${LinaWorkTimeOperationEnabled}
       SummaryGenerationOperationEnabled: ${SummaryGenerationOperationEnabled}
       ShowAllTimeStatOperationEnabled: ${ShowAllTimeStatOperationEnabled}
+      UploadOperationEnabled: ${UploadOperationEnabled}
+      ReportOperationEnabled: ${ReportOperationEnabled}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     depends_on:
       - db
       - image-manipulation-service

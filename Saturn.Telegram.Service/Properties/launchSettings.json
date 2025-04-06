@@ -21,7 +21,9 @@
         "ImageGenerationOperationEnabled": "true",
         "LinaWorkTimeOperationEnabled": "true",
         "SummaryGenerationOperationEnabled": "true",
-        "ShowAllTimeStatOperationEnabled": "true"
+        "ShowAllTimeStatOperationEnabled": "true",
+        "UploadOperationEnabled": "true",
+        "ReportOperationEnabled": "true"
       }
     }
   }
