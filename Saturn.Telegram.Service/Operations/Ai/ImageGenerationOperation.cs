@@ -13,6 +13,8 @@ namespace Saturn.Bot.Service.Operations.Ai;
 
 public class ImageGenerationOperation : OperationBase
 {
+    protected override bool CooldownNeeded => true;
+    
     private readonly ImageClient _imageClient;
     public ImageGenerationOperation(IConfiguration configuration)
     {

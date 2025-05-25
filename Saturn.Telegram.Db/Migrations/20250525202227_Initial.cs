@@ -41,19 +41,19 @@ namespace Saturn.Telegram.Db.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "cooldown_entity",
+                name: "cooldowns",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    chat_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    subject = table.Column<string>(type: "text", nullable: false),
+                    user_id = table.Column<long>(type: "bigint", nullable: true),
+                    chat_id = table.Column<long>(type: "bigint", nullable: false),
+                    operation = table.Column<string>(type: "text", nullable: false),
                     cooldown_seconds = table.Column<int>(type: "integer", nullable: false),
                     message = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_cooldown_entity", x => x.id);
+                    table.PrimaryKey("pk_cooldowns", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -154,7 +154,7 @@ namespace Saturn.Telegram.Db.Migrations
                 name: "account_entity");
 
             migrationBuilder.DropTable(
-                name: "cooldown_entity");
+                name: "cooldowns");
 
             migrationBuilder.DropTable(
                 name: "invoice_entity");

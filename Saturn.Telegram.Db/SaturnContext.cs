@@ -11,6 +11,8 @@ public sealed class SaturnContext : DbContext
     public DbSet<UserEntity> Users { get; set; } = null!;
     
     public DbSet<ChatEntity> Chats { get; set; } = null!;
+    
+    public DbSet<CooldownEntity> Cooldowns { get; set; } = null!;
 
     public SaturnContext(DbContextOptions<SaturnContext> options) : base(options) { }
 

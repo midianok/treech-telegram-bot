@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
-using System.Reflection;
 using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Services;
@@ -17,6 +17,8 @@ namespace Saturn.Telegram.Lib.Operation;
 
 public abstract class OperationBase : IOperation
 {
+    protected virtual bool CooldownNeeded => false;
+    
     protected readonly ILogger<OperationBase> Logger;
     protected readonly TelegramBotClient TelegramBotClient;
     protected readonly IMemoryCache MemoryCache;
@@ -25,46 +27,24 @@ public abstract class OperationBase : IOperation
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
         var isMatch = ValidateOnMessage(msg, type) && ValidateOnMessageFluent(msg, type);
-        if (!isMatch || await InCooldown(msg))
+        if (!isMatch)
         {
             return;
         }
 
+        var (inCooldown, message) = await CooldownService.IfInCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
+        if (CooldownNeeded && inCooldown)
+        {
+            await TelegramBotClient.SendMessage(msg.Chat.Id, message, replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+            return;
+        }
+
         await ProcessOnMessageAsync(msg, type);
-    }
 
-    private async Task<bool> InCooldown(Message msg)
-    {
-        if (msg.From == null)
+        if (CooldownNeeded)
         {
-            return false;
+           await CooldownService.SetCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
         }
-
-        var user = await TelegramBotClient.GetChatMember(msg.Chat.Id, msg.From.Id);
-        var cooldowns = GetType()
-            .GetMethod(nameof(ProcessOnMessageAsync), BindingFlags.Instance | BindingFlags.NonPublic)!
-            .GetCustomAttributes<CooldownAttribute>()
-            .Where(x => x.ChatId == msg.Chat.Id)
-            .ToList();
-
-        if (cooldowns.Count == 0)
-        {
-            return false;
-        }
-        
-        var userNameCooldown = cooldowns.SingleOrDefault(x => x.UserName == msg.From.Username);
-        if (userNameCooldown?.Cooldown > 0)
-        {
-            return await CheckCooldown(msg, userNameCooldown);
-        }
-        
-        var statusCooldown = cooldowns.SingleOrDefault(x => x.UserStatus == user.Status);
-        if (statusCooldown?.Cooldown > 0)
-        {
-            return await CheckCooldown(msg, statusCooldown);
-        }
-
-        return false;
     }
 
     private async Task<bool> CheckCooldown(Message msg, CooldownAttribute cooldown)

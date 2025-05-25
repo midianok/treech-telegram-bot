@@ -4,11 +4,11 @@ public class CooldownEntity
 {
     public Guid Id { get; set; }
     
-    public Guid UserId { get; set; }
+    public long? UserId { get; set; }
     
-    public Guid ChatId { get; set; }
+    public long ChatId { get; set; }
 
-    public required string Subject { get; set; }
+    public string Operation { get; set; }
     
     public int CooldownSeconds { get; set; }
     

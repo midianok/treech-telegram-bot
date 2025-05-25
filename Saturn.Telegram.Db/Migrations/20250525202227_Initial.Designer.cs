@@ -12,7 +12,7 @@ using Saturn.Telegram.Db;
 namespace Saturn.Telegram.Db.Migrations
 {
     [DbContext(typeof(SaturnContext))]
-    [Migration("20250321135744_Initial")]
+    [Migration("20250525202227_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -84,8 +84,8 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<Guid>("ChatId")
-                        .HasColumnType("uuid")
+                    b.Property<long>("ChatId")
+                        .HasColumnType("bigint")
                         .HasColumnName("chat_id");
 
                     b.Property<int>("CooldownSeconds")
@@ -96,19 +96,19 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasColumnType("text")
                         .HasColumnName("message");
 
-                    b.Property<string>("Subject")
+                    b.Property<string>("Operation")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("subject");
+                        .HasColumnName("operation");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_cooldown_entity");
+                        .HasName("pk_cooldowns");
 
-                    b.ToTable("cooldown_entity", (string)null);
+                    b.ToTable("cooldowns", (string)null);
                 });
 
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.InvoiceEntity", b =>

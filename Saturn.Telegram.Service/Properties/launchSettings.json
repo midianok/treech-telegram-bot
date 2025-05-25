@@ -10,7 +10,7 @@
         "OPEN_AI_KEY": "sk-proj-5W_c1323fKH50vy42m2RLPrMla5keT21A7I26Y26IYRzDLOLhBgq8JoChuSKhoAyalsbqHf_2rT3BlbkFJI1Tyj9FqwMbOt_kk3XT6IE1uYDMi3hZW-kgrKzp37iHOc75iHOc75P24xa5BcVmy9X-Bbr00jnSTyZ8A",
         "IMAGE_MANIPULATION_SERVICE_URL": "http://localhost:5187",
         "ImageDistortionOperationEnabled" : "true",
-        "SaveMessageOperationEnabled" : "true",
+        "SaveMessageOperationEnabled" : "false",
         "ShowChatLinkOperationEnabled" : "true",
         "ShowFavStickOperationEnabled" : "true",
         "ShowTopStatOperationEnabled" : "true",
