@@ -1,8 +1,9 @@
-﻿using System.Reflection;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
+using Saturn.Telegram.Lib.Services;
 using Telegram.Bot;
 
 namespace Saturn.Telegram.Lib;
@@ -13,16 +14,19 @@ public class HostedService : IHostedService
     private readonly IEnumerable<IOperation> _operations;
     private readonly ILogger<OperationBase> _logger;
     private readonly IMemoryCache _memoryCache;
+    private readonly ICooldownService _cooldownService;
 
     public HostedService(
         TelegramBotClient telegramBotClient,
         IEnumerable<IOperation> operations,
         ILogger<OperationBase> logger,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        ICooldownService cooldownService)
     {
         _operations = operations;
         _logger = logger;
         _memoryCache = memoryCache;
+        _cooldownService = cooldownService;
         _telegramBotClient = telegramBotClient;
     }
 
@@ -30,15 +34,10 @@ public class HostedService : IHostedService
     {
         foreach (var operation in _operations)
         {
-            var type = operation.GetType();
-            type.GetField("TelegramBotClient", BindingFlags.Instance | BindingFlags.NonPublic)?
-                .SetValue(operation, _telegramBotClient);
-            
-            type.GetField("Logger", BindingFlags.Instance | BindingFlags.NonPublic)?
-                .SetValue(operation, _logger);
-            
-            type.GetField("MemoryCache", BindingFlags.Instance | BindingFlags.NonPublic)?
-                .SetValue(operation, _memoryCache);
+            operation.SetService("TelegramBotClient", _telegramBotClient)
+                .SetService("Logger", _logger)
+                .SetService("MemoryCache", _memoryCache)
+                .SetService("CooldownService", _cooldownService);
             
             _telegramBotClient.OnError += operation.OnErrorAsync;
             _telegramBotClient.OnMessage += operation.OnMessageAsync;

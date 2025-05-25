@@ -4,10 +4,14 @@ using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Lib.Attributes;
+using Saturn.Telegram.Lib.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+// ReSharper disable UnassignedReadonlyField
 
 namespace Saturn.Telegram.Lib.Operation;
 
@@ -16,6 +20,7 @@ public abstract class OperationBase : IOperation
     protected readonly ILogger<OperationBase> Logger;
     protected readonly TelegramBotClient TelegramBotClient;
     protected readonly IMemoryCache MemoryCache;
+    protected readonly ICooldownService CooldownService;
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
@@ -26,22 +31,6 @@ public abstract class OperationBase : IOperation
         }
 
         await ProcessOnMessageAsync(msg, type);
-    }
-
-    private async Task<bool> IsAccessDenied(Message msg)
-    {
-        var access = GetType()
-            .GetMethod(nameof(ProcessOnMessageAsync), BindingFlags.Instance | BindingFlags.NonPublic)?
-            .GetCustomAttributes(typeof(AccessAttribute));
-
-        var user = await TelegramBotClient.GetChatMember(msg.Chat.Id, msg.From!.Id);
-        if (user.Status == ChatMemberStatus.Member && msg.From.Username != "nkess")
-        {
-            await TelegramBotClient.SendMessage(msg.Chat.Id, "Только тричане с лычками и Любимая Настя могут генерировать пикчи", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
-            return false;
-        }
-
-        return true;
     }
 
     private async Task<bool> InCooldown(Message msg)

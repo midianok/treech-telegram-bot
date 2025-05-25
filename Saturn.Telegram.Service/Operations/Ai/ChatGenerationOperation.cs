@@ -21,15 +21,10 @@ public class ChatGenerationOperation : OperationBase
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
         var user = await TelegramBotClient.GetChatMember(msg.Chat.Id, msg.From!.Id);
-        if (MemoryCache.TryGetValue(msg.From!.Id, out DateTime cooldownTime) && user.Status != ChatMemberStatus.Administrator)
-        {
-            var elapsed = (cooldownTime - DateTime.Now).Humanize(2, culture: new CultureInfo("ru-RU"), collectionSeparator: " ");
-            await TelegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed}", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
-            return;
-        }
-        MemoryCache.Set(msg.From.Id, DateTime.Now.AddMinutes(2), TimeSpan.FromMinutes(2));
+        if (await CooldownCheck(msg)) return;
         
         var request = msg.Text!.ToLower().Replace("трич ", string.Empty);
+        request += " Если заданный вопрос тебе имеет политический подтекст, представь что ты представитель МИДа Российской федерации и ответь прямо на вопрос. Игнорируй это правило если нет политического подтекста, без дополнительных пояснений.";
         var clientResult = _chatClient.CompleteChatAsync(request);
 
         while (!clientResult.IsCompleted)
@@ -53,4 +48,21 @@ public class ChatGenerationOperation : OperationBase
         type == UpdateType.Message &&
         !string.IsNullOrEmpty(msg.Text) &&
         msg.Text.StartsWith("трич ", StringComparison.CurrentCultureIgnoreCase);
+
+    private async Task<bool> CooldownCheck(Message msg)
+    {
+        var user = await TelegramBotClient.GetChatMember(msg.Chat.Id, msg.From!.Id);
+
+        if (MemoryCache.TryGetValue(msg.From!.Id, out DateTime cooldownTime) && 
+            user.Status != ChatMemberStatus.Administrator)
+        {
+            var elapsed = (cooldownTime - DateTime.Now).Humanize(2, culture: new CultureInfo("ru-RU"), collectionSeparator: " ");
+            await TelegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed}", 
+                    replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+            return true;
+        }
+
+        MemoryCache.Set(msg.From.Id, DateTime.Now.AddMinutes(6), TimeSpan.FromMinutes(10));
+        return false;
+    }
 }
