@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Saturn.Bot.Service.Extension;
+using Microsoft.Extensions.Caching.Memory;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Operation;
@@ -22,40 +22,87 @@ public class SaveMessageOperation : OperationBase
     
         var db = await _contextFactory.CreateDbContextAsync();
     
-        var user = await db.Users.FindAsync(msg.From.Id);
-        if (user == null)
-        {
-            await db.Users.AddAsync(new UserEntity
-            {
-                Id = msg.From.Id,
-                FirstName = msg.From.FirstName,
-                LastName = msg.From.LastName,
-                Username = msg.From.Username
-            });
-        }
+        await ProcessUser(msg, db);
+        await ProcessChat(msg, db);
+        await ProcessMessage(msg, db);
+
+        await db.SaveChangesAsync();
+    }
+
+    private async Task ProcessMessage(Message msg, SaturnContext db) => 
+        await db.Messages.AddAsync(CreateMessage(msg));
     
-        var chat = await db.Chats.FindAsync(msg.Chat.Id);
+    private async Task ProcessChat(Message msg, SaturnContext db)
+    {
+        var chat = await GetCachedEntityById<ChatEntity>(msg.Chat.Id, db, TimeSpan.FromHours(30));;
+
         if (chat == null)
         {
-            await db.Chats.AddAsync(new ChatEntity
-            {
-                Id = msg.Chat.Id,
-                Type = (int)msg.Chat.Type,
-                Name = msg.Chat.Username
-            });
+            await db.Chats.AddAsync(CreateChat(msg));
         }
-    
-        await db.Messages.AddAsync(new MessageEntity
+        else if (chat.Type != (int)msg.Chat.Type || chat.Name != msg.Chat.Username)
         {
-            Id = Guid.NewGuid(),
+            db.Chats.Update(CreateChat(msg));
+            RemoveCachedEntityById<ChatEntity>(msg.Chat.Id);
+        }
+    }
+
+    private async Task ProcessUser(Message msg, SaturnContext db)
+    {
+        var user = await GetCachedEntityById<UserEntity>(msg.From!.Id, db, TimeSpan.FromMinutes(30));
+        if (user == null)
+        {
+            await db.Users.AddAsync(CreateUser(msg));
+        }
+        else if (user.FirstName != msg.From.FirstName || user.LastName != msg.From.LastName || user.Username != msg.From.Username)
+        {
+            db.Users.Update(CreateUser(msg));
+            RemoveCachedEntityById<UserEntity>(msg.From!.Id);
+        }
+    }
+
+    private async Task<T?> GetCachedEntityById<T>(long id, SaturnContext db, TimeSpan expirationTime) where T : class
+    {
+        var cacheKey = $"{typeof(T).Name}_{id}";
+        if (MemoryCache.TryGetValue(cacheKey, out T? cachedEntity))
+        {
+            return cachedEntity;
+        }
+        
+        var entity = await db.Set<T>().FindAsync(id);
+        MemoryCache.Set(cacheKey, entity, expirationTime);
+        return entity;
+    }
+    
+    private void RemoveCachedEntityById<T>(long id) =>
+        MemoryCache.Remove($"{typeof(T).Name}_{id}");
+
+    private static MessageEntity CreateMessage(Message msg) =>
+        new()
+        {
+            Id = msg.Id,
             ChatId = msg.Chat.Id,
             Type = (int)msg.Type,
             Text = msg.Text,
             MessageDate = msg.Date,
             StickerId = msg.Sticker?.FileId,
-            UserId = msg.From.Id,
-        });
+            UserId = msg.From!.Id,
+        };
     
-        await db.SaveChangesAsync();
-    }
+    private static ChatEntity CreateChat(Message msg) =>
+        new()
+        {
+            Id = msg.Chat.Id,
+            Type = (int)msg.Chat.Type,
+            Name = msg.Chat.Username
+        };
+
+    private static UserEntity CreateUser(Message msg) =>
+        new()
+        {
+            Id = msg.From!.Id,
+            FirstName = msg.From.FirstName,
+            LastName = msg.From.LastName,
+            Username = msg.From.Username
+        };
 }

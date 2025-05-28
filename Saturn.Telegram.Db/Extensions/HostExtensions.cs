@@ -13,10 +13,6 @@ public static class HostExtensions
             .GetRequiredService<IDbContextFactory<SaturnContext>>()
             .CreateDbContext();
        
-        var pendingMigrations = dbContext.Database.GetPendingMigrations();
-        if (pendingMigrations.Any())
-        {
-            dbContext.Database.Migrate();
-        }
+        dbContext.Database.Migrate();
     }
 }
