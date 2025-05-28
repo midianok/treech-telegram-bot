@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Services;
@@ -32,11 +31,14 @@ public abstract class OperationBase : IOperation
             return;
         }
 
-        var (inCooldown, message) = await CooldownService.IfInCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
-        if (CooldownNeeded && inCooldown)
+        if (CooldownNeeded)
         {
-            await TelegramBotClient.SendMessage(msg.Chat.Id, message, replyParameters: new ReplyParameters { MessageId = msg.MessageId });
-            return;
+            var (inCooldown, message) = await CooldownService.IfInCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
+            if (inCooldown)
+            {
+                await TelegramBotClient.SendMessage(msg.Chat.Id, message!, replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+                return;
+            }
         }
 
         await ProcessOnMessageAsync(msg, type);
@@ -45,25 +47,6 @@ public abstract class OperationBase : IOperation
         {
            await CooldownService.SetCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
         }
-    }
-
-    private async Task<bool> CheckCooldown(Message msg, CooldownAttribute cooldown)
-    {
-        var cacheKey = $"{msg.Chat.Id}_{msg.From!.Id}";
-
-        if (MemoryCache.TryGetValue(cacheKey, out DateTime cooldownTime))
-        {
-            var elapsed = (cooldownTime - DateTime.Now).Humanize(2, culture: new CultureInfo("ru-RU"), collectionSeparator: " ");
-            var message = string.IsNullOrEmpty(cooldown.Message)
-                ? $"Команду можно будет выполнить через {elapsed}"
-                : cooldown.Message.Replace("{cooldown}", elapsed);
-
-            await TelegramBotClient.SendMessage(msg.Chat.Id, message, replyParameters: new ReplyParameters { MessageId = msg.MessageId });
-            return true;
-        }
-
-        MemoryCache.Set(cacheKey, DateTime.Now.AddSeconds(cooldown.Cooldown), TimeSpan.FromSeconds(cooldown.Cooldown));
-        return false;
     }
 
     public Task OnUpdateAsync(Update update)

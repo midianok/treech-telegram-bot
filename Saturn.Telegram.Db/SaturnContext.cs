@@ -18,12 +18,9 @@ public sealed class SaturnContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new AccountEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ChatEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CooldownEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new InvoiceEntityConfiguration());
         modelBuilder.ApplyConfiguration(new MessageEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new RulesEntityConfiguration());
         modelBuilder.ApplyConfiguration(new UserEntityConfiguration());
     }
 }

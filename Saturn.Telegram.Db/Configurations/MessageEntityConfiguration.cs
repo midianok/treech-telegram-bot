@@ -8,15 +8,15 @@ public class MessageEntityConfiguration : IEntityTypeConfiguration<MessageEntity
 {
     public void Configure(EntityTypeBuilder<MessageEntity> builder)
     {
-        builder.HasKey(x => x.Id);
-        
+        builder.HasKey(x => new { x.Id, x.ChatId });
+
         builder.HasIndex(x => x.ChatId);
         builder.HasIndex(x => new { x.UserId, x.ChatId });
 
         builder.HasOne(x => x.Chat)
             .WithMany(x => x.Messages)
             .HasForeignKey(x => x.ChatId);
-        
+
         builder.HasOne(x => x.User)
             .WithMany(x => x.Messages)
             .HasForeignKey(x => x.UserId);

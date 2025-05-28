@@ -32,7 +32,7 @@ public class CooldownService : ICooldownService
             return (false, null);
         }
         
-        var cacheKey = $"{operationType}_{chatId}_{userId}";
+        var cacheKey = $"cooldown_{operationType}_{chatId}_{userId}";
 
         if (!_memoryCache.TryGetValue(cacheKey, out DateTime cooldownTime))
         {
@@ -50,18 +50,30 @@ public class CooldownService : ICooldownService
     {
         var cooldown = await GetCooldown(operationType, chatId, userId);
 
-        var cacheKey = $"{operationType}_{chatId}_{userId}";
+        var cacheKey = $"cooldown_{operationType}_{chatId}_{userId}";
         
         _memoryCache.Set(cacheKey, DateTime.Now.AddSeconds(cooldown.CooldownSeconds), TimeSpan.FromSeconds(cooldown.CooldownSeconds));    
     }
 
     private async Task<CooldownEntity> GetCooldown(string operationType, long chatId, long userId)
     {
+        var cacheKey = $"CooldownEntity_{operationType}_{chatId}_{userId}";
+
+        if (_memoryCache.TryGetValue(cacheKey, out CooldownEntity? cachedCooldown))
+        {
+            return cachedCooldown ?? _defaultCooldown;
+        }
+
         var context = await _contextFactory.CreateDbContextAsync();
+
+        var cooldown = await context.Cooldowns
+                           .Where(x => x.Operation == operationType && x.ChatId == chatId && (x.UserId == userId || x.UserId == null))
+                           .OrderByDescending(x => x.UserId == userId)
+                           .FirstOrDefaultAsync()
+                       ?? _defaultCooldown;
         
-        var cooldown = await context.Cooldowns.SingleOrDefaultAsync(x => x.Operation == operationType && x.ChatId == chatId && x.UserId == userId) ?? 
-                       await context.Cooldowns.SingleOrDefaultAsync(x => x.Operation == operationType && x.ChatId == chatId) ?? 
-                       _defaultCooldown;
+        _memoryCache.Set(cacheKey, cooldown, TimeSpan.FromMinutes(10));
+
         return cooldown;
     }
 }
