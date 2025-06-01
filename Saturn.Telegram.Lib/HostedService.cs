@@ -30,8 +30,9 @@ public class HostedService : IHostedService
         _telegramBotClient = telegramBotClient;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
+        await _telegramBotClient.DropPendingUpdates(cancellationToken: cancellationToken);
         foreach (var operation in _operations)
         {
             operation.SetService("TelegramBotClient", _telegramBotClient)
@@ -43,8 +44,6 @@ public class HostedService : IHostedService
             _telegramBotClient.OnMessage += operation.OnMessageAsync;
             _telegramBotClient.OnUpdate += operation.OnUpdateAsync;
         }
-        
-        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken) =>
