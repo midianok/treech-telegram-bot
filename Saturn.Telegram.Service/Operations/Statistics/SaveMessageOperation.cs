@@ -12,6 +12,7 @@ namespace Saturn.Bot.Service.Operations.Statistics;
 public class SaveMessageOperation : OperationBase
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
+    private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
 
     public SaveMessageOperation(IDbContextFactory<SaturnContext> contextFactory) =>
         _contextFactory = contextFactory;
@@ -19,14 +20,23 @@ public class SaveMessageOperation : OperationBase
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
         if (msg.From == null) return;
-    
-        var db = await _contextFactory.CreateDbContextAsync();
-    
-        await ProcessUser(msg, db);
-        await ProcessChat(msg, db);
-        await ProcessMessage(msg, db);
+        
+        await _semaphoreSlim.WaitAsync();
+        try
+        {
+            await using var db = await _contextFactory.CreateDbContextAsync();
+        
+            await ProcessUser(msg, db);
+            await ProcessChat(msg, db);
+            await ProcessMessage(msg, db);
 
-        await db.SaveChangesAsync();
+            await db.SaveChangesAsync();
+        }
+        finally
+        {
+            _semaphoreSlim.Release();
+        }
+
     }
 
     private async Task ProcessMessage(Message msg, SaturnContext db) => 
@@ -70,8 +80,14 @@ public class SaveMessageOperation : OperationBase
         }
         
         var entity = await db.Set<T>().FindAsync(id);
+        if (entity == null)
+        {
+            return null;
+        }
+        
         MemoryCache.Set(cacheKey, entity, expirationTime);
         return entity;
+
     }
     
     private void RemoveCachedEntityById<T>(long id) =>
