@@ -36,8 +36,6 @@ public class WhoTodayOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
     }
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
-     type == UpdateType.Message &&
-     !string.IsNullOrEmpty(msg.Text) &&
-     msg.Text.StartsWith("кто сегодня ", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
+     msg.Text!.StartsWith("кто сегодня ", StringComparison.CurrentCultureIgnoreCase);
 }

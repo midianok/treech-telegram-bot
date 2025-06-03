@@ -25,7 +25,7 @@ public abstract class OperationBase : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        var isMatch = ValidateOnMessage(msg, type) && ValidateOnMessageFluent(msg, type);
+        var isMatch = ValidateOnTextMessage(msg, type) && ValidateOnMessageFluent(msg, type);
         if (!isMatch)
         {
             return;
@@ -67,9 +67,18 @@ public abstract class OperationBase : IOperation
         var result = validator.Validate((msg,type));
         return result.IsValid;
     }
+
+    private bool ValidateTextMessage(Message msg, UpdateType type)
+    {
+        if (UpdateType.Message != type || string.IsNullOrEmpty(msg.Text))
+        {
+            return false;
+        }
+        
+        return ValidateOnTextMessage(msg, type);
+    }
     
-    
-    protected virtual bool ValidateOnMessage(Message msg, UpdateType type) => true;
+    protected virtual bool ValidateOnTextMessage(Message msg, UpdateType type) => true;
 
     protected virtual Task ProcessOnMessageAsync(Message msg, UpdateType type) => Task.CompletedTask;
 

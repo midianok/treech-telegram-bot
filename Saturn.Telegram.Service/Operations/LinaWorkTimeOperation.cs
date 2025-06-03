@@ -33,7 +33,7 @@ public class LinaWorkTimeOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, $"через {elapsedString}", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id } );
     }
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
         type == UpdateType.Message && 
         !string.IsNullOrEmpty(msg.Text) &&
         msg.Text.StartsWith("домой", StringComparison.CurrentCultureIgnoreCase);

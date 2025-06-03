@@ -40,6 +40,6 @@ public class ShowUserStatOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None, new ReplyParameters { MessageId = msg.Id } );
     }
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
-        type == UpdateType.Message && msg.Text?.ToLower() == "стата";
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
+        msg.Text!.Equals("стата", StringComparison.CurrentCultureIgnoreCase);
 }

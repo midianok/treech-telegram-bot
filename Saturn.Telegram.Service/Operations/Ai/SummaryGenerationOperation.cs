@@ -62,7 +62,6 @@ public class SummaryGenerationOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id } );
     }
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) => 
-        !string.IsNullOrEmpty(msg.Text) &&
-        msg.Text.StartsWith("саммари", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) => 
+        msg.Text!.StartsWith("саммари", StringComparison.CurrentCultureIgnoreCase);
 }

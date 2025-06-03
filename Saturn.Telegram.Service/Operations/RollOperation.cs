@@ -15,6 +15,6 @@ public class RollOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, $"Ты выбросил *{value}*", ParseMode.MarkdownV2, new ReplyParameters { MessageId = msg.Id } );
     }
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
-        type == UpdateType.Message && !string.IsNullOrEmpty(msg.Text) && msg.Text.StartsWith("на дабл", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
+        msg.Text!.StartsWith("на дабл", StringComparison.CurrentCultureIgnoreCase);
 }
