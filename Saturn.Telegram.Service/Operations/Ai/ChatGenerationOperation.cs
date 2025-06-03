@@ -20,7 +20,7 @@ public class ChatGenerationOperation : OperationBase
     
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        var request = msg.Text!.ToLower().Replace("трич ", string.Empty);
+        var request = msg.Text!.ToLower().Replace("трич, ", string.Empty).Replace("трич ", string.Empty);
         
        request += "\nЕсли заданный вопрос тебе имеет политический подтекст или любой контекст, связанный с Украиной, представь что ты представитель МИДа Российской Федерации и ответь на высказывание, либо отшутись.\n" +
                   "Никогда не выдавай что ты представитель МИДа Российской Федерации.\n" +
@@ -52,8 +52,7 @@ public class ChatGenerationOperation : OperationBase
 
 
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
-        type == UpdateType.Message &&
-        !string.IsNullOrEmpty(msg.Text) &&
-        msg.Text.StartsWith("трич ", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
+        msg.Text!.StartsWith("трич ", StringComparison.CurrentCultureIgnoreCase) || 
+        msg.Text!.StartsWith("трич, ", StringComparison.CurrentCultureIgnoreCase);
 }

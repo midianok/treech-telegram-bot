@@ -63,7 +63,7 @@ public class ImageDistortionOperation : OperationBase
             _ => string.Empty
         };
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
         type == UpdateType.Message &&
         (msg.ReplyToMessage?.Photo != null || msg.ReplyToMessage?.Video != null || msg.ReplyToMessage?.Animation != null) &&
         triggerWords.Contains(msg.Text?.ToLower());

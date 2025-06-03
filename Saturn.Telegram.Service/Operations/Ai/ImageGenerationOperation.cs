@@ -23,23 +23,7 @@ public class ImageGenerationOperation : OperationBase
     
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        var user = await TelegramBotClient.GetChatMember(msg.Chat.Id, msg.From!.Id);
-        if (user.Status == ChatMemberStatus.Member && msg.From.Username != "nkess")
-        {
-            await TelegramBotClient.SendMessage(msg.Chat.Id, "Только тричане с лычками и Любимая Настя могут генерировать пикчи", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
-            return;
-        }
-        if (MemoryCache.TryGetValue(msg.From.Id, out DateTime cooldownTime))
-        {
-            var elapsed = (cooldownTime - DateTime.Now).Humanize(2, culture: new CultureInfo("ru-RU"), collectionSeparator: " ");
-            await TelegramBotClient.SendMessage(msg.Chat.Id, $"Отдохни ещё {elapsed}", replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
-            return;
-        }
-        MemoryCache.Set(msg.From.Id, DateTime.Now.AddMinutes(5), TimeSpan.FromMinutes(5));
-        
-        var request = msg.Text!.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи  ", string.Empty);
-        
-        
+        var request = msg.Text!.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи ", string.Empty);
         var clientResult = _imageClient.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes } );
 
         while (!clientResult.IsCompleted)
@@ -54,8 +38,6 @@ public class ImageGenerationOperation : OperationBase
         await TelegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedImage), replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
     }
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
-        type.IsMessage() &&
-        !string.IsNullOrEmpty(msg.Text) &&
-        (msg.Text.StartsWith("сгенерируй ", StringComparison.CurrentCultureIgnoreCase) || msg.Text.StartsWith("покажи ", StringComparison.CurrentCultureIgnoreCase));
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
+        msg.Text!.StartsWith("сгенерируй ", StringComparison.CurrentCultureIgnoreCase) || msg.Text.StartsWith("покажи ", StringComparison.CurrentCultureIgnoreCase);
 }

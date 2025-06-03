@@ -30,9 +30,7 @@ public class UploadOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, $"https://treech.ru/st/{fileName}.jpg");
     }  
 
-    protected override bool ValidateOnMessage(Message msg, UpdateType type) =>
-        type == UpdateType.Message &&
-        !string.IsNullOrEmpty(msg.Text) &&
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
         msg.ReplyToMessage?.Photo != null &&
-        msg.Text.ToLower() == "загрузи";
+        msg.Text!.ToLower() == "загрузи";
 }
