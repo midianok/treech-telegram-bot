@@ -1,10 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
+using OpenAI.Models;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.Payments;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
@@ -49,8 +52,6 @@ public class ChatGenerationOperation : OperationBase
             Logger.LogError(e, e.Message);
         }
     }
-
-
 
     protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
         msg.Text!.StartsWith("трич ", StringComparison.CurrentCultureIgnoreCase) || 

@@ -1,16 +1,11 @@
-﻿using System.Globalization;
-using Humanizer;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-// ReSharper disable UnassignedReadonlyField
 
 namespace Saturn.Telegram.Lib.Operation;
 
@@ -25,7 +20,7 @@ public abstract class OperationBase : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        var isMatch = ValidateOnTextMessage(msg, type) && ValidateOnMessageFluent(msg, type);
+        var isMatch = ValidateTextMessage(msg, type);
         if (!isMatch)
         {
             return;
@@ -36,7 +31,7 @@ public abstract class OperationBase : IOperation
             var (inCooldown, message) = await CooldownService.IfInCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
             if (inCooldown)
             {
-                await TelegramBotClient.SendMessage(msg.Chat.Id, message!, replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+                await OnCooldownAsync( msg, type, message!);
                 return;
             }
         }
@@ -51,21 +46,13 @@ public abstract class OperationBase : IOperation
 
     public Task OnUpdateAsync(Update update)
     {
-        return Task.CompletedTask;
+        return ProcessOnUpdateAsync(update);
     }
 
     public Task OnErrorAsync(Exception exception, HandleErrorSource source)
     {
         Logger.LogError(exception, "Ошибка");
         return Task.CompletedTask;
-    }
-
-    private bool ValidateOnMessageFluent(Message msg, UpdateType type)
-    {
-        var validator = new MessageValidator();
-        FluentValidateOnMessage(validator);
-        var result = validator.Validate((msg,type));
-        return result.IsValid;
     }
 
     private bool ValidateTextMessage(Message msg, UpdateType type)
@@ -81,6 +68,9 @@ public abstract class OperationBase : IOperation
     protected virtual bool ValidateOnTextMessage(Message msg, UpdateType type) => true;
 
     protected virtual Task ProcessOnMessageAsync(Message msg, UpdateType type) => Task.CompletedTask;
+    
+    protected virtual Task ProcessOnUpdateAsync(Update update) => Task.CompletedTask;
 
-    protected virtual void FluentValidateOnMessage(MessageValidator validator) { }
+    protected virtual Task OnCooldownAsync(Message msg, UpdateType type, string cooldownMessage) => 
+        TelegramBotClient.SendMessage(msg.Chat.Id, cooldownMessage, replyParameters: new ReplyParameters { MessageId = msg.MessageId });
 }
