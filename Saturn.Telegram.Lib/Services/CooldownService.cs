@@ -2,6 +2,7 @@ using System.Globalization;
 using Humanizer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 
@@ -11,12 +12,14 @@ public class CooldownService : ICooldownService
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
     private readonly IMemoryCache _memoryCache;
+    private readonly ILogger<CooldownService> _logger;
     private readonly CooldownEntity _defaultCooldown;
 
-    public CooldownService(IDbContextFactory<SaturnContext> contextFactory, IMemoryCache memoryCache)
+    public CooldownService(IDbContextFactory<SaturnContext> contextFactory, IMemoryCache memoryCache, ILogger<CooldownService> logger)
     {
         _contextFactory = contextFactory;
         _memoryCache = memoryCache;
+        _logger = logger;
         _defaultCooldown = new CooldownEntity
         {
             CooldownSeconds = 60,
@@ -50,6 +53,11 @@ public class CooldownService : ICooldownService
     {
         var cooldown = await GetCooldown(operationType, chatId, userId);
 
+        if (cooldown.CooldownSeconds == 0)
+        {
+            return;
+        }
+
         var cacheKey = $"cooldown_{operationType}_{chatId}_{userId}";
         
         _memoryCache.Set(cacheKey, DateTime.Now.AddSeconds(cooldown.CooldownSeconds), TimeSpan.FromSeconds(cooldown.CooldownSeconds));    
@@ -65,12 +73,12 @@ public class CooldownService : ICooldownService
         }
 
         var context = await _contextFactory.CreateDbContextAsync();
-
         var cooldown = await context.Cooldowns
                            .Where(x => x.Operation == operationType && x.ChatId == chatId && (x.UserId == userId || x.UserId == null))
                            .OrderByDescending(x => x.UserId == userId)
                            .FirstOrDefaultAsync()
                        ?? _defaultCooldown;
+        _logger.LogInformation("Cooldown for {OperationType} in chat {ChatId} for user {UserId} is {CooldownCooldownSeconds}", operationType, chatId, userId, cooldown.CooldownSeconds);
         
         _memoryCache.Set(cacheKey, cooldown, TimeSpan.FromMinutes(10));
 
