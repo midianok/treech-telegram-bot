@@ -85,6 +85,9 @@ public class PaymentOperation : OperationBase
 
     }
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) => 
-        msg.Text == "/start payment";
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type)
+    {
+        _logger.LogInformation("Received Payment Operation {MsgText}", msg.Text);
+        return msg.Text == "/start payment";
+    }
 }
