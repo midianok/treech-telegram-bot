@@ -21,6 +21,7 @@ public class SubscriptionService : ISubscriptionService
 
     public async Task AddSubscriptionAsync(long userId, DateTime validUntil, SubscriptionType type)
     {
+        var cacheKey = $"SubscriptionEntity_{userId}_{type}";
         var context = await _contextFactory.CreateDbContextAsync();
         await context.Subscriptions.AddAsync(new SubscriptionEntity
         {
@@ -30,6 +31,10 @@ public class SubscriptionService : ISubscriptionService
             Date = DateTime.Now
         });
         await context.SaveChangesAsync();
+        if (_memoryCache.TryGetValue(cacheKey, out bool value))
+        {
+            _memoryCache.Remove(cacheKey);
+        }
     }
 
     public async Task<bool> HasSubscriptionAsync(long userId, SubscriptionType type)

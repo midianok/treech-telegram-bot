@@ -3,6 +3,7 @@ using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using OpenAI.Images;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -14,6 +15,7 @@ namespace Saturn.Bot.Service.Operations.Ai;
 public class ImageGenerationOperation : OperationBase
 {
     protected override bool CooldownNeeded => true;
+    protected override SubscriptionType SubscriptionType => SubscriptionType.RemoveImageGenerationCooldown;
     
     private readonly ImageClient _imageClient;
     public ImageGenerationOperation(IConfiguration configuration)

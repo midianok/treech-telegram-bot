@@ -1,11 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Extension;
 using Saturn.Telegram.Db.Extensions;
 using Saturn.Telegram.Infrastructure.Extension;
 using Saturn.Telegram.Lib.Extensions;
 
 var builder = Host.CreateApplicationBuilder();
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddMemoryCache();

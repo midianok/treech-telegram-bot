@@ -36,6 +36,8 @@ public class HostedService : IHostedService
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await _telegramBotClient.DropPendingUpdates(cancellationToken: cancellationToken);
+        var operations = _operations.Select(x => x.GetType().Name);
+        _logger.LogInformation("Starting hosted service: {operations}", string.Join(", ", operations));
         foreach (var operation in _operations)
         {
             operation.SetService("TelegramBotClient", _telegramBotClient)
