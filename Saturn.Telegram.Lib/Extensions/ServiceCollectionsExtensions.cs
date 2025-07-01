@@ -30,6 +30,7 @@ public static class ServiceCollectionsExtensions
         }
         
         serviceCollection.AddSingleton<ICooldownService, CooldownService>(); 
+        serviceCollection.AddSingleton<ISubscriptionService, SubscriptionService>(); 
         serviceCollection.AddSingleton<IEnumerable<IOperation>>(serviceProvider => operations.Select(serviceProvider.GetRequiredService).Cast<IOperation>()); 
         serviceCollection.AddHostedService<HostedService>();
         return serviceCollection;

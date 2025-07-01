@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using OpenAI.Models;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -14,7 +15,8 @@ namespace Saturn.Bot.Service.Operations.Ai;
 public class ChatGenerationOperation : OperationBase
 {
     protected override bool CooldownNeeded => true;
-    
+    protected override SubscriptionType SubscriptionType => SubscriptionType.RemoveChatCooldown;
+
     private readonly ChatClient _chatClient;
     public ChatGenerationOperation(IConfiguration configuration)
     {
