@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Services;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -12,11 +13,13 @@ namespace Saturn.Telegram.Lib.Operation;
 public abstract class OperationBase : IOperation
 {
     protected virtual bool CooldownNeeded => false;
+    protected virtual SubscriptionType SubscriptionType => SubscriptionType.None;
     
     protected readonly ILogger<OperationBase> Logger;
     protected readonly TelegramBotClient TelegramBotClient;
     protected readonly IMemoryCache MemoryCache;
     protected readonly ICooldownService CooldownService;
+    protected readonly ISubscriptionService SubscriptionService;
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
@@ -26,19 +29,21 @@ public abstract class OperationBase : IOperation
             return;
         }
 
-        if (CooldownNeeded)
+        var hasSubscription = await SubscriptionService.HasSubscriptionAsync(msg.From!.Id, SubscriptionType);
+        if (CooldownNeeded && !hasSubscription)
         {
             var (inCooldown, message) = await CooldownService.IfInCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
+            
             if (inCooldown)
             {
-                await OnCooldownAsync( msg, type, message!);
+                await OnCooldownAsync( msg, type, message! + "\\. А ещё можно оплатить [Подписон](https://t.me/TreechBot?start=payment)");
                 return;
             }
         }
 
         await ProcessOnMessageAsync(msg, type);
 
-        if (CooldownNeeded)
+        if (CooldownNeeded && !hasSubscription)
         {
            await CooldownService.SetCooldown(GetType().Name, msg.Chat.Id, msg.From!.Id);
         }
@@ -72,5 +77,5 @@ public abstract class OperationBase : IOperation
     protected virtual Task ProcessOnUpdateAsync(Update update) => Task.CompletedTask;
 
     protected virtual Task OnCooldownAsync(Message msg, UpdateType type, string cooldownMessage) => 
-        TelegramBotClient.SendMessage(msg.Chat.Id, cooldownMessage, replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+        TelegramBotClient.SendMessage(msg.Chat.Id, cooldownMessage, ParseMode.MarkdownV2, new ReplyParameters { MessageId = msg.MessageId }, linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true });
 }

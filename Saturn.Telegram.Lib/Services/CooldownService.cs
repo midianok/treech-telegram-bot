@@ -22,7 +22,7 @@ public class CooldownService : ICooldownService
         _logger = logger;
         _defaultCooldown = new CooldownEntity
         {
-            CooldownSeconds = 60,
+            CooldownSeconds = 120,
             Message = "Команду можно выполнить через {cooldown}"
         };
     }
