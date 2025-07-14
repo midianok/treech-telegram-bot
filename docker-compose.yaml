@@ -8,22 +8,8 @@
       BOT_TOKEN: ${BOT_TOKEN}
       CONNECTION_STRING: ${CONNECTION_STRING}
       IMAGE_MANIPULATION_SERVICE_URL: ${IMAGE_MANIPULATION_SERVICE_URL}
-      OPEN_AI_KEY: ${OPEN_AI_KEY}
-      ImageDistortionOperationEnabled: ${ImageDistortionOperationEnabled}
-      SaveMessageOperationEnabled: ${SaveMessageOperationEnabled}
-      ShowChatLinkOperationEnabled: ${ShowChatLinkOperationEnabled}
-      ShowFavStickOperationEnabled: ${ShowFavStickOperationEnabled}
-      ShowTopStatOperationEnabled: ${ShowTopStatOperationEnabled}
-      ShowUserStatOperationEnabled: ${ShowUserStatOperationEnabled}
-      RollOperationEnabled: ${RollOperationEnabled}
-      WhoTodayOperationEnabled: ${WhoTodayOperationEnabled}
-      ChatGenerationOperationEnabled: ${ChatGenerationOperationEnabled}
-      ImageGenerationOperationEnabled: ${ImageGenerationOperationEnabled}
-      LinaWorkTimeOperationEnabled: ${LinaWorkTimeOperationEnabled}
-      SummaryGenerationOperationEnabled: ${SummaryGenerationOperationEnabled}
-      ShowAllTimeStatOperationEnabled: ${ShowAllTimeStatOperationEnabled}
-      UploadOperationEnabled: ${UploadOperationEnabled}
-      ReportOperationEnabled: ${ReportOperationEnabled}
+      CHAT_GENERATION_API_KEY: ${CHAT_GENERATION_API_KEY}
+      IMAGE_GENERATION_API_KEY: ${IMAGE_GENERATION_API_KEY}
     volumes:
       - pgdata:/var/lib/postgresql/data
     depends_on:

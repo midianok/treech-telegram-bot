@@ -1,11 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
-using Saturn.Telegram.Lib.Services;
 using Saturn.Telegram.Lib.Services.Abstractions;
 using Telegram.Bot;
 
@@ -16,28 +12,22 @@ public class HostedService : IHostedService
     private readonly TelegramBotClient _telegramBotClient;
     private readonly IEnumerable<IOperation> _operations;
     private readonly ILogger<OperationBase> _logger;
-    private readonly IMemoryCache _memoryCache;
     private readonly ICooldownService _cooldownService;
     private readonly ISubscriptionService _subscriptionService;
-    private readonly IDbContextFactory<SaturnContext> _contextFactory;
     private readonly ISaveMessageService _saveMessageService;
 
     public HostedService(
         TelegramBotClient telegramBotClient,
         IEnumerable<IOperation> operations,
         ILogger<OperationBase> logger,
-        IMemoryCache memoryCache,
         ICooldownService cooldownService,
         ISubscriptionService subscriptionService,
-        IDbContextFactory<SaturnContext> contextFactory,
         ISaveMessageService saveMessageService)
     {
         _operations = operations;
         _logger = logger;
-        _memoryCache = memoryCache;
         _cooldownService = cooldownService;
         _subscriptionService = subscriptionService;
-        _contextFactory = contextFactory;
         _saveMessageService = saveMessageService;
         _telegramBotClient = telegramBotClient;
     }

@@ -1,11 +1,5 @@
-using System.ClientModel;
-using System.ClientModel.Primitives;
-using System.Net;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using OpenAI;
 using OpenAI.Chat;
-using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Saturn.Telegram.Lib.Services.Abstractions;
@@ -17,33 +11,13 @@ namespace Saturn.Bot.Service.Operations.Ai;
 
 public class ChatGenerationOperation : OperationBase
 {
-    protected override bool CooldownNeeded => true;
-    protected override SubscriptionType SubscriptionType => SubscriptionType.RemoveChatCooldown;
-
     private readonly ChatClient _chatClient;
     private readonly ISaveMessageService _saveMessageService;
     private readonly IChatCachedRepository _chatCachedRepository;
 
-    public ChatGenerationOperation(IConfiguration configuration, ISaveMessageService saveMessageService, IChatCachedRepository chatCachedRepository)
+    public ChatGenerationOperation(ChatClient chatClient, ISaveMessageService saveMessageService, IChatCachedRepository chatCachedRepository)
     {
-        var handler = new HttpClientHandler
-        {
-            Proxy = new WebProxy("http://dockerservices.ru:3128")
-            {
-                Credentials = new NetworkCredential("proxyuser", "qwaszx"),
-                BypassProxyOnLocal = false
-            },
-            UseProxy = true,
-        };
-        var httpClient = new HttpClient(handler);
-        
-        _chatClient = new ChatClient("grok-4", new ApiKeyCredential(configuration.GetSection("OPEN_AI_KEY").Value), 
-            new OpenAIClientOptions
-            {
-                Endpoint = new Uri("https://api.x.ai/v1"),
-                Transport = new HttpClientPipelineTransport(httpClient)
-            });
-        
+        _chatClient = chatClient;
         _saveMessageService = saveMessageService;
         _chatCachedRepository = chatCachedRepository;
     }
