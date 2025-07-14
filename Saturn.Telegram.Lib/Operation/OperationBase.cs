@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Services;
+using Saturn.Telegram.Lib.Services.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -14,10 +15,8 @@ public abstract class OperationBase : IOperation
 {
     protected virtual bool CooldownNeeded => false;
     protected virtual SubscriptionType SubscriptionType => SubscriptionType.None;
-    
     protected readonly ILogger<OperationBase> Logger;
     protected readonly TelegramBotClient TelegramBotClient;
-    protected readonly IMemoryCache MemoryCache;
     protected readonly ICooldownService CooldownService;
     protected readonly ISubscriptionService SubscriptionService;
 
@@ -36,7 +35,7 @@ public abstract class OperationBase : IOperation
             
             if (inCooldown)
             {
-                await OnCooldownAsync( msg, type, message! + "\\. А ещё можно оплатить [Подписон](https://t.me/TreechBot?start=payment)");
+                await OnCooldownAsync( msg, type, message!);
                 return;
             }
         }

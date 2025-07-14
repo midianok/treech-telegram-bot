@@ -1,4 +1,4 @@
-namespace Saturn.Telegram.Lib.Services;
+namespace Saturn.Telegram.Lib.Services.Abstractions;
 
 public interface ICooldownService
 {

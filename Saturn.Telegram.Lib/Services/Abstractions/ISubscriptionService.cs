@@ -1,6 +1,6 @@
 ﻿using Saturn.Telegram.Db.Entities;
 
-namespace Saturn.Telegram.Lib.Services;
+namespace Saturn.Telegram.Lib.Services.Abstractions;
 
 public interface ISubscriptionService
 {

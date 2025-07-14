@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
+using Saturn.Telegram.Lib.Services.Abstractions;
 
 namespace Saturn.Telegram.Lib.Services;
 

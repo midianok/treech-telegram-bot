@@ -8,7 +8,9 @@ public static class ServiceCollectionsExtensions
 {
     public static IServiceCollection AddSaturnContext(this IServiceCollection serviceCollection, string connectionString)
     {
-       return serviceCollection.AddDbContextFactory<SaturnContext>(options =>
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        
+        return serviceCollection.AddDbContextFactory<SaturnContext>(options =>
         {
             options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
             options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));

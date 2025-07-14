@@ -22,6 +22,36 @@ namespace Saturn.Telegram.Db.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Saturn.Telegram.Db.Entities.AiAgentEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("prompt");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ai_agents");
+
+                    b.ToTable("ai_agents", (string)null);
+                });
+
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.ChatEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -93,12 +123,22 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("message_date");
 
+                    b.Property<long?>("ReplyToMessageChatId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("reply_to_message_chat_id");
+
+                    b.Property<long?>("ReplyToMessageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("reply_to_message_id");
+
                     b.Property<string>("StickerId")
-                        .HasColumnType("text")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
                         .HasColumnName("sticker_id");
 
                     b.Property<string>("Text")
-                        .HasColumnType("text")
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)")
                         .HasColumnName("text");
 
                     b.Property<int>("Type")

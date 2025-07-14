@@ -5,9 +5,9 @@
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "BOT_TOKEN": "5990847351:AAFVgJzjNFv427MUyxYf42DN6F2fWfBkShM",
+        "BOT_TOKEN": "1169135083:AAEB4aWHBo6FHa3F3-qNvMmQczPYhPF2dME",
         "CONNECTION_STRING" : "Host=localhost;Port=5432;Database=saturn;Username=postgres;Password=mysecretpassword",
-        "OPEN_AI_KEY": "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",
+        "OPEN_AI_KEY": "xai-FW3VyZPWvK3Kpkn5fpHEPBGeUcelz3RFDMlpsjgtd7Nt9JLHHbzvAnRaVKDN0dyWcL0sdWAK4MgmRexB",
         "IMAGE_MANIPULATION_SERVICE_URL": "http://localhost:5187",
         "ImageDistortionOperationEnabled" : "true",
         "SaveMessageOperationEnabled" : "false",
@@ -25,7 +25,7 @@
         "UploadOperationEnabled": "true",
         "ReportOperationEnabled": "true",
         "SendInvoiceOperationEnabled": "true",
-        "PaymentOperationEnabled": "true"
+        "PaymentOperationEnabled": "false"
       }
     }
   }
