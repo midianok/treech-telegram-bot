@@ -4,12 +4,8 @@
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      BOT_TOKEN: ${BOT_TOKEN}
-      CONNECTION_STRING: ${CONNECTION_STRING}
-      IMAGE_MANIPULATION_SERVICE_URL: ${IMAGE_MANIPULATION_SERVICE_URL}
-      CHAT_GENERATION_API_KEY: ${CHAT_GENERATION_API_KEY}
-      IMAGE_GENERATION_API_KEY: ${IMAGE_GENERATION_API_KEY}
+    env_file:
+      - ./.env
     volumes:
       - pgdata:/var/lib/postgresql/data
     depends_on:
