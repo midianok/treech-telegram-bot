@@ -6,6 +6,8 @@ namespace Saturn.Telegram.Db;
 
 public sealed class SaturnContext : DbContext
 {
+    public DbSet<AiAgentEntity> AiAgents { get; set; } = null!;
+    
     public DbSet<MessageEntity> Messages { get; set; } = null!;
     
     public DbSet<UserEntity> Users { get; set; } = null!;
@@ -25,5 +27,6 @@ public sealed class SaturnContext : DbContext
         modelBuilder.ApplyConfiguration(new MessageEntityConfiguration());
         modelBuilder.ApplyConfiguration(new UserEntityConfiguration());
         modelBuilder.ApplyConfiguration(new SubscriptionEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AiAgentEntityConfiguration());
     }
 }

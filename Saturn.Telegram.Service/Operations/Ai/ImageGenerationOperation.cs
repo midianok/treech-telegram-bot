@@ -1,7 +1,9 @@
+using System.ClientModel;
 using System.Globalization;
 using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using OpenAI;
 using OpenAI.Images;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Extensions;
@@ -20,7 +22,7 @@ public class ImageGenerationOperation : OperationBase
     private readonly ImageClient _imageClient;
     public ImageGenerationOperation(IConfiguration configuration)
     {
-        _imageClient = new ImageClient("dall-e-3", configuration.GetSection("OPEN_AI_KEY").Value);
+        _imageClient = new ImageClient("grok-2-image", new ApiKeyCredential(configuration.GetSection("OPEN_AI_KEY").Value), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
     }
     
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)

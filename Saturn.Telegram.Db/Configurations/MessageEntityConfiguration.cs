@@ -13,6 +13,12 @@ public class MessageEntityConfiguration : IEntityTypeConfiguration<MessageEntity
         builder.HasIndex(x => x.ChatId);
         builder.HasIndex(x => new { x.UserId, x.ChatId });
 
+        builder.Property(x => x.Text)
+            .HasMaxLength(4096);
+        
+        builder.Property(x => x.StickerId)
+            .HasMaxLength(256);
+
         builder.HasOne(x => x.Chat)
             .WithMany(x => x.Messages)
             .HasForeignKey(x => x.ChatId);

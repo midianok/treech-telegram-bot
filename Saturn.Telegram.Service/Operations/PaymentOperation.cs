@@ -20,7 +20,6 @@ public class PaymentOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        _logger.LogInformation("Received Payment Operation");
         var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("На 7 дней ", "sub7"), InlineKeyboardButton.WithCallbackData("На 30 дней", "sub30"));
         
         await TelegramBotClient.SendMessage(msg.Chat, "Платные подписки", ParseMode.MarkdownV2, replyMarkup: keyboard);
@@ -46,7 +45,7 @@ public class PaymentOperation : OperationBase
         
         var cost = update.CallbackQuery!.Data switch
         {
-            "sub7" => 30,
+            "sub7" => 1,
             "sub30" => 100,
             _ => throw new ArgumentOutOfRangeException()
         };
@@ -85,9 +84,6 @@ public class PaymentOperation : OperationBase
 
     }
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type)
-    {
-        _logger.LogInformation("Received Payment Operation {MsgText}", msg.Text);
-        return msg.Text == "/start payment";
-    }
+    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) => 
+        msg.Text == "/start payment";
 }

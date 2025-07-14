@@ -7,16 +7,14 @@ using Saturn.Telegram.Infrastructure.Extension;
 using Saturn.Telegram.Lib.Extensions;
 
 var builder = Host.CreateApplicationBuilder();
+
+
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
 
-AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+builder.Services.AddTelegramBotClient<Program>(builder.Configuration);
 builder.Services.AddMemoryCache();
-
-var botToken = builder.Configuration.GetSectionOrThrow("BOT_TOKEN");
-builder.Services.AddTelegramBotClient<Program>(botToken, builder.Configuration);
 var connectionString = builder.Configuration.GetSectionOrThrow("CONNECTION_STRING");
 builder.Services.AddSaturnContext(connectionString);
-
 var imageManipulationServiceUrl = builder.Configuration.GetSectionOrThrow("IMAGE_MANIPULATION_SERVICE_URL");
 builder.Services.AddImageManipulationServiceClient(imageManipulationServiceUrl);
 
@@ -24,7 +22,3 @@ var app = builder.Build();
 app.ApplyMigrations();
 
 app.Run();
-
-return;
-
-

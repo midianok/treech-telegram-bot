@@ -1,23 +1,26 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
-using Saturn.Telegram.Lib.Operation;
+using Saturn.Telegram.Lib.Services.Abstractions;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using MessageEntity = Saturn.Telegram.Db.Entities.MessageEntity;
 
-namespace Saturn.Bot.Service.Operations.Statistics;
+namespace Saturn.Telegram.Lib.Services;
 
-public class SaveMessageOperation : OperationBase
+public class SaveMessageService : ISaveMessageService
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
     private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
+    private readonly IMemoryCache _memoryCache;
 
-    public SaveMessageOperation(IDbContextFactory<SaturnContext> contextFactory) =>
+    public SaveMessageService(IDbContextFactory<SaturnContext> contextFactory, IMemoryCache memoryCache)
+    {
         _contextFactory = contextFactory;
-
-    protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
+        _memoryCache = memoryCache;
+    }
+    
+    public async Task SaveMessageAsync(Message msg)
     {
         if (msg.From == null) return;
         
@@ -36,9 +39,8 @@ public class SaveMessageOperation : OperationBase
         {
             _semaphoreSlim.Release();
         }
-
     }
-
+    
     private async Task ProcessMessage(Message msg, SaturnContext db) => 
         await db.Messages.AddAsync(CreateMessage(msg));
     
@@ -74,7 +76,7 @@ public class SaveMessageOperation : OperationBase
     private async Task<T?> GetCachedEntityById<T>(long id, SaturnContext db, TimeSpan expirationTime) where T : class
     {
         var cacheKey = $"{typeof(T).Name}_{id}";
-        if (MemoryCache.TryGetValue(cacheKey, out T? cachedEntity))
+        if (_memoryCache.TryGetValue(cacheKey, out T? cachedEntity))
         {
             return cachedEntity;
         }
@@ -85,13 +87,13 @@ public class SaveMessageOperation : OperationBase
             return null;
         }
         
-        MemoryCache.Set(cacheKey, entity, expirationTime);
+        _memoryCache.Set(cacheKey, entity, expirationTime);
         return entity;
 
     }
     
     private void RemoveCachedEntityById<T>(long id) =>
-        MemoryCache.Remove($"{typeof(T).Name}_{id}");
+        _memoryCache.Remove($"{typeof(T).Name}_{id}");
 
     private static MessageEntity CreateMessage(Message msg) =>
         new()
@@ -103,6 +105,8 @@ public class SaveMessageOperation : OperationBase
             MessageDate = msg.Date,
             StickerId = msg.Sticker?.FileId,
             UserId = msg.From!.Id,
+            ReplyToMessageId = msg.ReplyToMessage?.Id,
+            ReplyToMessageChatId = msg.ReplyToMessage?.Chat.Id,
         };
     
     private static ChatEntity CreateChat(Message msg) =>
