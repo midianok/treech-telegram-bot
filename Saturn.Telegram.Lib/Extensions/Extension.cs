@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
+using Saturn.Telegram.Lib.Operation;
+using Telegram.Bot;
 
 namespace Saturn.Telegram.Lib.Extensions;
 
@@ -15,5 +17,13 @@ public static class Extension
         }
 
         return item;
+    }
+        
+    public static TelegramBotClient Use(this TelegramBotClient telegramBotClient, IOperation operation) 
+    {
+        telegramBotClient.OnError += operation.OnErrorAsync;
+        telegramBotClient.OnMessage += operation.OnMessageAsync;
+        telegramBotClient.OnUpdate += operation.OnUpdateAsync;
+        return telegramBotClient;
     }
 }

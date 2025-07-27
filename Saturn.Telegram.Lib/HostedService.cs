@@ -32,7 +32,7 @@ public class HostedService : IHostedService
         var operations = _operations.Select(x => x.GetType().Name);
         _logger.LogInformation("Starting hosted service: {operations}", string.Join(", ", operations));
         
-        RegisterTelegramBotEventHandlers(new SaveMessageOperation(_saveMessageService));
+        _telegramBotClient.Use(new SaveMessageOperation(_saveMessageService));
         
         foreach (var operation in _operations)
         {
@@ -40,17 +40,10 @@ public class HostedService : IHostedService
                 .SetService("TelegramBotClient", _telegramBotClient)
                 .SetService("Logger", _logger);
 
-            RegisterTelegramBotEventHandlers(operation);
+            _telegramBotClient.Use(operation);
         }
     }
-
-    private void RegisterTelegramBotEventHandlers(IOperation operation)
-    {
-        _telegramBotClient.OnError += operation.OnErrorAsync;
-        _telegramBotClient.OnMessage += operation.OnMessageAsync;
-        _telegramBotClient.OnUpdate += operation.OnUpdateAsync;
-    }
-
+    
     public Task StopAsync(CancellationToken cancellationToken) =>
         Task.CompletedTask;
 }
