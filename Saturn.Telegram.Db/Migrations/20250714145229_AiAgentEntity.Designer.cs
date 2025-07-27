@@ -12,15 +12,15 @@ using Saturn.Telegram.Db;
 namespace Saturn.Telegram.Db.Migrations
 {
     [DbContext(typeof(SaturnContext))]
-    [Migration("20250713120550_AiAgents")]
-    partial class AiAgents
+    [Migration("20250714145229_AiAgentEntity")]
+    partial class AiAgentEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.2")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -52,6 +52,10 @@ namespace Saturn.Telegram.Db.Migrations
                     b.HasKey("Id")
                         .HasName("pk_ai_agents");
 
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ai_agents_code");
+
                     b.ToTable("ai_agents", (string)null);
                 });
 
@@ -64,6 +68,10 @@ namespace Saturn.Telegram.Db.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<Guid?>("AiAgentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ai_agent_id");
+
                     b.Property<string>("Name")
                         .HasColumnType("text")
                         .HasColumnName("name");
@@ -74,6 +82,9 @@ namespace Saturn.Telegram.Db.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_chats");
+
+                    b.HasIndex("AiAgentId")
+                        .HasDatabaseName("ix_chats_ai_agent_id");
 
                     b.ToTable("chats", (string)null);
                 });
@@ -223,6 +234,16 @@ namespace Saturn.Telegram.Db.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Saturn.Telegram.Db.Entities.ChatEntity", b =>
+                {
+                    b.HasOne("Saturn.Telegram.Db.Entities.AiAgentEntity", "AiAgent")
+                        .WithMany("Chats")
+                        .HasForeignKey("AiAgentId")
+                        .HasConstraintName("fk_chats_ai_agents_ai_agent_id");
+
+                    b.Navigation("AiAgent");
+                });
+
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.MessageEntity", b =>
                 {
                     b.HasOne("Saturn.Telegram.Db.Entities.ChatEntity", "Chat")
@@ -254,6 +275,11 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasConstraintName("fk_subscriptions_users_user_id");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Saturn.Telegram.Db.Entities.AiAgentEntity", b =>
+                {
+                    b.Navigation("Chats");
                 });
 
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.ChatEntity", b =>

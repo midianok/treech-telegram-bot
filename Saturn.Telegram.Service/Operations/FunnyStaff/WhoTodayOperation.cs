@@ -5,7 +5,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class WhoTodayOperation : OperationBase
 {

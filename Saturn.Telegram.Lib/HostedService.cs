@@ -12,22 +12,16 @@ public class HostedService : IHostedService
     private readonly TelegramBotClient _telegramBotClient;
     private readonly IEnumerable<IOperation> _operations;
     private readonly ILogger<OperationBase> _logger;
-    private readonly ICooldownService _cooldownService;
-    private readonly ISubscriptionService _subscriptionService;
     private readonly ISaveMessageService _saveMessageService;
 
     public HostedService(
         TelegramBotClient telegramBotClient,
         IEnumerable<IOperation> operations,
         ILogger<OperationBase> logger,
-        ICooldownService cooldownService,
-        ISubscriptionService subscriptionService,
         ISaveMessageService saveMessageService)
     {
         _operations = operations;
         _logger = logger;
-        _cooldownService = cooldownService;
-        _subscriptionService = subscriptionService;
         _saveMessageService = saveMessageService;
         _telegramBotClient = telegramBotClient;
     }
@@ -42,10 +36,9 @@ public class HostedService : IHostedService
         
         foreach (var operation in _operations)
         {
-            operation.SetService("TelegramBotClient", _telegramBotClient)
-                .SetService("Logger", _logger)
-                .SetService("CooldownService", _cooldownService)
-                .SetService("SubscriptionService", _subscriptionService);
+            operation
+                .SetService("TelegramBotClient", _telegramBotClient)
+                .SetService("Logger", _logger);
 
             RegisterTelegramBotEventHandlers(operation);
         }

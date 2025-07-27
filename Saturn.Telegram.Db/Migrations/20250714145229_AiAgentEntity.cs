@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Saturn.Telegram.Db.Migrations
 {
     /// <inheritdoc />
-    public partial class AiAgents : Migration
+    public partial class AiAgentEntity : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -43,6 +43,12 @@ namespace Saturn.Telegram.Db.Migrations
                 type: "bigint",
                 nullable: true);
 
+            migrationBuilder.AddColumn<Guid>(
+                name: "ai_agent_id",
+                table: "chats",
+                type: "uuid",
+                nullable: true);
+
             migrationBuilder.CreateTable(
                 name: "ai_agents",
                 columns: table => new
@@ -56,13 +62,39 @@ namespace Saturn.Telegram.Db.Migrations
                 {
                     table.PrimaryKey("pk_ai_agents", x => x.id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_chats_ai_agent_id",
+                table: "chats",
+                column: "ai_agent_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_ai_agents_code",
+                table: "ai_agents",
+                column: "code",
+                unique: true);
+
+            migrationBuilder.AddForeignKey(
+                name: "fk_chats_ai_agents_ai_agent_id",
+                table: "chats",
+                column: "ai_agent_id",
+                principalTable: "ai_agents",
+                principalColumn: "id");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "fk_chats_ai_agents_ai_agent_id",
+                table: "chats");
+
             migrationBuilder.DropTable(
                 name: "ai_agents");
+
+            migrationBuilder.DropIndex(
+                name: "ix_chats_ai_agent_id",
+                table: "chats");
 
             migrationBuilder.DropColumn(
                 name: "reply_to_message_chat_id",
@@ -71,6 +103,10 @@ namespace Saturn.Telegram.Db.Migrations
             migrationBuilder.DropColumn(
                 name: "reply_to_message_id",
                 table: "messages");
+
+            migrationBuilder.DropColumn(
+                name: "ai_agent_id",
+                table: "chats");
 
             migrationBuilder.AlterColumn<string>(
                 name: "text",
