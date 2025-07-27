@@ -1,6 +1,5 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using OpenAI.Chat;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
@@ -15,10 +14,10 @@ public class SummaryGenerationOperation : OperationBase
     private readonly ChatClient _chatClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
     
-    public SummaryGenerationOperation(IConfiguration configuration, IDbContextFactory<SaturnContext> contextFactory)
+    public SummaryGenerationOperation(ChatClient chatClient, IDbContextFactory<SaturnContext> contextFactory)
     {
         _contextFactory = contextFactory;
-        _chatClient = new ChatClient("gpt-4o", configuration.GetSection("OPEN_AI_KEY").Value);
+        _chatClient = chatClient;
     }
     
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)

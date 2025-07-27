@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Images;
+using Saturn.Telegram.Db.Repositories;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Saturn.Telegram.Lib.Services;
 using Saturn.Telegram.Lib.Services.Abstractions;
@@ -24,7 +26,7 @@ public static class ServiceCollectionsExtensions
         serviceCollection.AddSingleton<ChatClient>(_ =>
         {
             var apiKey = configuration.GetSectionOrThrow("CHAT_GENERATION_API_KEY");
-            return new ChatClient("grok-4", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+            return new ChatClient("grok-3-mini-fast", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
         });
         
         serviceCollection.AddSingleton<ImageClient>(_ =>
@@ -34,6 +36,8 @@ public static class ServiceCollectionsExtensions
         });
             
         serviceCollection.AddSingleton<ICooldownService, CooldownService>(); 
+        serviceCollection.AddSingleton<IChatCachedRepository, ChatCachedRepository>(); 
+        serviceCollection.AddSingleton<IMessageRepository, MessageRepository>(); 
         serviceCollection.AddSingleton<ISaveMessageService, SaveMessageService>(); 
         serviceCollection.AddSingleton<ISubscriptionService, SubscriptionService>(); 
         

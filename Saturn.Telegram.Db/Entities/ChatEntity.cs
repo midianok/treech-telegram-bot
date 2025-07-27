@@ -8,7 +8,7 @@ public class ChatEntity
     
     public string? Name { get; set; }
     
-    public Guid AiAgentId { get; set; }
+    public Guid? AiAgentId { get; set; }
     
     public virtual List<MessageEntity>? Messages { get; set; }
     
