@@ -35,15 +35,10 @@ public abstract class OperationBase : IOperation
 
     private bool ValidateTextMessage(Message msg, UpdateType type)
     {
-        if (UpdateType.Message != type || string.IsNullOrEmpty(msg.Text))
-        {
-            return false;
-        }
-        
-        return ValidateOnTextMessage(msg, type);
+        return ValidateMessage(msg, type);
     }
     
-    protected virtual bool ValidateOnTextMessage(Message msg, UpdateType type) => true;
+    protected virtual bool ValidateMessage(Message msg, UpdateType type) => true;
 
     protected virtual Task ProcessOnMessageAsync(Message msg, UpdateType type) => Task.CompletedTask;
     

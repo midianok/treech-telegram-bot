@@ -80,8 +80,12 @@ public class ChatGenerationOperation : OperationBase
         }
     }
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type)
+    protected override bool ValidateMessage(Message msg, UpdateType type)
     {
+        if (string.IsNullOrEmpty(msg.Text))
+        {
+            return false;
+        }
         var isReplyToBot = IsReplyToBot(msg);
         return msg.Text!.StartsWith("трич ", StringComparison.CurrentCultureIgnoreCase) ||
                msg.Text!.StartsWith("трич, ", StringComparison.CurrentCultureIgnoreCase) ||

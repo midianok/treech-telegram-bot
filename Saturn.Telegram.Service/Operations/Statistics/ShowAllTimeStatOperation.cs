@@ -15,8 +15,8 @@ public class ShowAllTimeStatOperation : OperationBase
     public ShowAllTimeStatOperation(IDbContextFactory<SaturnContext> contextFactory) =>
         _contextFactory = contextFactory;
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
-        type == UpdateType.Message && msg.Text?.ToLower() == "вся стата";
+    protected override bool ValidateMessage(Message msg, UpdateType type) =>
+        !string.IsNullOrEmpty(msg.Text) && msg.Text.ToLower() == "вся стата";
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {

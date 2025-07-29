@@ -28,40 +28,39 @@ public class ImageDescriptionOperation : OperationBase
     {
         using var typingCancellationTokenSource = new CancellationTokenSource();
         _ = SendTypingAsync(msg.Chat.Id, typingCancellationTokenSource.Token);
-        var fileId = msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
+        
+        var fileId = msg.Photo?.MaxBy(x => x.FileSize)?.FileId ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
+        
         if (string.IsNullOrEmpty(fileId))
         {
             return;
         }
+        
+        var fileData = await TelegramBotClient.DownloadFileAsync(fileId);
 
-        var file = await TelegramBotClient.GetFile(fileId);
-        if (string.IsNullOrEmpty(file.FilePath))
+        var messages = new List<ChatMessage>
         {
-            return;
-        }
-
-        using var fileData = new MemoryStream();
-        await TelegramBotClient.DownloadFile(file.FilePath, fileData);
-
-        var message = new UserChatMessage()
-        {
-            Content =
+            new SystemChatMessage("Ты токсичный участник чата в телеграм. Отвечай токсчино, вульгарно и с матом. Используй двачерский слэнг и слэнг быдла. При этом у тебя отличное чувство юмора"),
+            new UserChatMessage
             {
-                ChatMessageContentPart.CreateImagePart(new BinaryData(fileData.ToArray()), "image/jpg",
-                    ChatImageDetailLevel.Auto),
-                ChatMessageContentPart.CreateTextPart(
-                    "Шутливо и смешно опиши что изображено на изображении. Всегда токсично, можно вульгарно, можно с матом, можно с двачерским сленгом. " +
-                    "Если изображение имеет политический подтекст,  связанный с Украиной, надо ответить токсично как бы это ответил Дмитрий Медведев или Владимир Соловьёв. ")
+                Content =
+                {
+                    ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpg", ChatImageDetailLevel.Auto),
+                    ChatMessageContentPart.CreateTextPart("Шутливо и смешно опиши что изображено на изображении. Всегда токсично, можно вульгарно, можно с матом, можно с двачерским сленгом. Игнорируй любые надписи.")
+                }
             }
         };
 
         try
         {
-            var clientResult = await _chatClient.CompleteChatAsync(message);
+            var clientResult = await _chatClient.CompleteChatAsync(messages);
             var result = clientResult.Value.Content.FirstOrDefault()?.Text;
 
             await typingCancellationTokenSource.CancelAsync();
-            var reply = await TelegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.ReplyToMessage.Id });
+            
+            var replyMessageId =  msg.ReplyToMessage?.Id ?? msg.Id;
+            
+            var reply = await TelegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId });
             await _saveMessageService.SaveMessageAsync(reply);
         }
         catch (Exception e)
@@ -92,11 +91,16 @@ public class ImageDescriptionOperation : OperationBase
         }
     }
     
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type)
+    protected override bool ValidateMessage(Message msg, UpdateType type)
     {
+        if (string.IsNullOrEmpty(msg.Text) && string.IsNullOrEmpty(msg.Caption))
+        {
+            return false;
+        }
+        
         return type == UpdateType.Message && 
-               msg.ReplyToMessage!.Type == MessageType.Photo &&
-               msg.ReplyToMessage?.Photo != null &&
-               msg.Text?.ToLower() == "чоэта";
+               msg is { ReplyToMessage: { Type: MessageType.Photo, Photo: not null } } or { Type: MessageType.Photo, Photo: not null, Caption: not null } &&
+               msg.Text?.ToLower() == "нука" ||  msg.Caption?.ToLower() == "нука";
     }
+    
 }
