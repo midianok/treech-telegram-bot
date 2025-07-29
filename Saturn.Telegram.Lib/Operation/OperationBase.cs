@@ -13,7 +13,7 @@ public abstract class OperationBase : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        var isMatch = ValidateTextMessage(msg, type);
+        var isMatch = ValidateMessage(msg, type);
         if (!isMatch)
         {
             return;
@@ -31,11 +31,6 @@ public abstract class OperationBase : IOperation
     {
         Logger.LogError(exception, "Ошибка");
         return Task.CompletedTask;
-    }
-
-    private bool ValidateTextMessage(Message msg, UpdateType type)
-    {
-        return ValidateMessage(msg, type);
     }
     
     protected virtual bool ValidateMessage(Message msg, UpdateType type) => true;
