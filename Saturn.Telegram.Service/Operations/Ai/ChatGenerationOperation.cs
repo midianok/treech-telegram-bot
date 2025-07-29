@@ -35,6 +35,9 @@ public class ChatGenerationOperation : OperationBase
             .Replace("трич, ", string.Empty)
             .Replace("трич ", string.Empty);
         
+        using var typingCancellationTokenSource = new CancellationTokenSource();
+        _ = SendTypingAsync(msg.Chat.Id, typingCancellationTokenSource.Token);
+        
         var messages = new List<ChatMessage>();
         
         var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
@@ -58,10 +61,6 @@ public class ChatGenerationOperation : OperationBase
         }
         
         messages.Add(new UserChatMessage(request));
-        
-        using var typingCancellationTokenSource = new CancellationTokenSource();
-
-        _ = SendTypingAsync(msg.Chat.Id, typingCancellationTokenSource.Token);
 
         try
         {
