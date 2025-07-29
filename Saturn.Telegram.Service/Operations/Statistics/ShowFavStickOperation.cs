@@ -38,6 +38,6 @@ public class ShowFavStickOperation : OperationBase
         await TelegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters {MessageId = msg.Id});
     }
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
-        msg.Text!.Equals("любимый стикер", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateMessage(Message msg, UpdateType type) =>
+        !string.IsNullOrEmpty(msg.Text) && msg.Text.Equals("любимый стикер", StringComparison.CurrentCultureIgnoreCase);
 }

@@ -4,12 +4,11 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class ImageDistortionOperation : OperationBase
 {
     private readonly IImageManipulationServiceClient _imageManipulationService;
-    private static readonly string[] triggerWords = ["жмыхни", "нука"];
 
     public ImageDistortionOperation(IImageManipulationServiceClient imageManipulationService)
     {
@@ -63,8 +62,9 @@ public class ImageDistortionOperation : OperationBase
             _ => string.Empty
         };
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
-        type == UpdateType.Message &&
+    protected override bool ValidateMessage(Message msg, UpdateType type) =>
+        type == UpdateType.Message && 
+        !string.IsNullOrEmpty(msg.Text) &&
         (msg.ReplyToMessage?.Photo != null || msg.ReplyToMessage?.Video != null || msg.ReplyToMessage?.Animation != null) &&
-        triggerWords.Contains(msg.Text?.ToLower());
+        msg.Text?.ToLower() == "жмыхни";
 }

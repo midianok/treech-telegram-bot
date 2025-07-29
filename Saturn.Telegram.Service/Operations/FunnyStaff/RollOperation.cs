@@ -3,7 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class RollOperation : OperationBase
 {
@@ -15,6 +15,6 @@ public class RollOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, $"Ты выбросил *{value}*", ParseMode.MarkdownV2, new ReplyParameters { MessageId = msg.Id } );
     }
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
-        msg.Text!.StartsWith("на дабл", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateMessage(Message msg, UpdateType type) =>
+        !string.IsNullOrEmpty(msg.Text) && msg.Text!.StartsWith("на дабл", StringComparison.CurrentCultureIgnoreCase);
 }

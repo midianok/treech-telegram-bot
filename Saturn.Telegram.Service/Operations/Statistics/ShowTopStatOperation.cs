@@ -17,8 +17,8 @@ public class ShowTopStatOperation : OperationBase
         _contextFactory = contextFactory;
     }
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
-        msg.Text!.Equals("топ стата", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateMessage(Message msg, UpdateType type) =>
+        !string.IsNullOrEmpty(msg.Text) && msg.Text.Equals("топ стата", StringComparison.CurrentCultureIgnoreCase);
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {

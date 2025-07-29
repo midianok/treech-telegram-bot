@@ -4,7 +4,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace Saturn.Bot.Service.Operations;
+namespace Saturn.Bot.Service.Operations.Trash;
 
 public class ReportOperation : OperationBase
 {
@@ -19,7 +19,7 @@ public class ReportOperation : OperationBase
         await TelegramBotClient.SendMessage(msg.Chat, "Отчёт отправлен");
     }  
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
+    protected override bool ValidateMessage(Message msg, UpdateType type) =>
         type == UpdateType.Message &&
         !string.IsNullOrEmpty(msg.Text) &&
         msg.ReplyToMessage != null &&

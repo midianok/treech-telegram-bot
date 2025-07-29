@@ -29,6 +29,7 @@ public class ImageGenerationOperation : OperationBase
         await TelegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedImage), replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
     }
 
-    protected override bool ValidateOnTextMessage(Message msg, UpdateType type) =>
-        msg.Text!.StartsWith("сгенерируй ", StringComparison.CurrentCultureIgnoreCase) || msg.Text.StartsWith("покажи ", StringComparison.CurrentCultureIgnoreCase);
+    protected override bool ValidateMessage(Message msg, UpdateType type) => 
+        !string.IsNullOrEmpty(msg.Text) && 
+        msg.Text.StartsWith("покажи ", StringComparison.CurrentCultureIgnoreCase);
 }
