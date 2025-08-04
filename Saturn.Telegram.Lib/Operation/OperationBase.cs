@@ -19,9 +19,41 @@ public abstract class OperationBase : IOperation
             return;
         }
 
-        await ProcessOnMessageAsync(msg, type);
+        using var typingCancellationTokenSource = new CancellationTokenSource();
+        _ = SendTypingAsync(msg.Chat.Id, typingCancellationTokenSource.Token);
+        
+        try
+        {
+            await ProcessOnMessageAsync(msg, type);
+        }
+        catch (Exception e)
+        {
+            await TelegramBotClient.SendMessage(msg.Chat, "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
+            await typingCancellationTokenSource.CancelAsync();
+            Logger.LogError(e, e.Message);
+        }
+        
     }
+    private async Task SendTypingAsync(long chatId, CancellationToken cancellationToken)
+    {
+        using var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(1));
+        using var combinedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
 
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await TelegramBotClient.SendChatAction(chatId, ChatAction.Typing,
+                    cancellationToken: combinedCancellationTokenSource.Token);
+                await Task.Delay(TimeSpan.FromSeconds(5), combinedCancellationTokenSource.Token);
+            }
+        }
+        catch (Exception)
+        {
+            // ignored
+        }
+    }
+    
     public Task OnUpdateAsync(Update update)
     {
         return ProcessOnUpdateAsync(update);

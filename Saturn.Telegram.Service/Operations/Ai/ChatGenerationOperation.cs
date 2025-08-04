@@ -19,7 +19,6 @@ public class ChatGenerationOperation : OperationBase
     private readonly IMessageRepository _messageRepository;
     private readonly IMemoryCache _memoryCache;
     
-
     public ChatGenerationOperation(ChatClient chatClient, ISaveMessageService saveMessageService, IChatCachedRepository chatCachedRepository, IMessageRepository messageRepository, IMemoryCache memoryCache)
     {
         _chatClient = chatClient;

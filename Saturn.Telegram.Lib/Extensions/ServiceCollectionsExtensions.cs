@@ -34,12 +34,10 @@ public static class ServiceCollectionsExtensions
             var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
             return new ImageClient("dall-e-3", apiKey);
         });
-            
-        serviceCollection.AddSingleton<ICooldownService, CooldownService>(); 
+        
         serviceCollection.AddSingleton<IChatCachedRepository, ChatCachedRepository>(); 
         serviceCollection.AddSingleton<IMessageRepository, MessageRepository>(); 
         serviceCollection.AddSingleton<ISaveMessageService, SaveMessageService>(); 
-        serviceCollection.AddSingleton<ISubscriptionService, SubscriptionService>(); 
         
         RegisterOperations<T>(serviceCollection);
         
