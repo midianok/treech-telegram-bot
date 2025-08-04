@@ -20,15 +20,12 @@ public class ImageDescriptionOperation : OperationBase
     public ImageDescriptionOperation(ISaveMessageService saveMessageService, IConfiguration configuration)
     {
         var apiKey = configuration.GetSectionOrThrow("CHAT_GENERATION_API_KEY");
-        _chatClient =  new ChatClient("grok-2-vision-latest", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });;
+        _chatClient =  new ChatClient("grok-2-vision-latest", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
         _saveMessageService = saveMessageService;
     }
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        using var typingCancellationTokenSource = new CancellationTokenSource();
-        _ = SendTypingAsync(msg.Chat.Id, typingCancellationTokenSource.Token);
-        
         var fileId = msg.Photo?.MaxBy(x => x.FileSize)?.FileId ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
         
         if (string.IsNullOrEmpty(fileId))
@@ -40,7 +37,7 @@ public class ImageDescriptionOperation : OperationBase
 
         var messages = new List<ChatMessage>
         {
-            new SystemChatMessage("Ты токсичный участник чата в телеграм. Отвечай токсчино, вульгарно и с матом. Используй двачерский слэнг и слэнг быдла. При этом у тебя отличное чувство юмора"),
+            new SystemChatMessage("Ты токсичный участник чата в телеграм. Отвечай токсично, вульгарно и с матом. Используй двачерский сленг и сленг быдла. При этом у тебя отличное чувство юмора"),
             new UserChatMessage
             {
                 Content =
@@ -53,10 +50,10 @@ public class ImageDescriptionOperation : OperationBase
 
         try
         {
+            await TelegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+            
             var clientResult = await _chatClient.CompleteChatAsync(messages);
             var result = clientResult.Value.Content.FirstOrDefault()?.Text;
-
-            await typingCancellationTokenSource.CancelAsync();
             
             var replyMessageId =  msg.ReplyToMessage?.Id ?? msg.Id;
             
@@ -66,28 +63,7 @@ public class ImageDescriptionOperation : OperationBase
         catch (Exception e)
         {
             await TelegramBotClient.SendMessage(msg.Chat, "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
-            await typingCancellationTokenSource.CancelAsync();
             Logger.LogError(e, e.Message);
-        }
-    }
-    
-    private async Task SendTypingAsync(long chatId, CancellationToken cancellationToken)
-    {
-        using var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMinutes(1));
-        using var combinedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCancellationTokenSource.Token);
-
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await TelegramBotClient.SendChatAction(chatId, ChatAction.Typing,
-                    cancellationToken: combinedCancellationTokenSource.Token);
-                await Task.Delay(TimeSpan.FromSeconds(5), combinedCancellationTokenSource.Token);
-            }
-        }
-        catch (Exception)
-        {
-            // ignored
         }
     }
     
