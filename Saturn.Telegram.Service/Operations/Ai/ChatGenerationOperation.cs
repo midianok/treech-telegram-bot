@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Saturn.Telegram.Lib.Services.Abstractions;
 using Telegram.Bot;
@@ -18,21 +20,23 @@ public class ChatGenerationOperation : OperationBase
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IMemoryCache _memoryCache;
+    private readonly string _invokeCommand;
     
-    public ChatGenerationOperation(ChatClient chatClient, ISaveMessageService saveMessageService, IChatCachedRepository chatCachedRepository, IMessageRepository messageRepository, IMemoryCache memoryCache)
+    public ChatGenerationOperation(ChatClient chatClient, ISaveMessageService saveMessageService, IChatCachedRepository chatCachedRepository, IMessageRepository messageRepository, IMemoryCache memoryCache, IConfiguration configuration)
     {
         _chatClient = chatClient;
         _saveMessageService = saveMessageService;
         _chatCachedRepository = chatCachedRepository;
         _memoryCache = memoryCache;
         _messageRepository = messageRepository;
+        _invokeCommand = configuration.GetSectionOrThrow("INVOKE_COMMAND");
     }
     
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
         var request = msg.Text!.ToLower()
-            .Replace("трич, ", string.Empty)
-            .Replace("трич ", string.Empty);
+            .Replace($"{_invokeCommand}, ", string.Empty)
+            .Replace($"{_invokeCommand} ", string.Empty);
         
         using var typingCancellationTokenSource = new CancellationTokenSource();
         _ = SendTypingAsync(msg.Chat.Id, typingCancellationTokenSource.Token);
@@ -85,8 +89,8 @@ public class ChatGenerationOperation : OperationBase
             return false;
         }
         var isReplyToBot = IsReplyToBot(msg);
-        return msg.Text!.StartsWith("трич ", StringComparison.CurrentCultureIgnoreCase) ||
-               msg.Text!.StartsWith("трич, ", StringComparison.CurrentCultureIgnoreCase) ||
+        return msg.Text!.StartsWith($"{_invokeCommand} ", StringComparison.CurrentCultureIgnoreCase) ||
+               msg.Text!.StartsWith($"{_invokeCommand}, ", StringComparison.CurrentCultureIgnoreCase) ||
                isReplyToBot;
     }
 
