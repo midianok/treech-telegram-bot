@@ -25,6 +25,7 @@ public abstract class OperationBase : IOperation
         try
         {
             await ProcessOnMessageAsync(msg, type);
+            await typingCancellationTokenSource.CancelAsync();
         }
         catch (Exception e)
         {
