@@ -13,20 +13,14 @@ public sealed class SaturnContext : DbContext
     public DbSet<UserEntity> Users { get; set; } = null!;
     
     public DbSet<ChatEntity> Chats { get; set; } = null!;
-    
-    public DbSet<CooldownEntity> Cooldowns { get; set; } = null!;
-    
-    public DbSet<SubscriptionEntity> Subscriptions { get; set; } = null!;
 
     public SaturnContext(DbContextOptions<SaturnContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new ChatEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new CooldownEntityConfiguration());
         modelBuilder.ApplyConfiguration(new MessageEntityConfiguration());
         modelBuilder.ApplyConfiguration(new UserEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new SubscriptionEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AiAgentEntityConfiguration());
     }
 }
