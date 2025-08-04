@@ -5,12 +5,12 @@
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "BOT_TOKEN": "8302349132:AAH1e-9gw31g3-gEuZY5qMo__-awX7NCJtg",
+        "BOT_TOKEN": "",
         "CONNECTION_STRING" : "Host=localhost;Port=5432;Database=saturn;Username=postgres;Password=mysecretpassword",
-        "CHAT_GENERATION_API_KEY": "xai-FW3VyZPWvK3Kpkn5fpHEPBGeUcelz3RFDMlpsjgtd7Nt9JLHHbzvAnRaVKDN0dyWcL0sdWAK4MgmRexB",
-        "IMAGE_GENERATION_API_KEY": "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",
+        "CHAT_GENERATION_API_KEY": "",
+        "IMAGE_GENERATION_API_KEY": "",
         "IMAGE_MANIPULATION_SERVICE_URL": "http://localhost:5187",
-        "INVOKE_COMMAND": "пук"
+        "INVOKE_COMMAND": "брысь"
       }
     }
   }
