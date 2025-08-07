@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
+using Saturn.Telegram.Lib.Services.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -10,10 +11,12 @@ namespace Saturn.Bot.Service.Operations.FunnyStaff;
 public class WhoTodayOperation : OperationBase
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
+    private readonly ISaveMessageService _saveMessageService;
 
-    public WhoTodayOperation(IDbContextFactory<SaturnContext> contextFactory)
+    public WhoTodayOperation(IDbContextFactory<SaturnContext> contextFactory, ISaveMessageService saveMessageService)
     {
         _contextFactory = contextFactory;
+        _saveMessageService = saveMessageService;
     }
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
@@ -33,7 +36,8 @@ public class WhoTodayOperation : OperationBase
         }
 
         var todayMessage = msg.Text!.ToLower().Replace("кто сегодня ", string.Empty);
-        await TelegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
+        var message = await TelegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
+        await _saveMessageService.SaveMessageAsync(message);
     }
 
     protected override bool ValidateMessage(Message msg, UpdateType type) =>
