@@ -48,23 +48,14 @@ public class ImageDescriptionOperation : OperationBase
             }
         };
 
-        try
-        {
-            await TelegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+        await TelegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+        var clientResult = await _chatClient.CompleteChatAsync(messages);
+        var result = clientResult.Value.Content.FirstOrDefault()?.Text;
             
-            var clientResult = await _chatClient.CompleteChatAsync(messages);
-            var result = clientResult.Value.Content.FirstOrDefault()?.Text;
+        var replyMessageId =  msg.ReplyToMessage?.Id ?? msg.Id;
             
-            var replyMessageId =  msg.ReplyToMessage?.Id ?? msg.Id;
-            
-            var reply = await TelegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId });
-            await _saveMessageService.SaveMessageAsync(reply);
-        }
-        catch (Exception e)
-        {
-            await TelegramBotClient.SendMessage(msg.Chat, "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
-            Logger.LogError(e, e.Message);
-        }
+        var reply = await TelegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId });
+        await _saveMessageService.SaveMessageAsync(reply);
     }
     
     protected override bool ValidateMessage(Message msg, UpdateType type)

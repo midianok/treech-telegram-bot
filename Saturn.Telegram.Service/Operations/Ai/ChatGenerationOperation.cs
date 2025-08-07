@@ -62,19 +62,12 @@ public class ChatGenerationOperation : OperationBase
         
         messages.Add(new UserChatMessage(request));
 
-        try
-        {
-            var clientResult = await _chatClient.CompleteChatAsync(messages);
-            var result = clientResult.Value.Content.FirstOrDefault()?.Text;
+        await TelegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+        var clientResult = await _chatClient.CompleteChatAsync(messages);
+        var result = clientResult.Value.Content.FirstOrDefault()?.Text;
             
-            var reply = await TelegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
-            await _saveMessageService.SaveMessageAsync(reply);
-        }
-        catch (Exception e)
-        {
-            await TelegramBotClient.SendMessage(msg.Chat, "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
-            Logger.LogError(e, e.Message);
-        }
+        var reply = await TelegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
+        await _saveMessageService.SaveMessageAsync(reply);
     }
 
     protected override bool ValidateMessage(Message msg, UpdateType type)
