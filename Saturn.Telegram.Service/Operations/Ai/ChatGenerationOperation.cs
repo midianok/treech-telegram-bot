@@ -50,9 +50,16 @@ public class ChatGenerationOperation : OperationBase
         if (isReplyToBot)
         {
             var messageChain = await _messageRepository.GetMessageChainAsync(msg.Chat.Id, msg.ReplyToMessage!.Id);
-            var res = messageChain.OrderBy(x => x.MessageDate)
-                .Select(x => new UserChatMessage(x.Text));
-            messages.AddRange(res);
+            if (messageChain.Count > 0)
+            {
+                var userChatMessages = messageChain.OrderBy(x => x.MessageDate)
+                    .Select(x => new UserChatMessage(x.Text));
+                messages.AddRange(userChatMessages);
+            }
+            else
+            {
+                messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
+            }
         }
 
         if (!isReplyToBot && msg.ReplyToMessage is { Type: MessageType.Text } && !string.IsNullOrWhiteSpace(msg.ReplyToMessage.Text))
