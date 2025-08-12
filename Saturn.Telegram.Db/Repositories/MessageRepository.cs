@@ -20,7 +20,7 @@ public class MessageRepository : IMessageRepository
             .FirstOrDefaultAsync(m => m.Id == messageId && m.ChatId == chatId);
     
         if (currentMessage == null)
-            throw new Exception("Message not found");
+           return [];
         
         var chain = new List<MessageEntity> { currentMessage };
 
