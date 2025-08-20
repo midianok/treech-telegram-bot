@@ -3,9 +3,9 @@ using Saturn.Telegram.Lib.Operation;
 
 namespace Saturn.Telegram.Lib.Extensions;
 
-public static class OperationExtensions
+internal static class OperationExtensions
 {
-    public static IOperation SetService(this IOperation operation, string fieldName, object serviceInstance)
+    internal static OperationBase SetService(this OperationBase operation, string fieldName, object serviceInstance)
     {
         ArgumentNullException.ThrowIfNull(operation, nameof(operation));
         ArgumentNullException.ThrowIfNull(fieldName, nameof(fieldName));

@@ -1,12 +1,11 @@
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Operation;
-using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations;
 
-public class SaveMessageOperation : IOperation
+public class SaveMessageOperation : OperationBase
 {
     private readonly ISaveMessageService _saveMessageService;
 
@@ -14,13 +13,6 @@ public class SaveMessageOperation : IOperation
     {
         _saveMessageService = saveMessageService;
     }
-
-    public Task OnMessageAsync(Message msg, UpdateType type) => 
+    protected override Task ProcessOnMessageAsync(Message msg, UpdateType type) => 
         _saveMessageService.SaveMessageAsync(msg);
-
-    public Task OnUpdateAsync(Update update) =>
-        Task.CompletedTask;
-
-    public Task OnErrorAsync(Exception exception, HandleErrorSource source) =>
-        Task.CompletedTask;
 }

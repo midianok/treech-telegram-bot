@@ -9,7 +9,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Telegram.Lib.Operation;
 
-public abstract class OperationBase : IOperation
+public abstract class OperationBase
 {
     protected readonly ILogger<OperationBase> Logger;
     protected readonly TelegramBotClient TelegramBotClient;
@@ -43,10 +43,8 @@ public abstract class OperationBase : IOperation
         
     }
     
-    public Task OnUpdateAsync(Update update)
-    {
-        return ProcessOnUpdateAsync(update);
-    }
+    public Task OnUpdateAsync(Update update) => 
+        ProcessOnUpdateAsync(update);
 
     public Task OnErrorAsync(Exception exception, HandleErrorSource source)
     {
