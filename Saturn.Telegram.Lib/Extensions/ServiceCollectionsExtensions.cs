@@ -10,7 +10,7 @@ public static class ServiceCollectionsExtensions
         var operations = typeof(T).Assembly.GetTypes()
             .Where(x => 
                 x is { IsAbstract: false, IsClass: true } && 
-                x.GetInterface(nameof(IOperation)) == typeof(IOperation))
+                x.IsSubclassOf(typeof(OperationBase)))
             .ToList();
         
         foreach (var rule in operations)
@@ -18,8 +18,8 @@ public static class ServiceCollectionsExtensions
             serviceCollection.Add(new ServiceDescriptor(rule, rule, ServiceLifetime.Singleton));
         }
         
-        serviceCollection.AddSingleton<IEnumerable<IOperation>>(serviceProvider => operations.Select(serviceProvider.GetRequiredService).Cast<IOperation>());
-        serviceCollection.AddHostedService<HostedService>();
+        serviceCollection.AddSingleton<IEnumerable<OperationBase>>(serviceProvider => operations.Select(serviceProvider.GetRequiredService).Cast<OperationBase>());
+        serviceCollection.AddHostedService<TelegramHostedService>();
         return serviceCollection;
     }
 }

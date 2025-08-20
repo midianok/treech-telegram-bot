@@ -2,8 +2,8 @@
 
 namespace Saturn.Telegram.Lib.Extensions;
 
-public static class UpdateTypeExtensions
+internal static class UpdateTypeExtensions
 {
-    public static bool IsMessage(this UpdateType update) => 
+    internal static bool IsMessage(this UpdateType update) => 
         update == UpdateType.Message;
 }

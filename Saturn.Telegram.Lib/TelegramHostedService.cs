@@ -6,15 +6,15 @@ using Telegram.Bot;
 
 namespace Saturn.Telegram.Lib;
 
-public class HostedService : IHostedService
+internal class TelegramHostedService : IHostedService
 {
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly IEnumerable<IOperation> _operations;
+    private readonly IEnumerable<OperationBase> _operations;
     private readonly ILogger<OperationBase> _logger;
 
-    public HostedService(
+    public TelegramHostedService(
         TelegramBotClient telegramBotClient,
-        IEnumerable<IOperation> operations,
+        IEnumerable<OperationBase> operations,
         ILogger<OperationBase> logger)
     {
         _operations = operations;
