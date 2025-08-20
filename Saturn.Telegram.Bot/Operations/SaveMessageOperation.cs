@@ -1,10 +1,10 @@
-using Saturn.Telegram.Lib.Services;
-using Saturn.Telegram.Lib.Services.Abstractions;
+using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
-namespace Saturn.Telegram.Lib.Operation;
+namespace Saturn.Bot.Service.Operations;
 
 public class SaveMessageOperation : IOperation
 {
