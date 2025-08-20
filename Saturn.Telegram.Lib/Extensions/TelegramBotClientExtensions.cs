@@ -20,7 +20,7 @@ public static class TelegramBotClientExtensions
         return fileData.ToArray();
     }
     
-    public static TelegramBotClient Use(this TelegramBotClient telegramBotClient, IOperation operation) 
+    public static TelegramBotClient Use(this TelegramBotClient telegramBotClient, OperationBase operation) 
     {
         telegramBotClient.OnError += operation.OnErrorAsync;
         telegramBotClient.OnMessage += operation.OnMessageAsync;
