@@ -1,12 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Service", "Saturn.Telegram.Service\Saturn.Telegram.Service.csproj", "{DB58A1C5-10B1-484A-9D3F-4E2C8CB7C933}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturn.Telegram.Bot", "Saturn.Telegram.Bot\Saturn.Telegram.Bot.csproj", "{DB58A1C5-10B1-484A-9D3F-4E2C8CB7C933}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{FACF396F-958E-48A3-9EF2-F68C9AF09BB3}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yaml = docker-compose.yaml
-		Dockerfile = Dockerfile
-		.dockerignore = .dockerignore
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
