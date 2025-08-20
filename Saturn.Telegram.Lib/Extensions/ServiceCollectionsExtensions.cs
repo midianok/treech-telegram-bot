@@ -1,51 +1,11 @@
-﻿using System.ClientModel;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using OpenAI;
-using OpenAI.Chat;
-using OpenAI.Images;
-using Saturn.Telegram.Db.Repositories;
-using Saturn.Telegram.Db.Repositories.Abstractions;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Saturn.Telegram.Lib.Operation;
-using Saturn.Telegram.Lib.Services;
-using Saturn.Telegram.Lib.Services.Abstractions;
-using Telegram.Bot;
 
 namespace Saturn.Telegram.Lib.Extensions;
 
 public static class ServiceCollectionsExtensions
 {
-    public static IServiceCollection AddTelegramBotClient<T>(this IServiceCollection serviceCollection, ConfigurationManager configuration)
-    {
-        serviceCollection.AddSingleton<TelegramBotClient>(_ =>
-        {
-            var botToken = configuration.GetSectionOrThrow("BOT_TOKEN");
-            return new TelegramBotClient(botToken);
-        });
-        
-        serviceCollection.AddSingleton<ChatClient>(_ =>
-        {
-            var apiKey = configuration.GetSectionOrThrow("CHAT_GENERATION_API_KEY");
-            return new ChatClient("grok-3-mini", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
-        });
-        
-        serviceCollection.AddSingleton<ImageClient>(_ =>
-        {
-            var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
-            return new ImageClient("grok-2-image", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
-        });
-        
-        serviceCollection.AddSingleton<IChatCachedRepository, ChatCachedRepository>(); 
-        serviceCollection.AddSingleton<IMessageRepository, MessageRepository>(); 
-        serviceCollection.AddSingleton<ISaveMessageService, SaveMessageService>(); 
-        
-        RegisterOperations<T>(serviceCollection);
-        
-        serviceCollection.AddHostedService<HostedService>();
-        return serviceCollection;
-    }
-
-    private static void RegisterOperations<T>(IServiceCollection serviceCollection)
+    public static IServiceCollection AddTelegramBotClient<T>(this IServiceCollection serviceCollection)
     {
         var operations = typeof(T).Assembly.GetTypes()
             .Where(x => 
@@ -59,5 +19,7 @@ public static class ServiceCollectionsExtensions
         }
         
         serviceCollection.AddSingleton<IEnumerable<IOperation>>(serviceProvider => operations.Select(serviceProvider.GetRequiredService).Cast<IOperation>());
+        serviceCollection.AddHostedService<HostedService>();
+        return serviceCollection;
     }
 }

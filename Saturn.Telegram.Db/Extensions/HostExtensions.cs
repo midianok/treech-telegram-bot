@@ -6,11 +6,11 @@ namespace Saturn.Telegram.Db.Extensions;
 
 public static class HostExtensions
 {
-    public static void ApplyMigrations(this IHost app)
+    public static void ApplyMigrations<T>(this IHost app) where T : DbContext
     {
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider
-            .GetRequiredService<IDbContextFactory<SaturnContext>>()
+            .GetRequiredService<IDbContextFactory<T>>()
             .CreateDbContext();
        
         dbContext.Database.Migrate();
