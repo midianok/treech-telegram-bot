@@ -14,4 +14,13 @@ public static class Extension
 
         return item;
     }
+    
+    public static long ParseLong(this string? longString)
+    {
+        if (long.TryParse(longString, out long result))
+        {
+            return result;
+        }
+        throw new Exception($"Unable to parse long string {longString}");
+    }
 }
