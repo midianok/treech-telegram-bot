@@ -1,6 +1,5 @@
 ﻿using System.ClientModel;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
