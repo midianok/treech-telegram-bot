@@ -33,28 +33,23 @@ public abstract class OperationBase
         {
             await ProcessOnMessageAsync(msg, type);
         }
-        catch (Exception e)
+        catch (Exception exception)
         {
             await TelegramBotClient.SendMessage(msg.Chat, "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
             var json = JsonSerializer.Serialize(msg, _jsonSerializerOptions);
-            await TelegramBotClient.SendMessage(-4899665219, $"Error: *{e.Message}*\nStackTrace:\n```csharp\n{e.StackTrace}\n```\n```json\n{json}```", ParseMode.Markdown);
-            Logger.LogError(e, e.Message);
+            await TelegramBotClient.SendMessage(-4899665219, $"Error: *{exception.Message}*\nStackTrace:\n```csharp\n{exception.StackTrace}\n```\n```json\n{json}```", ParseMode.Markdown);
         }
-        
     }
     
     public Task OnUpdateAsync(Update update) => 
         ProcessOnUpdateAsync(update);
-
-    public Task OnErrorAsync(Exception exception, HandleErrorSource source)
-    {
-        Logger.LogError(exception, "Ошибка");
-        return Task.CompletedTask;
-    }
     
-    protected virtual bool ValidateMessage(Message msg, UpdateType type) => true;
+    public Task OnErrorAsync(Exception exception, HandleErrorSource source) => 
+        Task.CompletedTask;
 
     protected virtual Task ProcessOnMessageAsync(Message msg, UpdateType type) => Task.CompletedTask;
     
     protected virtual Task ProcessOnUpdateAsync(Update update) => Task.CompletedTask;
+    
+    protected virtual bool ValidateMessage(Message msg, UpdateType type) => true;
 }
