@@ -1,5 +1,4 @@
-﻿using Saturn.Telegram.Lib.Operation;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 
 namespace Saturn.Telegram.Lib.Extensions;
 
@@ -18,13 +17,5 @@ public static class TelegramBotClientExtensions
         using var fileData = new MemoryStream();
         await telegramBotClient.DownloadFile(file.FilePath, fileData);
         return fileData.ToArray();
-    }
-    
-    public static TelegramBotClient Use(this TelegramBotClient telegramBotClient, OperationBase operation) 
-    {
-        telegramBotClient.OnError += operation.OnErrorAsync;
-        telegramBotClient.OnMessage += operation.OnMessageAsync;
-        telegramBotClient.OnUpdate += operation.OnUpdateAsync;
-        return telegramBotClient;
     }
 }

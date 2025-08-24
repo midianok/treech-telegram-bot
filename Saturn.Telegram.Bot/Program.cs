@@ -8,9 +8,9 @@ using Saturn.Telegram.Lib.Extensions;
 var builder = Host.CreateApplicationBuilder();
 
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
-
+var botToken = builder.Configuration.GetSectionOrThrow("BOT_TOKEN");
 builder.Services
-    .AddTelegramBotClient<Program>()
+    .AddTelegramBotClient<Program>(botToken)
     .AddServices(builder.Configuration);
 
 builder.Services.AddSaturnContext(builder.Configuration);
