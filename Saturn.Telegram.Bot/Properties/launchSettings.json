@@ -10,6 +10,7 @@
         "CHAT_GENERATION_API_KEY": "",
         "IMAGE_GENERATION_API_KEY": "",
         "IMAGE_MANIPULATION_SERVICE_URL": "http://localhost:5187",
+        "LOG_CHAT_ID": "",
         "INVOKE_COMMAND": "брысь"
       }
     }

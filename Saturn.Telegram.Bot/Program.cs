@@ -9,9 +9,19 @@ var builder = Host.CreateApplicationBuilder();
 
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
 var botToken = builder.Configuration.GetSectionOrThrow("BOT_TOKEN");
+
 builder.Services
     .AddTelegramBotClient<Program>(botToken)
     .AddServices(builder.Configuration);
+
+builder.Logging.AddTelegramLogger(opts =>
+{
+    var loggingChatId = builder.Configuration.GetSectionOrThrow("LOG_CHAT_ID").ParseLong();
+    opts.TelegramLoggingChatId = loggingChatId;
+    opts.MinimumLevel = LogLevel.Information;
+    opts.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Error);
+    opts.AddFilter("Microsoft.EntityFrameworkCore.Migrations", LogLevel.Error);
+});
 
 builder.Services.AddSaturnContext(builder.Configuration);
 
