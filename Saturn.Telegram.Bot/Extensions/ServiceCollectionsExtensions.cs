@@ -9,6 +9,7 @@ using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Telegram.Lib;
 using Telegram.Bot;
 
 namespace Saturn.Bot.Service.Extensions;
@@ -47,6 +48,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
             .AddSingleton<IMessageRepository, MessageRepository>() 
             .AddSingleton<ISaveMessageService, SaveMessageService>() 
+            .AddSingleton<OperationManager>() 
             .AddMemoryCache();
         
         return serviceCollection;
