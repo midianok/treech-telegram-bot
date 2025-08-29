@@ -35,9 +35,7 @@ public abstract class OperationBase
         }
         catch (Exception exception)
         {
-            await TelegramBotClient.SendMessage(msg.Chat, "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
-            var json = JsonSerializer.Serialize(msg, _jsonSerializerOptions);
-            await TelegramBotClient.SendMessage(-4899665219, $"Error: *{exception.Message}*\nStackTrace:\n```csharp\n{exception.StackTrace}\n```\n```json\n{json}```", ParseMode.Markdown);
+            Logger.LogError(exception, "*Error*: {Message}\n```csharp\n{StackTrace}\n```\n```json\n{json}```", exception.Message, exception.StackTrace, JsonSerializer.Serialize(msg, _jsonSerializerOptions));
         }
     }
     

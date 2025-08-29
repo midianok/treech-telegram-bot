@@ -34,10 +34,6 @@ internal class TelegramHostedService : IHostedService
         var operations = _operations.Select(x => x.GetType().Name);
         _hostedServiceLogger.LogInformation("Starting hosted service. Enabled operations: {operations}", string.Join(", ", operations));
         
-        _telegramBotClient.OnError += _operationManager.ErrorHandler;
-        _telegramBotClient.OnMessage += _operationManager.MessageHandler;
-        _telegramBotClient.OnUpdate += _operationManager.UpdateHandler;
-        
         foreach (var operation in _operations)
         {
             operation
