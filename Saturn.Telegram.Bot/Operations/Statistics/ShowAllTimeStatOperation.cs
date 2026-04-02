@@ -20,7 +20,7 @@ public class ShowAllTimeStatOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
 
         var topUsersByMessageCount = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id)
