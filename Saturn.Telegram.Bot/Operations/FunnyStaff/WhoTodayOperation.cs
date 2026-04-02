@@ -21,7 +21,7 @@ public class WhoTodayOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
         var randomUser = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id && x.MessageDate > DateTime.Now.Date)
             .Select(x => x.User!.Username)

@@ -18,7 +18,7 @@ public class ShowUserStatOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
         var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
 
         var messageTypes = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.UserId == userId)

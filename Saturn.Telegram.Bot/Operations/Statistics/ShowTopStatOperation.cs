@@ -22,7 +22,7 @@ public class ShowTopStatOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
-        var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
 
         var monday = GetMondayDate();
 

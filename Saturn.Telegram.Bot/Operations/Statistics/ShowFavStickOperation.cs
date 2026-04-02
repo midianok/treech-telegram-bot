@@ -20,7 +20,7 @@ public class ShowFavStickOperation : OperationBase
     {
         var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
 
-        var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync();
         var userStickers = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id && x.UserId == userId &&
                         x.Type == (int) MessageType.Sticker)

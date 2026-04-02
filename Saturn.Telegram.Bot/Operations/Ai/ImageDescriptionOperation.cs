@@ -1,8 +1,4 @@
-﻿using System.ClientModel;
-using Microsoft.Extensions.Configuration;
-using OpenAI;
-using OpenAI.Chat;
-using Saturn.Bot.Service.Extensions;
+﻿using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
@@ -17,10 +13,9 @@ public class ImageDescriptionOperation : OperationBase
     private readonly ChatClient _chatClient;
     private readonly ISaveMessageService _saveMessageService;
 
-    public ImageDescriptionOperation(ISaveMessageService saveMessageService, IConfiguration configuration)
+    public ImageDescriptionOperation(ChatClient chatClient, ISaveMessageService saveMessageService)
     {
-        var apiKey = configuration.GetSectionOrThrow("CHAT_GENERATION_API_KEY");
-        _chatClient =  new ChatClient("grok-4", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+        _chatClient =  chatClient;
         _saveMessageService = saveMessageService;
     }
 
