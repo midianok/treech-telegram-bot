@@ -27,13 +27,13 @@ public static class ServiceCollectionsExtensions
         serviceCollection.AddSingleton<ChatClient>(_ =>
         {
             var apiKey = configuration.GetSectionOrThrow("CHAT_GENERATION_API_KEY");
-            return new ChatClient("grok-3-mini", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+            return new ChatClient("grok-4-1-fast-non-reasoning", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
         });
         
         serviceCollection.AddSingleton<ImageClient>(_ =>
         {
             var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
-            return new ImageClient("grok-2-image", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+            return new ImageClient("grok-imagine-image", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
         });
         
         serviceCollection.AddHttpClient<IImageManipulationServiceClient, ImageManipulationServiceClient>(x =>
