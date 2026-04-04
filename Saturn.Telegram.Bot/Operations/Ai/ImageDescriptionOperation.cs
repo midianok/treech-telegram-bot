@@ -21,6 +21,12 @@ public class ImageDescriptionOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
+        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
+        {
+            await TelegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
+            return;
+        }
+
         var fileId = msg.Photo?.MaxBy(x => x.FileSize)?.FileId ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
         
         if (string.IsNullOrEmpty(fileId))
@@ -59,10 +65,10 @@ public class ImageDescriptionOperation : OperationBase
         {
             return false;
         }
-        
-        return type == UpdateType.Message && 
+
+        return type == UpdateType.Message &&
                msg is { ReplyToMessage: { Type: MessageType.Photo, Photo: not null } } or { Type: MessageType.Photo, Photo: not null, Caption: not null } &&
-               msg.Text?.ToLower() == "нука" ||  msg.Caption?.ToLower() == "нука";
+               msg.Text?.ToLower() == "нука" || msg.Caption?.ToLower() == "нука";
     }
     
 }
