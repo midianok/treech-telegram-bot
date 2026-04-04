@@ -10,8 +10,8 @@ namespace Saturn.Bot.Service.Operations.Ai;
 
 public class ImageEditOperation : OperationBase
 {
-    private const string CommandPrefix1 = "отредактируй ";
-    private const string CommandPrefix2 = "измени ";
+    private const string CommandPrefix1 = "отредактируй";
+    private const string CommandPrefix2 = "измени";
 
     private readonly XaiImageEditClient _xaiImageEditClient;
     private readonly ISaveMessageService _saveMessageService;
@@ -24,6 +24,12 @@ public class ImageEditOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
+        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
+        {
+            await TelegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
+            return;
+        }
+
         var text = msg.Text ?? msg.Caption ?? string.Empty;
         var prefix = text.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
         var prompt = text[prefix.Length..].Trim();

@@ -14,6 +14,12 @@ public class ImageGenerationOperation : OperationBase
 
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
+        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
+        {
+            await TelegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
+            return;
+        }
+
         var request = msg.Text!.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи ", string.Empty);
         var clientResult = _imageClient.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes } );
 
@@ -29,7 +35,7 @@ public class ImageGenerationOperation : OperationBase
         await TelegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedImage), replyParameters: new ReplyParameters { MessageId = msg.MessageId } );
     }
 
-    protected override bool ValidateMessage(Message msg, UpdateType type) => 
-        !string.IsNullOrEmpty(msg.Text) && 
+    protected override bool ValidateMessage(Message msg, UpdateType type) =>
+        !string.IsNullOrEmpty(msg.Text) &&
         msg.Text.StartsWith("покажи ", StringComparison.CurrentCultureIgnoreCase);
 }
