@@ -33,6 +33,12 @@ public class ChatGenerationOperation : OperationBase
     
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
+        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
+        {
+            await TelegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
+            return;
+        }
+
         var request = msg.Text!.ToLower()
             .Replace($"{_invokeCommand}, ", string.Empty)
             .Replace($"{_invokeCommand} ", string.Empty);
