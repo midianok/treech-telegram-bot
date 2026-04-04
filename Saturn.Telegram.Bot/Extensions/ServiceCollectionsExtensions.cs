@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Images;
+using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
 using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories;
@@ -40,6 +41,14 @@ public static class ServiceCollectionsExtensions
         {
             var imageManipulationServiceUrl = configuration.GetSectionOrThrow("IMAGE_MANIPULATION_SERVICE_URL");
             x.BaseAddress = new Uri(imageManipulationServiceUrl);
+            x.Timeout = TimeSpan.FromMinutes(5);
+        });
+
+        serviceCollection.AddHttpClient<XaiImageEditClient>(x =>
+        {
+            var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
+            x.BaseAddress = new Uri("https://api.x.ai/");
+            x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
             x.Timeout = TimeSpan.FromMinutes(5);
         });
         
