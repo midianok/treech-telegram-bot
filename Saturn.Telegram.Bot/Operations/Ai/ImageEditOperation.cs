@@ -10,7 +10,8 @@ namespace Saturn.Bot.Service.Operations.Ai;
 
 public class ImageEditOperation : OperationBase
 {
-    private const string CommandPrefix = "отредактируй ";
+    private const string CommandPrefix1 = "отредактируй ";
+    private const string CommandPrefix2 = "измени ";
 
     private readonly XaiImageEditClient _xaiImageEditClient;
     private readonly ISaveMessageService _saveMessageService;
@@ -24,7 +25,8 @@ public class ImageEditOperation : OperationBase
     protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
     {
         var text = msg.Text ?? msg.Caption ?? string.Empty;
-        var prompt = text[CommandPrefix.Length..].Trim();
+        var prefix = text.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
+        var prompt = text[prefix.Length..].Trim();
 
         var fileId = msg.ReplyToMessage!.Photo!.MaxBy(x => x.FileSize)!.FileId;
         var imageBytes = await TelegramBotClient.DownloadFileAsync(fileId);
@@ -53,6 +55,7 @@ public class ImageEditOperation : OperationBase
         var text = msg.Text ?? msg.Caption;
         return type == UpdateType.Message &&
                msg.ReplyToMessage is { Type: MessageType.Photo, Photo: not null } &&
-               text?.StartsWith(CommandPrefix, StringComparison.CurrentCultureIgnoreCase) == true;
+               (text?.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) == true ||
+                text?.StartsWith(CommandPrefix2, StringComparison.CurrentCultureIgnoreCase) == true);
     }
 }
