@@ -1,5 +1,4 @@
-using Saturn.Bot.Service.Infrastructure.XaiChatClient;
-using Saturn.Bot.Service.Infrastructure.XaiChatClient.Model;
+using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
@@ -12,10 +11,10 @@ namespace Saturn.Bot.Service.Operations.Ai;
 public class ImageDescriptionOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly XaiChatClient _chatClient;
+    private readonly ChatClient _chatClient;
     private readonly ISaveMessageService _saveMessageService;
 
-    public ImageDescriptionOperation(TelegramBotClient telegramBotClient, XaiChatClient chatClient, ISaveMessageService saveMessageService)
+    public ImageDescriptionOperation(TelegramBotClient telegramBotClient, ChatClient chatClient, ISaveMessageService saveMessageService)
     {
         _telegramBotClient = telegramBotClient;
         _chatClient = chatClient;
@@ -45,14 +44,22 @@ public class ImageDescriptionOperation : IOperation
 
         var fileData = await _telegramBotClient.DownloadFileAsync(fileId);
 
-        var messages = new List<XaiMessage>
+        var messages = new List<ChatMessage>
         {
-            XaiMessage.System("Ты токсичный участник чата в телеграм. Отвечай токсично, вульгарно и с матом. Используй двачерский сленг и сленг быдла. При этом у тебя отличное чувство юмора"),
-            XaiMessage.UserWithImage(fileData, "Шутливо и смешно опиши что изображено на изображении. Всегда токсично, можно вульгарно, можно с матом, можно с двачерским сленгом. Игнорируй любые надписи.")
+            new SystemChatMessage("Ты токсичный участник чата в телеграм. Отвечай токсично, вульгарно и с матом. Используй двачерский сленг и сленг быдла. При этом у тебя отличное чувство юмора"),
+            new UserChatMessage
+            {
+                Content =
+                {
+                    ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpg", ChatImageDetailLevel.Auto),
+                    ChatMessageContentPart.CreateTextPart("Шутливо и смешно опиши что изображено на изображении. Всегда токсично, можно вульгарно, можно с матом, можно с двачерским сленгом. Игнорируй любые надписи.")
+                }
+            }
         };
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
-        var result = await _chatClient.CompleteChatAsync(messages);
+        var clientResult = await _chatClient.CompleteChatAsync(messages);
+        var result = clientResult.Value.Content.FirstOrDefault()?.Text;
 
         var replyMessageId = msg.ReplyToMessage?.Id ?? msg.Id;
 
