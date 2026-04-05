@@ -4,12 +4,14 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using System.Net;
+using Saturn.Telegram.Lib.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
+[Cooldown(120)]
 public class ImageEditOperation : IOperation
 {
     private const string CommandPrefix1 = "отредактируй";

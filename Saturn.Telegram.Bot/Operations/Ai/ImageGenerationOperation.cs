@@ -2,12 +2,14 @@ using Microsoft.Extensions.Logging;
 using OpenAI.Images;
 using Saturn.Telegram.Lib.Operation;
 using System.ClientModel;
+using Saturn.Telegram.Lib.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
+[Cooldown(120)]
 public class ImageGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
