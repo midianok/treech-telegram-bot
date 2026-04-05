@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
+using System.ClientModel;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -13,12 +15,14 @@ public class ImageDescriptionOperation : IOperation
     private readonly TelegramBotClient _telegramBotClient;
     private readonly ChatClient _chatClient;
     private readonly ISaveMessageService _saveMessageService;
+    private readonly ILogger<ImageDescriptionOperation> _logger;
 
-    public ImageDescriptionOperation(TelegramBotClient telegramBotClient, ChatClient chatClient, ISaveMessageService saveMessageService)
+    public ImageDescriptionOperation(TelegramBotClient telegramBotClient, ChatClient chatClient, ISaveMessageService saveMessageService, ILogger<ImageDescriptionOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
         _chatClient = chatClient;
         _saveMessageService = saveMessageService;
+        _logger = logger;
     }
 
     public bool Validate(Message msg, UpdateType type) =>
@@ -58,13 +62,20 @@ public class ImageDescriptionOperation : IOperation
         };
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
-        var clientResult = await _chatClient.CompleteChatAsync(messages);
-        var result = clientResult.Value.Content.FirstOrDefault()?.Text;
-
         var replyMessageId = msg.ReplyToMessage?.Id ?? msg.Id;
+        try
+        {
+            var clientResult = await _chatClient.CompleteChatAsync(messages);
+            var result = clientResult.Value.Content.FirstOrDefault()?.Text;
 
-        var reply = await _telegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId });
-        await _saveMessageService.SaveMessageAsync(reply);
+            var reply = await _telegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId });
+            await _saveMessageService.SaveMessageAsync(reply);
+        }
+        catch (ClientResultException ex) when (ex.Status == 429)
+        {
+            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
+            await _telegramBotClient.SendMessage(msg.Chat, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = replyMessageId });
+        }
     }
 
     public Task OnUpdateAsync(Update update) => Task.CompletedTask;

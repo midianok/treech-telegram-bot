@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
+using System.Net;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -16,12 +18,14 @@ public class ImageEditOperation : IOperation
     private readonly TelegramBotClient _telegramBotClient;
     private readonly XaiImageEditClient _xaiImageEditClient;
     private readonly ISaveMessageService _saveMessageService;
+    private readonly ILogger<ImageEditOperation> _logger;
 
-    public ImageEditOperation(TelegramBotClient telegramBotClient, XaiImageEditClient xaiImageEditClient, ISaveMessageService saveMessageService)
+    public ImageEditOperation(TelegramBotClient telegramBotClient, XaiImageEditClient xaiImageEditClient, ISaveMessageService saveMessageService, ILogger<ImageEditOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
         _xaiImageEditClient = xaiImageEditClient;
         _saveMessageService = saveMessageService;
+        _logger = logger;
     }
 
     public bool Validate(Message msg, UpdateType type)
@@ -48,23 +52,31 @@ public class ImageEditOperation : IOperation
         var fileId = msg.ReplyToMessage!.Photo!.MaxBy(x => x.FileSize)!.FileId;
         var imageBytes = await _telegramBotClient.DownloadFileAsync(fileId);
 
-        var editTask = _xaiImageEditClient.EditImageAsync(imageBytes, prompt);
-
-        while (!editTask.IsCompleted)
+        try
         {
-            await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            var editTask = _xaiImageEditClient.EditImageAsync(imageBytes, prompt);
+
+            while (!editTask.IsCompleted)
+            {
+                await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+
+            var resultBytes = await editTask;
+
+            using var resultStream = new MemoryStream(resultBytes);
+            var reply = await _telegramBotClient.SendPhoto(
+                msg.Chat.Id,
+                new InputFileStream(resultStream),
+                replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+
+            await _saveMessageService.SaveMessageAsync(reply);
         }
-
-        var resultBytes = await editTask;
-
-        using var resultStream = new MemoryStream(resultBytes);
-        var reply = await _telegramBotClient.SendPhoto(
-            msg.Chat.Id,
-            new InputFileStream(resultStream),
-            replyParameters: new ReplyParameters { MessageId = msg.MessageId });
-
-        await _saveMessageService.SaveMessageAsync(reply);
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
+            await _telegramBotClient.SendMessage(msg.Chat.Id, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+        }
     }
 
     public Task OnUpdateAsync(Update update) => Task.CompletedTask;
