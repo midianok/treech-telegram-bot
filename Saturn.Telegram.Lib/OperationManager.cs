@@ -11,7 +11,7 @@ namespace Saturn.Telegram.Lib;
 
 public class OperationManager
 {
-    private readonly IEnumerable<OperationBase> _operations;
+    private readonly IEnumerable<IOperation> _operations;
     private readonly ILogger<OperationManager> _logger;
     
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -21,7 +21,7 @@ public class OperationManager
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
     };
 
-    public OperationManager(IEnumerable<OperationBase> operations, ILogger<OperationManager> logger)
+    public OperationManager(IEnumerable<IOperation> operations, ILogger<OperationManager> logger)
     {
         _operations = operations;
         _logger = logger;
@@ -31,6 +31,11 @@ public class OperationManager
     {
         foreach (var operation in _operations)
         {
+            if (!operation.Validate(msg, type))
+            {
+                continue;
+            }
+
             try
             {
                 await operation.OnMessageAsync(msg, type);
@@ -42,9 +47,24 @@ public class OperationManager
         }
     }
     
-    public Task UpdateHandler(Update update) => 
-        Task.CompletedTask;
+    public async Task UpdateHandler(Update update)
+    {
+        foreach (var operation in _operations)
+        {
+            try
+            {
+                await operation.OnUpdateAsync(update);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "*Error*: {Message}\n```csharp\n{StackTrace}\n```\n```json\n{json}```", exception.Message, exception.StackTrace, JsonSerializer.Serialize(update, _jsonSerializerOptions));
+            }
+        }
+    }
 
-    public Task ErrorHandler(Exception exception, HandleErrorSource source) => 
-        Task.CompletedTask;
+    public Task ErrorHandler(Exception exception, HandleErrorSource source)
+    {
+        _logger.LogError(exception, "Telegram polling error. Source: {Source}", source);
+        return Task.CompletedTask;
+    }
 }

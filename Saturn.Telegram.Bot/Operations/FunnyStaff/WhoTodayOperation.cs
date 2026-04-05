@@ -8,18 +8,23 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
-public class WhoTodayOperation : OperationBase
+public class WhoTodayOperation : IOperation
 {
+    private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
     private readonly ISaveMessageService _saveMessageService;
 
-    public WhoTodayOperation(IDbContextFactory<SaturnContext> contextFactory, ISaveMessageService saveMessageService)
+    public WhoTodayOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory, ISaveMessageService saveMessageService)
     {
+        _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;
         _saveMessageService = saveMessageService;
     }
 
-    protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
+    public bool Validate(Message msg, UpdateType type) =>
+        !string.IsNullOrEmpty(msg.Text) && msg.Text.StartsWith("кто сегодня ", StringComparison.CurrentCultureIgnoreCase);
+
+    public async Task OnMessageAsync(Message msg, UpdateType type)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
         var randomUser = await db.Messages
@@ -31,15 +36,14 @@ public class WhoTodayOperation : OperationBase
 
         if (randomUser == null)
         {
-            await TelegramBotClient.SendMessage(msg.Chat, "Ты!", ParseMode.None, new ReplyParameters { MessageId = msg.Id } );
+            await _telegramBotClient.SendMessage(msg.Chat, "Ты!", ParseMode.None, new ReplyParameters { MessageId = msg.Id });
             return;
         }
 
-        var todayMessage = msg.Text!.ToLower().Replace("кто сегодня ", string.Empty);
-        var message = await TelegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
+        var todayMessage = msg.Text.ToLower().Replace("кто сегодня ", string.Empty);
+        var message = await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
         await _saveMessageService.SaveMessageAsync(message);
     }
 
-    protected override bool ValidateMessage(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.StartsWith("кто сегодня ", StringComparison.CurrentCultureIgnoreCase);
+    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

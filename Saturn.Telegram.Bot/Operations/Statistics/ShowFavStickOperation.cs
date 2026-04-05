@@ -7,16 +7,21 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Statistics;
 
-public class ShowFavStickOperation : OperationBase
+public class ShowFavStickOperation : IOperation
 {
+    private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ShowFavStickOperation(IDbContextFactory<SaturnContext> contextFactory)
+    public ShowFavStickOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
     {
+        _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;
     }
 
-    protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
+    public bool Validate(Message msg, UpdateType type) =>
+        !string.IsNullOrEmpty(msg.Text) && msg.Text.Equals("любимый стикер", StringComparison.CurrentCultureIgnoreCase);
+
+    public async Task OnMessageAsync(Message msg, UpdateType type)
     {
         var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
 
@@ -35,9 +40,8 @@ public class ShowFavStickOperation : OperationBase
             return;
         }
 
-        await TelegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters {MessageId = msg.Id});
+        await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters { MessageId = msg.Id });
     }
 
-    protected override bool ValidateMessage(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.Equals("любимый стикер", StringComparison.CurrentCultureIgnoreCase);
+    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }
