@@ -1,9 +1,11 @@
+﻿using System.ClientModel;
 using HttpClients;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Saturn.Bot.Service.Infrastructure.XaiChatClient;
+using OpenAI;
+using OpenAI.Chat;
+using OpenAI.Images;
 using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
-using Saturn.Bot.Service.Infrastructure.XaiImageGenerationClient;
 using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories;
@@ -22,20 +24,23 @@ public static class ServiceCollectionsExtensions
             var botToken = configuration.GetSectionOrThrow("BOT_TOKEN");
             return new TelegramBotClient(botToken);
         });
-
-        serviceCollection.AddHttpClient<XaiChatClient>(x =>
+        
+        serviceCollection.AddSingleton<ChatClient>(_ =>
         {
             var apiKey = configuration.GetSectionOrThrow("CHAT_GENERATION_API_KEY");
-            x.BaseAddress = new Uri("https://api.x.ai/");
-            x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-            x.Timeout = TimeSpan.FromMinutes(5);
+            return new ChatClient("grok-4-1-fast-non-reasoning", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
         });
-
-        serviceCollection.AddHttpClient<XaiImageGenerationClient>(x =>
+        
+        serviceCollection.AddSingleton<ImageClient>(_ =>
         {
             var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
-            x.BaseAddress = new Uri("https://api.x.ai/");
-            x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            return new ImageClient("grok-imagine-image", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+        });
+        
+        serviceCollection.AddHttpClient<IImageManipulationServiceClient, ImageManipulationServiceClient>(x =>
+        {
+            var imageManipulationServiceUrl = configuration.GetSectionOrThrow("IMAGE_MANIPULATION_SERVICE_URL");
+            x.BaseAddress = new Uri(imageManipulationServiceUrl);
             x.Timeout = TimeSpan.FromMinutes(5);
         });
 
@@ -46,21 +51,15 @@ public static class ServiceCollectionsExtensions
             x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
             x.Timeout = TimeSpan.FromMinutes(5);
         });
-
-        serviceCollection.AddHttpClient<IImageManipulationServiceClient, ImageManipulationServiceClient>(x =>
-        {
-            var imageManipulationServiceUrl = configuration.GetSectionOrThrow("IMAGE_MANIPULATION_SERVICE_URL");
-            x.BaseAddress = new Uri(imageManipulationServiceUrl);
-            x.Timeout = TimeSpan.FromMinutes(5);
-        });
-
+        
+        
         serviceCollection
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
-            .AddSingleton<IMessageRepository, MessageRepository>()
-            .AddSingleton<ISaveMessageService, SaveMessageService>()
-            .AddSingleton<OperationManager>()
+            .AddSingleton<IMessageRepository, MessageRepository>() 
+            .AddSingleton<ISaveMessageService, SaveMessageService>() 
+            .AddSingleton<OperationManager>() 
             .AddMemoryCache();
-
+        
         return serviceCollection;
     }
 }

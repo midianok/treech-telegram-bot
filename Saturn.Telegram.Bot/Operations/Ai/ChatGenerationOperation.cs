@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
-using Saturn.Bot.Service.Infrastructure.XaiChatClient;
-using Saturn.Bot.Service.Infrastructure.XaiChatClient.Model;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
@@ -16,7 +15,7 @@ namespace Saturn.Bot.Service.Operations.Ai;
 public class ChatGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly XaiChatClient _chatClient;
+    private readonly ChatClient _chatClient;
     private readonly ISaveMessageService _saveMessageService;
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
@@ -25,7 +24,7 @@ public class ChatGenerationOperation : IOperation
 
     public ChatGenerationOperation(
         TelegramBotClient telegramBotClient,
-        XaiChatClient chatClient,
+        ChatClient chatClient,
         ISaveMessageService saveMessageService,
         IChatCachedRepository chatCachedRepository,
         IMessageRepository messageRepository,
@@ -65,12 +64,12 @@ public class ChatGenerationOperation : IOperation
             .Replace($"{_invokeCommand}, ", string.Empty)
             .Replace($"{_invokeCommand} ", string.Empty);
 
-        var messages = new List<XaiMessage>();
+        var messages = new List<ChatMessage>();
 
         var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
         if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
         {
-            messages.Add(XaiMessage.System(chatEntity.AiAgent.Prompt));
+            messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
 
         var isReplyToBot = IsReplyToBot(msg);
@@ -80,24 +79,25 @@ public class ChatGenerationOperation : IOperation
             if (messageChain.Count > 0)
             {
                 var userChatMessages = messageChain.OrderBy(x => x.MessageDate)
-                    .Select(x => XaiMessage.User(x.Text));
+                    .Select(x => new UserChatMessage(x.Text));
                 messages.AddRange(userChatMessages);
             }
             else
             {
-                messages.Add(XaiMessage.User(msg.ReplyToMessage.Text));
+                messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
             }
         }
 
         if (!isReplyToBot && msg.ReplyToMessage is { Type: MessageType.Text } && !string.IsNullOrWhiteSpace(msg.ReplyToMessage.Text))
         {
-            messages.Add(XaiMessage.User(msg.ReplyToMessage.Text));
+            messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
         }
 
-        messages.Add(XaiMessage.User(request));
+        messages.Add(new UserChatMessage(request));
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
-        var result = await _chatClient.CompleteChatAsync(messages);
+        var clientResult = await _chatClient.CompleteChatAsync(messages);
+        var result = clientResult.Value.Content.FirstOrDefault()?.Text;
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
         await _saveMessageService.SaveMessageAsync(reply);
