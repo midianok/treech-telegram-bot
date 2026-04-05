@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
 
@@ -14,59 +14,28 @@ public class XaiImageEditClient
     {
         var base64Image = Convert.ToBase64String(imageBytes);
 
-        var request = new XaiImageEditRequest
+        var request = new
         {
-            Prompt = prompt,
-            Image = new XaiImageSource
+            model = "grok-imagine-image",
+            prompt,
+            image = new
             {
-                Url = $"data:image/jpeg;base64,{base64Image}"
+                type = "image_url",
+                url = $"data:image/jpeg;base64,{base64Image}"
             },
-            ResponseFormat = "b64_json"
+            response_format = "b64_json"
         };
 
         var response = await _httpClient.PostAsJsonAsync("v1/images/edits", request);
         response.EnsureSuccessStatusCode();
 
-        var result = await response.Content.ReadFromJsonAsync<XaiImageEditResponse>();
-        var b64 = result?.Data?.FirstOrDefault()?.B64Json
+        using var json = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        var b64 = json?.RootElement
+            .GetProperty("data")[0]
+            .GetProperty("b64_json")
+            .GetString()
             ?? throw new InvalidOperationException("Пустой ответ от xAI image edit API");
 
         return Convert.FromBase64String(b64);
     }
-}
-
-file class XaiImageEditRequest
-{
-    [JsonPropertyName("model")]
-    public string Model { get; init; } = "grok-imagine-image";
-
-    [JsonPropertyName("prompt")]
-    public required string Prompt { get; init; }
-
-    [JsonPropertyName("image")]
-    public required XaiImageSource Image { get; init; }
-
-    [JsonPropertyName("response_format")]
-    public string ResponseFormat { get; init; } = "b64_json";
-}
-
-file class XaiImageSource
-{
-    [JsonPropertyName("url")]
-    public required string Url { get; init; }
-
-    [JsonPropertyName("type")]
-    public string Type { get; init; } = "image_url";
-}
-
-file class XaiImageEditResponse
-{
-    [JsonPropertyName("data")]
-    public List<XaiImageEditData>? Data { get; init; }
-}
-
-file class XaiImageEditData
-{
-    [JsonPropertyName("b64_json")]
-    public string? B64Json { get; init; }
 }
