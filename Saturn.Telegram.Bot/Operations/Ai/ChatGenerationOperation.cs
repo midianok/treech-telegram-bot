@@ -12,17 +12,26 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
-public class ChatGenerationOperation : OperationBase
+public class ChatGenerationOperation : IOperation
 {
+    private readonly TelegramBotClient _telegramBotClient;
     private readonly ChatClient _chatClient;
     private readonly ISaveMessageService _saveMessageService;
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IMemoryCache _memoryCache;
     private readonly string _invokeCommand;
-    
-    public ChatGenerationOperation(ChatClient chatClient, ISaveMessageService saveMessageService, IChatCachedRepository chatCachedRepository, IMessageRepository messageRepository, IMemoryCache memoryCache, IConfiguration configuration)
+
+    public ChatGenerationOperation(
+        TelegramBotClient telegramBotClient,
+        ChatClient chatClient,
+        ISaveMessageService saveMessageService,
+        IChatCachedRepository chatCachedRepository,
+        IMessageRepository messageRepository,
+        IMemoryCache memoryCache,
+        IConfiguration configuration)
     {
+        _telegramBotClient = telegramBotClient;
         _chatClient = chatClient;
         _saveMessageService = saveMessageService;
         _chatCachedRepository = chatCachedRepository;
@@ -30,27 +39,39 @@ public class ChatGenerationOperation : OperationBase
         _messageRepository = messageRepository;
         _invokeCommand = configuration.GetSectionOrThrow("INVOKE_COMMAND");
     }
-    
-    protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
+
+    public bool Validate(Message msg, UpdateType type)
+    {
+        if (string.IsNullOrEmpty(msg.Text))
+        {
+            return false;
+        }
+
+        return msg.Text.StartsWith($"{_invokeCommand} ", StringComparison.CurrentCultureIgnoreCase) ||
+               msg.Text.StartsWith($"{_invokeCommand}, ", StringComparison.CurrentCultureIgnoreCase) ||
+               IsReplyToBot(msg);
+    }
+
+    public async Task OnMessageAsync(Message msg, UpdateType type)
     {
         if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
         {
-            await TelegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
+            await _telegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
             return;
         }
 
         var request = msg.Text!.ToLower()
             .Replace($"{_invokeCommand}, ", string.Empty)
             .Replace($"{_invokeCommand} ", string.Empty);
-        
+
         var messages = new List<ChatMessage>();
-        
+
         var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
         if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
         {
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
-        
+
         var isReplyToBot = IsReplyToBot(msg);
         if (isReplyToBot)
         {
@@ -71,36 +92,26 @@ public class ChatGenerationOperation : OperationBase
         {
             messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
         }
-        
+
         messages.Add(new UserChatMessage(request));
 
-        await TelegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
         var clientResult = await _chatClient.CompleteChatAsync(messages);
         var result = clientResult.Value.Content.FirstOrDefault()?.Text;
-            
-        var reply = await TelegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
+
+        var reply = await _telegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
         await _saveMessageService.SaveMessageAsync(reply);
     }
 
-    protected override bool ValidateMessage(Message msg, UpdateType type)
-    {
-        if (string.IsNullOrEmpty(msg.Text))
-        {
-            return false;
-        }
-        var isReplyToBot = IsReplyToBot(msg);
-        return msg.Text!.StartsWith($"{_invokeCommand} ", StringComparison.CurrentCultureIgnoreCase) ||
-               msg.Text!.StartsWith($"{_invokeCommand}, ", StringComparison.CurrentCultureIgnoreCase) ||
-               isReplyToBot;
-    }
+    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 
     private bool IsReplyToBot(Message msg)
     {
-        var bot = _memoryCache.GetOrCreate($"{nameof(ChatGenerationOperation)}_user_bot", async _ => await TelegramBotClient.GetMe())?.GetAwaiter().GetResult();
-        if (bot == null ||  msg.ReplyToMessage ==null || msg.ReplyToMessage.From == null)
+        var bot = _memoryCache.GetOrCreate($"{nameof(ChatGenerationOperation)}_user_bot", async _ => await _telegramBotClient.GetMe())?.GetAwaiter().GetResult();
+        if (bot == null || msg.ReplyToMessage == null || msg.ReplyToMessage.From == null)
         {
             return false;
         }
-        return  msg.ReplyToMessage.Type == MessageType.Text && msg.ReplyToMessage.From.Username == bot.Username;
+        return msg.ReplyToMessage.Type == MessageType.Text && msg.ReplyToMessage.From.Username == bot.Username;
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
@@ -8,17 +8,21 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Statistics;
 
-public class ShowAllTimeStatOperation : OperationBase
+public class ShowAllTimeStatOperation : IOperation
 {
+    private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
-    
-    public ShowAllTimeStatOperation(IDbContextFactory<SaturnContext> contextFactory) =>
-        _contextFactory = contextFactory;
 
-    protected override bool ValidateMessage(Message msg, UpdateType type) =>
+    public ShowAllTimeStatOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
+    {
+        _telegramBotClient = telegramBotClient;
+        _contextFactory = contextFactory;
+    }
+
+    public bool Validate(Message msg, UpdateType type) =>
         !string.IsNullOrEmpty(msg.Text) && msg.Text.ToLower() == "вся стата";
 
-    protected override async Task ProcessOnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
 
@@ -42,14 +46,15 @@ public class ShowAllTimeStatOperation : OperationBase
         foreach (var user in topUsersByMessageCount)
         {
             var userName = !string.IsNullOrEmpty(user.Username) ? $"@{user.Username}" : user.UserId.ToString();
-
             var emoji = GetEmoji(iterator++);
             replyMessage.Append($"{emoji} {user.FirstName} {user.LastName} ({userName}): {user.MessageCount}\n");
         }
 
-        await TelegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
+        await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
             new ReplyParameters { MessageId = msg.Id });
     }
+
+    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 
     private string GetEmoji(int iterator) =>
         iterator switch
