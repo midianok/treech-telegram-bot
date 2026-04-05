@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Logging;
 using OpenAI.Images;
 using Saturn.Telegram.Lib.Operation;
+using System.ClientModel;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -10,11 +12,13 @@ public class ImageGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
     private readonly ImageClient _imageClient;
+    private readonly ILogger<ImageGenerationOperation> _logger;
 
-    public ImageGenerationOperation(TelegramBotClient telegramBotClient, ImageClient imageClient)
+    public ImageGenerationOperation(TelegramBotClient telegramBotClient, ImageClient imageClient, ILogger<ImageGenerationOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
         _imageClient = imageClient;
+        _logger = logger;
     }
 
     public bool Validate(Message msg, UpdateType type) =>
@@ -29,18 +33,26 @@ public class ImageGenerationOperation : IOperation
         }
 
         var request = msg.Text.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи ", string.Empty);
-        var clientResult = _imageClient.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes });
-
-        while (!clientResult.IsCompleted)
+        try
         {
-            await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-        await Task.WhenAll(clientResult);
-        var result = clientResult.Result.Value.ImageBytes.ToArray();
+            var clientResult = _imageClient.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes });
 
-        using var generatedImage = new MemoryStream(result);
-        await _telegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedImage), replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+            while (!clientResult.IsCompleted)
+            {
+                await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+            await Task.WhenAll(clientResult);
+            var result = clientResult.Result.Value.ImageBytes.ToArray();
+
+            using var generatedImage = new MemoryStream(result);
+            await _telegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedImage), replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+        }
+        catch (ClientResultException ex) when (ex.Status == 429)
+        {
+            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
+            await _telegramBotClient.SendMessage(msg.Chat.Id, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+        }
     }
 
     public Task OnUpdateAsync(Update update) => Task.CompletedTask;
