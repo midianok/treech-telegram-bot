@@ -1,7 +1,8 @@
-﻿using System.Text.Encodings.Web;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -13,18 +14,23 @@ public class OperationManager
 {
     private readonly IEnumerable<IOperation> _operations;
     private readonly ILogger<OperationManager> _logger;
-    
+    private readonly ICooldownService _cooldownService;
+
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         WriteIndented = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping 
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    public OperationManager(IEnumerable<IOperation> operations, ILogger<OperationManager> logger)
+    public OperationManager(
+        IEnumerable<IOperation> operations,
+        ILogger<OperationManager> logger,
+        ICooldownService cooldownService)
     {
         _operations = operations;
         _logger = logger;
+        _cooldownService = cooldownService;
     }
 
     public async Task MessageHandler(Message msg, UpdateType type)
@@ -36,9 +42,15 @@ public class OperationManager
                 continue;
             }
 
+            if (await _cooldownService.IsCooldownAsync(operation, msg))
+            {
+                continue;
+            }
+
             try
             {
                 await operation.OnMessageAsync(msg, type);
+                _cooldownService.SetCooldown(operation, msg);
             }
             catch (Exception exception)
             {
@@ -46,7 +58,7 @@ public class OperationManager
             }
         }
     }
-    
+
     public async Task UpdateHandler(Update update)
     {
         foreach (var operation in _operations)

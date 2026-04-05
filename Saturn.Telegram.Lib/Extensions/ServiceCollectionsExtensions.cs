@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 
@@ -23,6 +24,7 @@ public static class ServiceCollectionsExtensions
             operations.Select(serviceProvider.GetRequiredService).Cast<IOperation>());
 
         serviceCollection.AddSingleton<TelegramBotClient>(_ => new TelegramBotClient(botToken));
+        serviceCollection.AddSingleton<ICooldownService, CooldownService>();
 
         serviceCollection.AddHostedService<TelegramHostedService>();
         return serviceCollection;
