@@ -5,7 +5,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Infrastructure;
 
-public class SaveMessageOperation : OperationBase
+public class SaveMessageOperation : IOperation
 {
     private readonly ISaveMessageService _saveMessageService;
 
@@ -13,6 +13,11 @@ public class SaveMessageOperation : OperationBase
     {
         _saveMessageService = saveMessageService;
     }
-    protected override Task ProcessOnMessageAsync(Message msg, UpdateType type) => 
+
+    public bool Validate(Message msg, UpdateType type) => true;
+
+    public Task OnMessageAsync(Message msg, UpdateType type) =>
         _saveMessageService.SaveMessageAsync(msg);
+
+    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }
