@@ -16,6 +16,7 @@ public class ImageEditOperation : IOperation
 {
     private const string CommandPrefix1 = "отредактируй";
     private const string CommandPrefix2 = "измени";
+    private const int MaxImages = 3;
 
     private readonly TelegramBotClient _telegramBotClient;
     private readonly XaiImageEditClient _xaiImageEditClient;
@@ -32,11 +33,22 @@ public class ImageEditOperation : IOperation
 
     public bool Validate(Message msg, UpdateType type)
     {
+        if (type != UpdateType.Message) return false;
         var text = msg.Text ?? msg.Caption;
-        return type == UpdateType.Message &&
-               msg.ReplyToMessage is { Type: MessageType.Photo, Photo: not null } &&
-               (text?.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) == true ||
-                text?.StartsWith(CommandPrefix2, StringComparison.CurrentCultureIgnoreCase) == true);
+        var hasPrefix = text?.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) == true ||
+                        text?.StartsWith(CommandPrefix2, StringComparison.CurrentCultureIgnoreCase) == true;
+
+        if (!hasPrefix) return false;
+
+        // Reply to a photo (existing behaviour)
+        if (msg.ReplyToMessage is { Type: MessageType.Photo, Photo: not null })
+            return true;
+
+        // Own message with photo(s) attached
+        if (msg.Photo != null)
+            return true;
+
+        return false;
     }
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
@@ -51,12 +63,32 @@ public class ImageEditOperation : IOperation
         var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
         var prompt = text[prefix.Length..].Trim();
 
-        var fileId = msg.ReplyToMessage!.Photo!.MaxBy(x => x.FileSize)!.FileId;
-        var imageBytes = await _telegramBotClient.DownloadFileAsync(fileId);
+        var images = new List<byte[]>();
 
+        // Photos from the replied-to message
+        if (msg.ReplyToMessage?.Photo != null)
+        {
+            var fileId = msg.ReplyToMessage.Photo.MaxBy(x => x.FileSize)!.FileId;
+            images.Add(await _telegramBotClient.DownloadFileAsync(fileId));
+        }
+
+        // Photos attached to the user's own message
+        if (msg.Photo != null)
+        {
+            var fileId = msg.Photo.MaxBy(x => x.FileSize)!.FileId;
+            images.Add(await _telegramBotClient.DownloadFileAsync(fileId));
+        }
+
+        await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt);
+    }
+
+    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
+
+    private async Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt)
+    {
         try
         {
-            var editTask = _xaiImageEditClient.EditImageAsync(imageBytes, prompt);
+            var editTask = _xaiImageEditClient.EditImageAsync(images, prompt);
 
             while (!editTask.IsCompleted)
             {
@@ -80,6 +112,4 @@ public class ImageEditOperation : IOperation
             await _telegramBotClient.SendMessage(msg.Chat.Id, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
         }
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }
