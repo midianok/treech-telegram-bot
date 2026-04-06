@@ -10,21 +10,36 @@ public class XaiImageEditClient
     public XaiImageEditClient(HttpClient httpClient) =>
         _httpClient = httpClient;
 
-    public async Task<byte[]> EditImageAsync(byte[] imageBytes, string prompt)
+    public async Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> imageBytesList, string prompt)
     {
-        var base64Image = Convert.ToBase64String(imageBytes);
-
-        var request = new
+        object request;
+        if (imageBytesList.Count == 1)
         {
-            model = "grok-imagine-image",
-            prompt,
-            image = new
+            request = new
             {
-                type = "image_url",
-                url = $"data:image/jpeg;base64,{base64Image}"
-            },
-            response_format = "b64_json"
-        };
+                model = "grok-imagine-image",
+                prompt,
+                image = new
+                {
+                    type = "image_url",
+                    url = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytesList[0])}"
+                },
+                response_format = "b64_json"
+            };
+        }
+        else
+        {
+            var images = imageBytesList
+                .Select(b => new { type = "image_url", url = $"data:image/jpeg;base64,{Convert.ToBase64String(b)}" })
+                .ToArray();
+            request = new
+            {
+                model = "grok-imagine-image",
+                prompt,
+                images,
+                response_format = "b64_json"
+            };
+        }
 
         var response = await _httpClient.PostAsJsonAsync("v1/images/edits", request);
         response.EnsureSuccessStatusCode();
