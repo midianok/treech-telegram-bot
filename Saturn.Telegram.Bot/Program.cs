@@ -8,6 +8,7 @@ using Saturn.Telegram.Lib.Extensions;
 var builder = Host.CreateApplicationBuilder();
 
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
+builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
 var botToken = builder.Configuration.GetSectionOrThrow("BOT_TOKEN");
 
 builder.Services
@@ -21,6 +22,7 @@ builder.Logging.AddTelegramLogger(opts =>
     opts.MinimumLevel = LogLevel.Information;
     opts.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Error);
     opts.AddFilter("Microsoft.EntityFrameworkCore.Migrations", LogLevel.Error);
+    opts.AddFilter("System.Net.Http.HttpClient", LogLevel.Error);
 });
 
 builder.Services.AddSaturnContext(builder.Configuration);
