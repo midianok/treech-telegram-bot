@@ -10,6 +10,7 @@ using Telegram.Bot.Types.Enums;
 namespace Saturn.Bot.Service.Operations.Ai;
 
 [Cooldown(120)]
+[GlobalCooldown(10)]
 public class ImageGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;

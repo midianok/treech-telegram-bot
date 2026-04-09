@@ -7,6 +7,7 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using System.ClientModel;
+using Saturn.Telegram.Lib.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -14,6 +15,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
+[GlobalCooldown(30)]
 public class ChatGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
