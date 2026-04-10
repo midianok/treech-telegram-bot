@@ -15,7 +15,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
-[GlobalCooldown(30)]
+[GlobalCooldown(10)]
 public class ChatGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
