@@ -46,7 +46,21 @@ public class ImageDistortionOperation : IOperation
         }
         else if (msg.ReplyToMessage!.Type == MessageType.Video || msg.ReplyToMessage!.Type == MessageType.Animation)
         {
-            var resultBytes = await _distortionService.DistortVideoAsync(fileBytes);
+            var progressMsg = await _telegramBotClient.SendMessage(msg.Chat.Id, "Жмыхаем",
+                replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+
+            var onProgress = CreateProgressCallback(msg.Chat.Id, progressMsg.MessageId);
+
+            byte[] resultBytes;
+            try
+            {
+                resultBytes = await _distortionService.DistortVideoAsync(fileBytes, onProgress);
+            }
+            finally
+            {
+                await _telegramBotClient.DeleteMessage(msg.Chat.Id, progressMsg.MessageId);
+            }
+
             using var sendStream = new MemoryStream(resultBytes);
             await _telegramBotClient.SendVideo(msg.Chat.Id, new InputFileStream(sendStream),
                 replyParameters: new ReplyParameters { MessageId = msg.MessageId });
@@ -54,6 +68,37 @@ public class ImageDistortionOperation : IOperation
     }
 
     public Task OnUpdateAsync(Update update) => Task.CompletedTask;
+
+    private Func<int, Task> CreateProgressCallback(long chatId, int messageId)
+    {
+        var lastReported = -1;
+        var lastUpdateTime = DateTime.MinValue;
+        return async percent =>
+        {
+            if (percent == lastReported)
+            {
+                return;
+            }
+            
+            var now = DateTime.UtcNow;
+            if (percent < 100 && (now - lastUpdateTime).TotalMilliseconds < 1000)
+            {
+                return;
+            }
+            
+            lastReported = percent;
+            lastUpdateTime = now;
+
+            try
+            {
+                await _telegramBotClient.EditMessageText(chatId, messageId, $"Жмыхнуто на {percent}%");
+            }
+            catch
+            {
+                 /* ignore rate limit errors */
+            }
+        };
+    }
 
     private string GetFileId(Message msg) =>
         msg.ReplyToMessage!.Type switch

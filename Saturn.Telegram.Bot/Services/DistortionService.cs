@@ -2,6 +2,7 @@ using System.Diagnostics;
 using ImageMagick;
 using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Services.Abstractions;
+using Xabe.FFmpeg;
 
 namespace Saturn.Bot.Service.Services;
 
@@ -30,7 +31,7 @@ public class DistortionService : IDistortionService
         return result;
     }
 
-    public async Task<byte[]> DistortVideoAsync(byte[] video)
+    public async Task<byte[]> DistortVideoAsync(byte[] video, Func<int, Task>? onProgress = null)
     {
         var totalStopwatch = Stopwatch.StartNew();
         _logger.LogInformation("Start distorting video");
@@ -45,41 +46,59 @@ public class DistortionService : IDistortionService
             await File.WriteAllBytesAsync(videoFilePath, video);
             _logger.LogInformation("File saved: {Path} ({Size} KB)", videoFilePath, video.Length / 1000);
 
+            var ffmpegExe = FFmpeg.ExecutablesPath != null
+                ? Path.Combine(FFmpeg.ExecutablesPath, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg")
+                : "ffmpeg";
+
             using (var process = new Process())
             {
                 process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.RedirectStandardOutput = false;
-                process.StartInfo.FileName = "ffmpeg";
-                process.StartInfo.Arguments = $"-i {videoFilePath} -r 15 {Path.Combine(fileTempDir, id.ToString())}_%d.png";
+                process.StartInfo.FileName = ffmpegExe;
+                process.StartInfo.Arguments = $"-i \"{videoFilePath}\" -r 15 \"{Path.Combine(fileTempDir, id.ToString())}_%d.png\"";
                 process.Start();
                 await process.WaitForExitAsync();
             }
             _logger.LogInformation("Frames extracted");
 
-            var frames = Directory.GetFiles(fileTempDir, $"{id}*.png")
+            var framePaths = Directory.GetFiles(fileTempDir, $"{id}*.png")
                 .OrderBy(x => x.Length)
                 .ThenBy(x => x)
-                .Select(x => new MagickImage(x))
                 .ToList();
 
-            using var result = new MagickImageCollection();
-            _logger.LogInformation("Distorting {Count} frames", frames.Count);
-            var frameNum = 1;
-            foreach (var image in frames)
+            var distortedDir = Path.Combine(fileTempDir, "distorted");
+            Directory.CreateDirectory(distortedDir);
+
+            _logger.LogInformation("Distorting {Count} frames", framePaths.Count);
+            for (var i = 0; i < framePaths.Count; i++)
             {
-                var w = image.Width;
-                var h = image.Height;
+                using var image = new MagickImage(framePaths[i]);
                 image.LiquidRescale(new Percentage(40), new Percentage(40), 1, 0);
-                image.Resize(w, h);
-                result.Add(image);
-                _logger.LogInformation("Frame {N} distorted", frameNum++);
+                image.Resize(image.Width, image.Height);
+                
+                await image.WriteAsync(Path.Combine(distortedDir, $"frame_{i + 1}.png"));
+                _logger.LogInformation("Frame {N} distorted", i + 1);
+
+                if (onProgress != null)
+                {
+                    await onProgress((i + 1) * 100 / framePaths.Count);
+                }
             }
 
-            using var memoryStream = new MemoryStream();
-            await result.WriteAsync(memoryStream, MagickFormat.Mp4);
+            var outputVideoPath = Path.Combine(fileTempDir, $"{id}_output.mp4");
+            using (var process = new Process())
+            {
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.FileName = ffmpegExe;
+                process.StartInfo.Arguments = $"-y -framerate 15 -i \"{Path.Combine(distortedDir, "frame_%d.png")}\" -vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" -c:v libx264 -pix_fmt yuv420p \"{outputVideoPath}\"";
+                process.Start();
+                await process.WaitForExitAsync();
+            }
+            _logger.LogInformation("Frames reassembled");
+
+            var result = await File.ReadAllBytesAsync(outputVideoPath);
             totalStopwatch.Stop();
             _logger.LogInformation("Video distortion finished. Elapsed time: {Elapsed} sec", totalStopwatch.ElapsedMilliseconds / 1000.0);
-            return memoryStream.ToArray();
+            return result;
         }
         finally
         {
