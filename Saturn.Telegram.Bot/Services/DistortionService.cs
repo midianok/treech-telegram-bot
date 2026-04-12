@@ -9,6 +9,7 @@ namespace Saturn.Bot.Service.Services;
 public class DistortionService : IDistortionService
 {
     private readonly ILogger<DistortionService> _logger;
+    private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
     private const string TempDirectory = "Temp";
 
     public DistortionService(ILogger<DistortionService> logger)
@@ -33,12 +34,14 @@ public class DistortionService : IDistortionService
 
     public async Task<byte[]> DistortVideoAsync(byte[] video, Func<int, Task>? onProgress = null)
     {
-        var totalStopwatch = Stopwatch.StartNew();
-        _logger.LogInformation("Start distorting video");
+        await _semaphoreSlim.WaitAsync();
         var id = Guid.NewGuid();
         var fileTempDir = Path.Combine(TempDirectory, id.ToString());
         try
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            _logger.LogInformation("Start distorting video");
+                
             Directory.CreateDirectory(fileTempDir);
             _logger.LogInformation("Frames directory created: {FileTempDir}", fileTempDir);
 
@@ -103,6 +106,7 @@ public class DistortionService : IDistortionService
         finally
         {
             Directory.Delete(fileTempDir, true);
+            _semaphoreSlim.Release();
         }
     }
 }
