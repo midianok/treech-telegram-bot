@@ -1,0 +1,17 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "http://localhost:5237",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "CONNECTION_STRING_local" : "Host=localhost;Port=5432;Database=saturn;Username=postgres;Password=mysecretpassword",
+        "CONNECTION_STRING" : "Host=152.53.94.213;Port=5432;Database=saturn;Username=postgres;Password=2Y1Eqt35h7cE"
+      }
+    }
+  }
+}
