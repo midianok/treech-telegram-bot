@@ -29,10 +29,18 @@ internal class TelegramHostedService : IHostedService
         await _telegramBotClient.DropPendingUpdates(cancellationToken: cancellationToken);
         var operationNames = _operations.Select(x => x.GetType().Name);
         _hostedServiceLogger.LogInformation("Starting hosted service. Enabled operations: {operations}", string.Join(", ", operationNames));
-
+        
+        _telegramBotClient.OnMessage += (msg, type) =>
+        {
+            _ = Task.Run(() => _operationManager.MessageHandler(msg, type), cancellationToken); 
+            return Task.CompletedTask;
+        };
+        _telegramBotClient.OnUpdate += msg =>
+        {
+            _ = Task.Run(() => _operationManager.UpdateHandler(msg), cancellationToken); 
+            return Task.CompletedTask;
+        };
         _telegramBotClient.OnError += _operationManager.ErrorHandler;
-        _telegramBotClient.OnMessage += _operationManager.MessageHandler;
-        _telegramBotClient.OnUpdate += _operationManager.UpdateHandler;
     }
 
     public Task StopAsync(CancellationToken cancellationToken) =>
