@@ -47,10 +47,11 @@ public static class ServiceCollectionsExtensions
         
         serviceCollection
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
-            .AddSingleton<IMessageRepository, MessageRepository>() 
+            .AddSingleton<IMessageRepository, MessageRepository>()
             .AddSingleton<IDistortionService, DistortionService>()
-            .AddSingleton<ISaveMessageService, SaveMessageService>() 
-            .AddSingleton<OperationManager>() 
+            .AddSingleton<ISaveMessageService, SaveMessageService>()
+            .AddSingleton<OperationManager>()
+            .AddHostedService<FfmpegSetupService>()
             .AddMemoryCache();
         
         return serviceCollection;
