@@ -1,5 +1,4 @@
 ﻿using System.ClientModel;
-using HttpClients;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
@@ -36,13 +35,6 @@ public static class ServiceCollectionsExtensions
             var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
             return new ImageClient("grok-imagine-image", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
         });
-        
-        serviceCollection.AddHttpClient<IImageManipulationServiceClient, ImageManipulationServiceClient>(x =>
-        {
-            var imageManipulationServiceUrl = configuration.GetSectionOrThrow("IMAGE_MANIPULATION_SERVICE_URL");
-            x.BaseAddress = new Uri(imageManipulationServiceUrl);
-            x.Timeout = TimeSpan.FromMinutes(5);
-        });
 
         serviceCollection.AddHttpClient<XaiImageEditClient>(x =>
         {
@@ -56,6 +48,7 @@ public static class ServiceCollectionsExtensions
         serviceCollection
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
             .AddSingleton<IMessageRepository, MessageRepository>() 
+            .AddSingleton<IDistortionService, DistortionService>()
             .AddSingleton<ISaveMessageService, SaveMessageService>() 
             .AddSingleton<OperationManager>() 
             .AddMemoryCache();

@@ -41,7 +41,7 @@ public class SaveMessageService : ISaveMessageService
         }
     }
     
-    private async Task ProcessMessage(Message msg, SaturnContext db) => 
+    private async Task ProcessMessage(Message msg, SaturnContext db) =>
         await db.Messages.AddAsync(CreateMessage(msg));
     
     private async Task ProcessChat(Message msg, SaturnContext db)
