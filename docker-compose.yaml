@@ -10,14 +10,6 @@
     depends_on:
       db:
         condition: service_healthy
-      image-manipulation-service:
-        condition: service_started
-
-  image-manipulation-service:
-    image: midianok/image-manipulation-service:latest
-    restart: always
-    environment:
-      ASPNETCORE_URLS: "http://*:80"
 
   db:
     image: postgres:17
