@@ -29,7 +29,7 @@ public class ShowTopStatOperation : IOperation
         var monday = GetMondayDate();
 
         var topUsersByMessageCount = await db.Messages
-            .Where(x => x.ChatId == msg.Chat.Id && x.MessageDate > monday && x.MessageDate < DateTime.Now)
+            .Where(x => x.ChatId == msg.Chat.Id && x.MessageDate >= monday && x.MessageDate < DateTime.Now)
             .GroupBy(x => x.UserId)
             .Select(x => new
             {
