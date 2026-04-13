@@ -91,4 +91,4 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             docker compose pull saturn saturn-api
-            docker compose up -d --no-deps saturn saturn-api
+            docker compose up -d saturn saturn-api
