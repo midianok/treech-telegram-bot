@@ -35,6 +35,14 @@ if (!string.IsNullOrWhiteSpace(pathBase))
     app.UsePathBase(pathBase);
 }
 
+app.UseSwagger(options =>
+{
+    options.RouteTemplate = "swagger/{documentName}/swagger.json";
+});
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("v1/swagger.json", "Saturn API v1");
+});
 app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
