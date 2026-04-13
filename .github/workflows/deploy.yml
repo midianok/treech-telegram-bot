@@ -6,11 +6,9 @@ on:
       - master
 
 jobs:
-  build-and-push:
-    name: Build & Push Docker image
+  build-and-push-bot:
+    name: Build & Push Bot image
     runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout
@@ -36,10 +34,38 @@ jobs:
           cache-from: type=registry,ref=midianok/saturn:cache
           cache-to: type=registry,ref=midianok/saturn:cache,mode=max
 
+  build-and-push-api:
+    name: Build & Push API image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Saturn.Telegram.Api/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: midianok/saturn-api:latest
+          cache-from: type=registry,ref=midianok/saturn-api:cache
+          cache-to: type=registry,ref=midianok/saturn-api:cache,mode=max
+
   deploy:
     name: Deploy to server
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [build-and-push-bot, build-and-push-api]
 
     steps:
       - name: Deploy via SSH
@@ -50,5 +76,5 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            docker compose pull saturn
-            docker compose up -d --no-deps saturn
+            docker compose pull saturn saturn-api
+            docker compose up -d --no-deps saturn saturn-api

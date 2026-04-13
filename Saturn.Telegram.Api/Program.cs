@@ -11,24 +11,17 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+        policy.WithOrigins("https://routefabric.ru")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseCors();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
-app.Run();
+app.Run("http://0.0.0.0:5001");
