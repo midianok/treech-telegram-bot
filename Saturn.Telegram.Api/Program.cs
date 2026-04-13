@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Saturn.Telegram.Db.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+var pathBase = builder.Configuration["PATH_BASE"];
 
 // Add services to the container.
 
@@ -18,8 +20,21 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+if (!string.IsNullOrWhiteSpace(pathBase))
+{
+    if (!pathBase.StartsWith('/'))
+    {
+        pathBase = "/" + pathBase;
+    }
+
+    app.UsePathBase(pathBase);
+}
+
 app.UseCors();
 app.UseAuthorization();
 app.MapControllers();
