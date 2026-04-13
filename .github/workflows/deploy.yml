@@ -68,6 +68,20 @@ jobs:
     needs: [build-and-push-bot, build-and-push-api]
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Copy docker-compose.yaml to server
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: "docker-compose.yaml"
+          target: ${{ secrets.DEPLOY_PATH }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
