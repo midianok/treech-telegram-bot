@@ -41,8 +41,19 @@ public class SaveMessageService : ISaveMessageService
         }
     }
     
-    private async Task ProcessMessage(Message msg, SaturnContext db) =>
-        await db.Messages.AddAsync(CreateMessage(msg));
+    private async Task ProcessMessage(Message msg, SaturnContext db)
+    {
+        var entity = CreateMessage(msg);
+        var exists = await db.Messages.AnyAsync(m => m.Id == msg.Id && m.ChatId == msg.Chat.Id);
+        if (exists)
+        {
+            db.Messages.Update(entity);
+        }
+        else
+        {
+            await db.Messages.AddAsync(entity);
+        }
+    }
     
     private async Task ProcessChat(Message msg, SaturnContext db)
     {
