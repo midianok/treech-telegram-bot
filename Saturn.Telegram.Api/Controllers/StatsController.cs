@@ -16,7 +16,7 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
         var monday = GetMondayDate();
 
         var users = await db.Messages
-            .Where(x => x.ChatId == chatId && x.MessageDate > monday && x.MessageDate < DateTime.Now)
+            .Where(x => x.ChatId == chatId && x.MessageDate >= monday && x.MessageDate < DateTime.Now)
             .GroupBy(x => x.UserId)
             .Select(x => new
             {
