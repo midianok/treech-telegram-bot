@@ -11,7 +11,6 @@ namespace Saturn.Bot.Service.Services;
 public class SaveMessageService : ISaveMessageService
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
-    private readonly SemaphoreSlim _semaphoreSlim = new(1, 1);
     private readonly IMemoryCache _memoryCache;
 
     public SaveMessageService(IDbContextFactory<SaturnContext> contextFactory, IMemoryCache memoryCache)
@@ -19,30 +18,33 @@ public class SaveMessageService : ISaveMessageService
         _contextFactory = contextFactory;
         _memoryCache = memoryCache;
     }
-    
+
     public async Task SaveMessageAsync(Message msg)
     {
         if (msg.From == null) return;
-        
-        await _semaphoreSlim.WaitAsync();
-        try
-        {
-            await using var db = await _contextFactory.CreateDbContextAsync();
-        
-            await ProcessUser(msg, db);
-            await ProcessChat(msg, db);
-            await ProcessMessage(msg, db);
 
-            await db.SaveChangesAsync();
-        }
-        finally
-        {
-            _semaphoreSlim.Release();
-        }
+        await using var db = await _contextFactory.CreateDbContextAsync();
+
+        await ProcessUser(msg, db);
+        await ProcessChat(msg, db);
+        await ProcessMessage(msg, db);
+
+        await db.SaveChangesAsync();
     }
     
-    private async Task ProcessMessage(Message msg, SaturnContext db) => 
-        await db.Messages.AddAsync(CreateMessage(msg));
+    private async Task ProcessMessage(Message msg, SaturnContext db)
+    {
+        var entity = CreateMessage(msg);
+        var exists = await db.Messages.AnyAsync(m => m.Id == msg.Id && m.ChatId == msg.Chat.Id);
+        if (exists)
+        {
+            db.Messages.Update(entity);
+        }
+        else
+        {
+            await db.Messages.AddAsync(entity);
+        }
+    }
     
     private async Task ProcessChat(Message msg, SaturnContext db)
     {

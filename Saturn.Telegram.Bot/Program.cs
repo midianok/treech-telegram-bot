@@ -19,10 +19,7 @@ builder.Logging.AddTelegramLogger(opts =>
 {
     var loggingChatId = builder.Configuration.GetSectionOrThrow("LOG_CHAT_ID").ParseLong();
     opts.TelegramLoggingChatId = loggingChatId;
-    opts.MinimumLevel = LogLevel.Information;
-    opts.AddFilter("Microsoft.Hosting.Lifetime", LogLevel.Error);
-    opts.AddFilter("Microsoft.EntityFrameworkCore.Migrations", LogLevel.Error);
-    opts.AddFilter("System.Net.Http.HttpClient", LogLevel.Error);
+    opts.MinimumLevel = LogLevel.Error;
 });
 
 builder.Services.AddSaturnContext(builder.Configuration);
