@@ -30,6 +30,28 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
         return Ok(new { users });
     }
 
+    [HttpGet("monthly")]
+    public async Task<IActionResult> GetMonthly([FromQuery] long chatId, CancellationToken cancellationToken)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+        var users = await db.Messages
+            .Where(x => x.ChatId == chatId && x.MessageDate >= firstDayOfMonth && x.MessageDate < DateTime.Now)
+            .GroupBy(x => x.UserId)
+            .Select(x => new
+            {
+                Name = (x.First().User!.FirstName + " " + x.First().User!.LastName).Trim(),
+                Count = x.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .Take(10)
+            .ToListAsync(cancellationToken);
+
+        return Ok(new { users });
+    }
+
     private static DateTime GetMondayDate() =>
         DateTime.Now.DayOfWeek switch
         {
