@@ -54,7 +54,7 @@ public class ShowTopStatOperation : IOperation
         }
 
         var keyboard = new InlineKeyboardMarkup(
-            InlineKeyboardButton.WithUrl("Открыть приложение", "https://t.me/TreechBot/app"));
+            InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/TreechBot/app?startapp={msg.Chat.Id}"));
 
         await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
             new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);
