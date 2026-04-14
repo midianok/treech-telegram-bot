@@ -4,6 +4,7 @@ using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Saturn.Bot.Service.Operations.Statistics;
 
@@ -42,7 +43,11 @@ public class ShowUserStatOperation : IOperation
                             📹 Видео: {messageTypes.Count(x => x.Type == (int) MessageType.Video)}
                             """;
 
-        await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None, new ReplyParameters { MessageId = msg.Id });
+        var keyboard = new InlineKeyboardMarkup(
+            InlineKeyboardButton.WithUrl("Открыть приложение", "https://t.me/TreechBot/app"));
+
+        await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None,
+            new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);
     }
 
     public Task OnUpdateAsync(Update update) => Task.CompletedTask;
