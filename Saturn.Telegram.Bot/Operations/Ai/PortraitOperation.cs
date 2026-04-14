@@ -15,7 +15,7 @@ namespace Saturn.Bot.Service.Operations.Ai;
 
 public class PortraitOperation : IOperation
 {
-    private const int MaxMessages = 500;
+    private const int MaxMessages = 1000;
 
     private static readonly ConcurrentDictionary<(long ChatId, long UserId), string> Cache = new();
 
