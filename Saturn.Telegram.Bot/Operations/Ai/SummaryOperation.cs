@@ -47,6 +47,7 @@ public class SummaryOperation : IOperation
 
         var messages = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id &&
+                        x.UserId != 5990847351 &&
                         x.MessageDate >= today &&
                         x.MessageDate < tomorrow &&
                         x.Text != null)
