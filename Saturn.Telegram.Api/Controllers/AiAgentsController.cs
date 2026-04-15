@@ -3,12 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/ai-agents")]
-public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
+public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory, IChatCachedRepository chatCachedRepository) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
@@ -51,6 +52,7 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory)
 
         agent.Prompt = request.Prompt;
         await db.SaveChangesAsync(cancellationToken);
+        await chatCachedRepository.InvalidateByAgentAsync(id, cancellationToken);
 
         return Ok(new AiAgentDto(agent.Id, agent.Name, agent.Prompt));
     }
