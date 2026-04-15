@@ -30,9 +30,9 @@ public class ChatCachedRepository : IChatCachedRepository
     public async Task SetAiAgentAsync(long chatId, Guid agentId, CancellationToken cancellationToken = default)
     {
         await using var context = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var chat = await context.Chats.SingleAsync(x => x.Id == chatId, cancellationToken);
-        chat.AiAgentId = agentId;
-        await context.SaveChangesAsync(cancellationToken);
+        await context.Chats
+            .Where(x => x.Id == chatId)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.AiAgentId, agentId), cancellationToken);
 
         var key = $"{nameof(ChatEntity)}:{chatId}";
         _memoryCache.Remove(key);
