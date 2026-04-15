@@ -6,9 +6,7 @@ public class AiAgentEntity
 
     public string Name { get; set; }
 
-    public string Code { get; set; }
-    
-    public string Prompt { get; set; }
+public string Prompt { get; set; }
 
     public virtual List<ChatEntity> Chats { get; set; }
     

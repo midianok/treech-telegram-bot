@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Saturn.Telegram.Db.Extensions;
+using Saturn.Telegram.Db.Repositories;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 
 var builder = WebApplication.CreateBuilder(args);
 var pathBase = builder.Configuration["PATH_BASE"];
@@ -7,6 +9,8 @@ var pathBase = builder.Configuration["PATH_BASE"];
 // Add services to the container.
 
 builder.Services.AddSaturnContext(builder.Configuration);
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IChatCachedRepository, ChatCachedRepository>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
