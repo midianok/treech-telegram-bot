@@ -37,4 +37,19 @@ public class ChatCachedRepository : IChatCachedRepository
         var key = $"{nameof(ChatEntity)}:{chatId}";
         _memoryCache.Remove(key);
     }
+
+    public async Task InvalidateByAgentAsync(Guid agentId, CancellationToken cancellationToken = default)
+    {
+        await using var context = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var chatIds = await context.Chats
+            .Where(x => x.AiAgentId == agentId)
+            .Select(x => x.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var chatId in chatIds)
+        {
+            var key = $"{nameof(ChatEntity)}:{chatId}";
+            _memoryCache.Remove(key);
+        }
+    }
 }

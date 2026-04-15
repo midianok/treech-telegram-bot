@@ -10,6 +10,24 @@ namespace Saturn.Telegram.Api.Controllers;
 [Route("api/chats")]
 public class ChatsController(IDbContextFactory<SaturnContext> contextFactory, IChatCachedRepository chatCachedRepository) : ControllerBase
 {
+    [HttpGet("{chatId:long}/ai-agent")]
+    public async Task<IActionResult> GetAiAgent(long chatId, CancellationToken cancellationToken)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var chat = await db.Chats
+            .Include(x => x.AiAgent)
+            .FirstOrDefaultAsync(x => x.Id == chatId, cancellationToken);
+
+        if (chat is null)
+            return NotFound("Chat not found");
+
+        if (chat.AiAgent is null)
+            return Ok(null);
+
+        return Ok(new AiAgentDto(chat.AiAgent.Id, chat.AiAgent.Name, chat.AiAgent.Prompt));
+    }
+
     [HttpPut("{chatId:long}/ai-agent")]
     public async Task<IActionResult> SetAiAgent(long chatId, [FromBody] SetChatAiAgentRequest request, CancellationToken cancellationToken)
     {
