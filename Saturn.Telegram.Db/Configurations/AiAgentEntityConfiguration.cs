@@ -13,14 +13,7 @@ public class AiAgentEntityConfiguration : IEntityTypeConfiguration<AiAgentEntity
         builder.Property(x => x.Prompt)
             .IsRequired();
 
-        builder.HasIndex(x => x.Code)
-            .IsUnique();
-        
-        builder.Property(x => x.Code)
-            .HasMaxLength(128)
-            .IsRequired();
-        
-        builder.Property(x => x.Name)
+builder.Property(x => x.Name)
             .HasMaxLength(128)
             .IsRequired();
         
