@@ -3,13 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
-using Saturn.Telegram.Db.Repositories.Abstractions;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/ai-agents")]
-public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory, IChatCachedRepository chatCachedRepository) : ControllerBase
+public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
@@ -48,12 +47,38 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory,
 
         var agent = await db.AiAgents.FindAsync([id], cancellationToken);
         if (agent is null)
+        {
             return NotFound();
+        }
 
         agent.Prompt = request.Prompt;
+        db.AiAgents.Update(agent);
         await db.SaveChangesAsync(cancellationToken);
-        await chatCachedRepository.InvalidateByAgentAsync(id, cancellationToken);
+        await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('agent_invalidation', {0})", id.ToString());
 
         return Ok(new AiAgentDto(agent.Id, agent.Name, agent.Prompt));
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var agent = await db.AiAgents.FindAsync([id], cancellationToken);
+        if (agent is null)
+        {
+            return NotFound();
+        }
+
+        await db.Chats
+            .Where(x => x.AiAgentId == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.AiAgentId, (Guid?)null), cancellationToken);
+
+        db.AiAgents.Remove(agent);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('agent_invalidation', {0})", id.ToString());
+
+        return NoContent();
     }
 }
