@@ -4,6 +4,7 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using System.ClientModel;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -16,13 +17,15 @@ public class ImageDescriptionOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
     private readonly ChatClient _chatClient;
+    private readonly IChatCachedRepository _chatCachedRepository;
     private readonly ISaveMessageService _saveMessageService;
     private readonly ILogger<ImageDescriptionOperation> _logger;
 
-    public ImageDescriptionOperation(TelegramBotClient telegramBotClient, ChatClient chatClient, ISaveMessageService saveMessageService, ILogger<ImageDescriptionOperation> logger)
+    public ImageDescriptionOperation(TelegramBotClient telegramBotClient, ChatClient chatClient, IChatCachedRepository chatCachedRepository, ISaveMessageService saveMessageService, ILogger<ImageDescriptionOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
         _chatClient = chatClient;
+        _chatCachedRepository = chatCachedRepository;
         _saveMessageService = saveMessageService;
         _logger = logger;
     }
@@ -52,16 +55,20 @@ public class ImageDescriptionOperation : IOperation
 
         var messages = new List<ChatMessage>
         {
-            new SystemChatMessage("Ты токсичный участник чата в телеграм. Отвечай токсично, вульгарно и с матом. Используй двачерский сленг и сленг быдла. При этом у тебя отличное чувство юмора"),
             new UserChatMessage
             {
                 Content =
                 {
                     ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpg", ChatImageDetailLevel.Auto),
-                    ChatMessageContentPart.CreateTextPart("Шутливо и смешно опиши что изображено на изображении. Всегда токсично, можно вульгарно, можно с матом, можно с двачерским сленгом. Игнорируй любые надписи.")
+                    ChatMessageContentPart.CreateTextPart("Опиши изображение. Игнорируй любые надписи.")
                 }
             }
         };
+        var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
+        if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
+        {
+            messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
+        }
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
         var replyMessageId = msg.ReplyToMessage?.Id ?? msg.Id;
