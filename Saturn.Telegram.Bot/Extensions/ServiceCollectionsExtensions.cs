@@ -52,6 +52,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<ISaveMessageService, SaveMessageService>()
             .AddSingleton<OperationManager>()
             .AddHostedService<FfmpegSetupService>()
+            .AddHostedService<CacheInvalidationService>()
             .AddMemoryCache();
         
         return serviceCollection;

@@ -52,4 +52,12 @@ public class ChatCachedRepository : IChatCachedRepository
             _memoryCache.Remove(key);
         }
     }
+
+    public Task InvalidateChatAsync(long chatId)
+    {
+        var key = $"{nameof(ChatEntity)}:{chatId}";
+        _memoryCache.Remove(key);
+        return Task.CompletedTask;
+    }
+
 }
