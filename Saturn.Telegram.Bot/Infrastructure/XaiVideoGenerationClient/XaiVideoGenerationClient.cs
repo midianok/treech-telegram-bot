@@ -15,6 +15,7 @@ public class XaiVideoGenerationClient
         var request = new
         {
             model = "grok-imagine-video",
+            prompt = "Animate this image naturally. If any person speaks or mouths words, they must speak Russian.",
             image = new { url = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}" },
             duration = 5,
             resolution = "480p"
