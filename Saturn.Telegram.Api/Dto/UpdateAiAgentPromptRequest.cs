@@ -1,3 +1,3 @@
 namespace Saturn.Telegram.Api.Dto;
 
-public record UpdateAiAgentPromptRequest(string Prompt);
+public record UpdateAiAgentPromptRequest(string Name, string Prompt);
