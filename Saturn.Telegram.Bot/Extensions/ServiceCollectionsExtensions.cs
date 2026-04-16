@@ -5,6 +5,7 @@ using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Images;
 using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
+using Saturn.Bot.Service.Infrastructure.XaiVideoGenerationClient;
 using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories;
@@ -42,6 +43,14 @@ public static class ServiceCollectionsExtensions
             x.BaseAddress = new Uri("https://api.x.ai/");
             x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
             x.Timeout = TimeSpan.FromMinutes(5);
+        });
+
+        serviceCollection.AddHttpClient<XaiVideoGenerationClient>(x =>
+        {
+            var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
+            x.BaseAddress = new Uri("https://api.x.ai/");
+            x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            x.Timeout = TimeSpan.FromMinutes(10);
         });
         
         
