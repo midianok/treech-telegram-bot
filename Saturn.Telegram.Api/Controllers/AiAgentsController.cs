@@ -40,7 +40,7 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory)
         return Ok(new AiAgentDto(agent.Id, agent.Name, agent.Prompt));
     }
 
-    [HttpPut("{id:guid}/prompt")]
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdatePrompt(Guid id, [FromBody] UpdateAiAgentPromptRequest request, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
@@ -51,6 +51,7 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory)
             return NotFound();
         }
 
+        agent.Name = request.Name;
         agent.Prompt = request.Prompt;
         db.AiAgents.Update(agent);
         await db.SaveChangesAsync(cancellationToken);
