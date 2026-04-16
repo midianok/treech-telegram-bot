@@ -22,6 +22,11 @@ public class CooldownService : ICooldownService
 
     public async Task<bool> IsCooldownAsync(IOperation operation, Message msg)
     {
+        if (msg.From?.Username == "ilya_naprimer")
+        {
+            return false;
+        }
+
         if (await IsGlobalCooldownAsync(operation, msg))
         {
             return true;
@@ -50,6 +55,11 @@ public class CooldownService : ICooldownService
 
     public void SetCooldown(IOperation operation, Message msg)
     {
+        if (msg.From?.Username == "ilya_naprimer")
+        {
+            return;
+        }
+
         IncrementGlobalCooldown(operation);
 
         var cooldown = GetCooldown(operation);
