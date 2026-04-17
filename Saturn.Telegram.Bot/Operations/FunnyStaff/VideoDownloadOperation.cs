@@ -61,7 +61,6 @@ public partial class VideoDownloadOperation : IOperation
             };
 
             var overrideOptions = new OptionSet();
-            overrideOptions.AddCustomOption("--js-runtimes", "node");
             overrideOptions.AddCustomOption("--extractor-args", "youtube:player_client=ios");
 
             var result = await ytdl.RunVideoDownload(
