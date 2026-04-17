@@ -49,6 +49,4 @@ public class ShowUserStatOperation : IOperation
         await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None,
             new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

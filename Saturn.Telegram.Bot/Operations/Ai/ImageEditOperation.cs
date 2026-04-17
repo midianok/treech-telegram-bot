@@ -83,8 +83,6 @@ public class ImageEditOperation : IOperation
         await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt);
     }
 
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
-
     private async Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt)
     {
         try

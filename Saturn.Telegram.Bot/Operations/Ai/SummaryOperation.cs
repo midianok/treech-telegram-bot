@@ -103,6 +103,4 @@ public class SummaryOperation : IOperation
                 replyParameters: new ReplyParameters { MessageId = msg.Id });
         }
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }
