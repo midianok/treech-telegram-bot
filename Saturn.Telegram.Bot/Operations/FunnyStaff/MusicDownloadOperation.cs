@@ -47,6 +47,7 @@ public class MusicDownloadOperation(TelegramBotClient telegramBotClient, ILogger
 
             var overrideOptions = new OptionSet();
             overrideOptions.AddCustomOption("--js-runtimes", "node");
+            overrideOptions.AddCustomOption("--extractor-args", "youtube:player_client=ios");
 
             var result = await ytdl.RunAudioDownload(
                 url: $"ytsearch1:{query}",
