@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
-using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Lib;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using System.ClientModel;

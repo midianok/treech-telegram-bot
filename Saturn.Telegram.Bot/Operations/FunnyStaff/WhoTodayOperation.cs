@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Lib;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
