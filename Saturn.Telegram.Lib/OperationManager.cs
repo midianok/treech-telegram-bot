@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Infrastructure;
@@ -17,6 +18,7 @@ public class OperationManager
     private readonly IEnumerable<IOperation> _operations;
     private readonly ILogger<OperationManager> _logger;
     private readonly ICooldownService _cooldownService;
+    private readonly IOperationCallRepository _operationCallRepository;
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -28,11 +30,13 @@ public class OperationManager
     public OperationManager(
         IEnumerable<IOperation> operations,
         ILogger<OperationManager> logger,
-        ICooldownService cooldownService)
+        ICooldownService cooldownService,
+        IOperationCallRepository operationCallRepository)
     {
         _operations = operations;
         _logger = logger;
         _cooldownService = cooldownService;
+        _operationCallRepository = operationCallRepository;
     }
 
     public async Task MessageHandler(Message msg, UpdateType type)
@@ -58,6 +62,7 @@ public class OperationManager
             {
                 await operation.OnMessageAsync(msg, type);
                 _cooldownService.SetCooldown(operation, msg);
+                await _operationCallRepository.RecordAsync(operation.GetType().Name, msg.Chat.Id, msg.From?.Id ?? 0);
             }
             catch (Exception exception)
             {

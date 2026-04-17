@@ -57,6 +57,7 @@ public static class ServiceCollectionsExtensions
         serviceCollection
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
             .AddSingleton<IMessageRepository, MessageRepository>()
+            .AddSingleton<IOperationCallRepository, OperationCallRepository>()
             .AddSingleton<IDistortionService, DistortionService>()
             .AddSingleton<ISaveMessageService, SaveMessageService>()
             .AddSingleton<OperationManager>()

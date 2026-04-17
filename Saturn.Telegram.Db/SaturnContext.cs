@@ -7,12 +7,14 @@ namespace Saturn.Telegram.Db;
 public sealed class SaturnContext : DbContext
 {
     public DbSet<AiAgentEntity> AiAgents { get; set; } = null!;
-    
+
     public DbSet<MessageEntity> Messages { get; set; } = null!;
-    
+
     public DbSet<UserEntity> Users { get; set; } = null!;
-    
+
     public DbSet<ChatEntity> Chats { get; set; } = null!;
+
+    public DbSet<OperationCallEntity> OperationCalls { get; set; } = null!;
 
     public SaturnContext(DbContextOptions<SaturnContext> options) : base(options) { }
 
@@ -22,5 +24,6 @@ public sealed class SaturnContext : DbContext
         modelBuilder.ApplyConfiguration(new MessageEntityConfiguration());
         modelBuilder.ApplyConfiguration(new UserEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AiAgentEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new OperationCallEntityConfiguration());
     }
 }
