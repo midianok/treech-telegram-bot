@@ -19,6 +19,7 @@ public class OperationManager
     private readonly ILogger<OperationManager> _logger;
     private readonly ICooldownService _cooldownService;
     private readonly IOperationCallRepository _operationCallRepository;
+    private readonly ISaveMessageService _saveMessageService;
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -31,16 +32,27 @@ public class OperationManager
         IEnumerable<IOperation> operations,
         ILogger<OperationManager> logger,
         ICooldownService cooldownService,
-        IOperationCallRepository operationCallRepository)
+        IOperationCallRepository operationCallRepository,
+        ISaveMessageService saveMessageService)
     {
         _operations = operations;
         _logger = logger;
         _cooldownService = cooldownService;
         _operationCallRepository = operationCallRepository;
+        _saveMessageService = saveMessageService;
     }
 
     public async Task MessageHandler(Message msg, UpdateType type)
     {
+        try
+        {
+            await _saveMessageService.SaveMessageAsync(msg);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "*Error* saving message: {Message}", exception.Message);
+        }
+
         foreach (var operation in _operations)
         {
             if (!operation.Validate(msg, type))

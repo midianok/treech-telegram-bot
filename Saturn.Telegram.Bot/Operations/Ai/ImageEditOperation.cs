@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
-using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Lib;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using System.Net;
