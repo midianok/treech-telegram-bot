@@ -55,6 +55,11 @@ public class OperationManager
 
         foreach (var operation in _operations)
         {
+            if (operation.GetAttribute<IgnoredAttribute>() != null)
+            {
+                continue;
+            }
+
             if (!operation.Validate(msg, type))
             {
                 continue;
@@ -93,6 +98,11 @@ public class OperationManager
     {
         foreach (var operation in _operations)
         {
+            if (operation.GetAttribute<IgnoredAttribute>() != null)
+            {
+                continue;
+            }
+
             try
             {
                 await operation.OnUpdateAsync(update);
