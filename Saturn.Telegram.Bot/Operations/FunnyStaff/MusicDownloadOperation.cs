@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Services;
+using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -57,16 +58,7 @@ public class MusicDownloadOperation(TelegramBotClient telegramBotClient, ILogger
 
             if (!result.Success || string.IsNullOrEmpty(result.Data))
             {
-                if (!result.Success || string.IsNullOrEmpty(result.Data))
-                {
-                    logger.LogError("Error: {Error}", string.Join(',', result.ErrorOutput));
-                    return;
-                }
-                await telegramBotClient.SendMessage(
-                    chatId: msg.Chat.Id,
-                    text: "Не удалось найти или скачать трек.",
-                    replyParameters: new ReplyParameters { MessageId = msg.MessageId }
-                );
+                logger.LogError("Error: {Error}", string.Join(',', result.ErrorOutput));
                 return;
             }
 
