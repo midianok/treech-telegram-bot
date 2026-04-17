@@ -15,7 +15,7 @@ public class YtDlpSetupService : IHostedService
             return "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe";
         if (OperatingSystem.IsMacOS())
             return "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos";
-        return "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
+        return "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux";
     }
 
     private readonly ILogger<YtDlpSetupService> _logger;
