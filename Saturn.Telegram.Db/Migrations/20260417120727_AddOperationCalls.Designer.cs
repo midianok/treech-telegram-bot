@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Saturn.Telegram.Db;
@@ -11,9 +12,11 @@ using Saturn.Telegram.Db;
 namespace Saturn.Telegram.Db.Migrations
 {
     [DbContext(typeof(SaturnContext))]
-    partial class SaturnContextModelSnapshot : ModelSnapshot
+    [Migration("20260417120727_AddOperationCalls")]
+    partial class AddOperationCalls
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -157,6 +160,12 @@ namespace Saturn.Telegram.Db.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_operation_calls");
+
+                    b.HasIndex("ChatId", "OperationName")
+                        .HasDatabaseName("ix_operation_calls_chat_id_operation_name");
+
+                    b.HasIndex("UserId", "ChatId", "OperationName")
+                        .HasDatabaseName("ix_operation_calls_user_id_chat_id_operation_name");
 
                     b.ToTable("operation_calls", (string)null);
                 });
