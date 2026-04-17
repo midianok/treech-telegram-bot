@@ -7,7 +7,7 @@ namespace Saturn.Bot.Service.Services;
 
 public class FfmpegSetupService : IHostedService
 {
-    private const string FfmpegFolder = "Tools";
+    private static readonly string FfmpegFolder = Path.Combine(AppContext.BaseDirectory, "Tools");
     private readonly ILogger<FfmpegSetupService> _logger;
 
     public FfmpegSetupService(ILogger<FfmpegSetupService> logger)
