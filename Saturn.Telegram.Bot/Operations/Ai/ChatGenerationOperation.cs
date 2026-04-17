@@ -118,8 +118,6 @@ public class ChatGenerationOperation : IOperation
         }
     }
 
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
-
     private bool IsReplyToBot(Message msg)
     {
         var bot = _memoryCache.GetOrCreate($"{nameof(ChatGenerationOperation)}_user_bot", async _ => await _telegramBotClient.GetMe())?.GetAwaiter().GetResult();

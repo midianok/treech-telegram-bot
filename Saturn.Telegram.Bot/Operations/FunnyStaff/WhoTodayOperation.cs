@@ -44,6 +44,4 @@ public class WhoTodayOperation : IOperation
         var message = await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
         await _saveMessageService.SaveMessageAsync(message);
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }
