@@ -69,7 +69,12 @@ public partial class VideoDownloadOperation : IOperation
             );
 
             if (!result.Success || string.IsNullOrEmpty(result.Data))
+            {
+                _logger.LogError("Failed to download video: {Url}", url);
+                _logger.LogError("Error: {Error}", string.Join(',', result.ErrorOutput));
                 return;
+            }
+                
 
             var filePath = result.Data;
             var fileInfo = new FileInfo(filePath);
