@@ -60,11 +60,16 @@ public partial class VideoDownloadOperation : IOperation
                 OutputFileTemplate = "%(id)s.%(ext)s"
             };
 
+            var overrideOptions = new OptionSet();
+            overrideOptions.AddCustomOption("--js-runtimes", "node");
+            overrideOptions.AddCustomOption("--extractor-args", "youtube:player_client=ios");
+
             var result = await ytdl.RunVideoDownload(
                 url: url,
                 format: format,
                 mergeFormat: DownloadMergeFormat.Mp4,
                 recodeFormat: VideoRecodeFormat.Mp4,
+                overrideOptions: overrideOptions,
                 output: new Progress<string>(line => _logger.LogInformation("{Line}", line))
             );
 
