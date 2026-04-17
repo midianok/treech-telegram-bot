@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
-using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Lib;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using System.ClientModel;
