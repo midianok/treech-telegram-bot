@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using Saturn.Telegram.Api.Middleware;
 using Saturn.Telegram.Db.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,15 +9,19 @@ var pathBase = builder.Configuration["PATH_BASE"];
 
 builder.Services.AddSaturnContext(builder.Configuration);
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
         policy.WithOrigins("https://routefabric.ru")
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+            .AllowAnyHeader()
+            .AllowAnyMethod());
 });
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+}
 
 var app = builder.Build();
 
@@ -35,16 +40,17 @@ if (!string.IsNullOrWhiteSpace(pathBase))
     app.UsePathBase(pathBase);
 }
 
-app.UseSwagger(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.RouteTemplate = "swagger/{documentName}/swagger.json";
-});
-app.UseSwaggerUI(options =>
+    app.UseSwagger(options => options.RouteTemplate = "swagger/{documentName}/swagger.json");
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("v1/swagger.json", "Saturn API v1"));
+}
+
+if (app.Environment.IsProduction())
 {
-    options.SwaggerEndpoint("v1/swagger.json", "Saturn API v1");
-});
-app.UseCors();
-app.UseAuthorization();
+    app.UseCors();
+    app.UseMiddleware<TelegramInitDataMiddleware>();
+}
 app.MapControllers();
 
 app.Run("http://0.0.0.0:5001");
