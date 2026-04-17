@@ -11,8 +11,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
-[Cooldown(300)]
-[GlobalCooldown(3)]
+[Allow(198607451)] //ilya_naprimer
 public class AnimateOperation : IOperation
 {
     private const string Command = "оживи";

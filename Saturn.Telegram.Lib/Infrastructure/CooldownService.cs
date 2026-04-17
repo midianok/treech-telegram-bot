@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Saturn.Telegram.Lib.Attributes;
+using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -118,12 +119,10 @@ public class CooldownService : ICooldownService
     }
 
     private static GlobalCooldownAttribute? GetGlobalCooldown(IOperation operation) =>
-        operation.GetType().GetCustomAttributes(typeof(GlobalCooldownAttribute), false)
-            .FirstOrDefault() as GlobalCooldownAttribute;
+        operation.GetAttribute<GlobalCooldownAttribute>();
 
     private static CooldownAttribute? GetCooldown(IOperation operation) =>
-        operation.GetType().GetCustomAttributes(typeof(CooldownAttribute), false)
-            .FirstOrDefault() as CooldownAttribute;
+        operation.GetAttribute<CooldownAttribute>();
 
     private static string BuildCacheKey(IOperation operation, long userId) =>
         $"cooldown:{operation.GetType().FullName}:{userId}";

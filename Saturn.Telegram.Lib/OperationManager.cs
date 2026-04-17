@@ -2,6 +2,8 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Saturn.Telegram.Lib.Attributes;
+using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot.Polling;
@@ -42,6 +44,11 @@ public class OperationManager
                 continue;
             }
 
+            if (!IsAllowed(msg.From?.Id, operation))
+            {
+                continue;
+            }
+
             if (await _cooldownService.IsCooldownAsync(operation, msg))
             {
                 continue;
@@ -57,6 +64,12 @@ public class OperationManager
                 _logger.LogError(exception, "*Error*: {Message}\n```csharp\n{StackTrace}\n```\n```json\n{json}```", exception.Message, exception.StackTrace, JsonSerializer.Serialize(msg, _jsonSerializerOptions));
             }
         }
+    }
+
+    private static bool IsAllowed(long? userId, IOperation operation)
+    {
+        var allowAttr = operation.GetAttribute<AllowAttribute>();
+        return allowAttr == null || allowAttr.UserIds.Contains(userId ?? 0);
     }
 
     public async Task UpdateHandler(Update update)
