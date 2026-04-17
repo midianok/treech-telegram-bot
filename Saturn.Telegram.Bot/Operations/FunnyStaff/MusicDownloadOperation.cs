@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Services;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -8,7 +9,7 @@ using YoutubeDLSharp.Options;
 
 namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
-public class MusicDownloadOperation(TelegramBotClient telegramBotClient) : IOperation
+public class MusicDownloadOperation(TelegramBotClient telegramBotClient, ILogger<MusicDownloadOperation> logger) : IOperation
 {
     private const string Prefix = "найти ";
 
@@ -50,7 +51,8 @@ public class MusicDownloadOperation(TelegramBotClient telegramBotClient) : IOper
             var result = await ytdl.RunAudioDownload(
                 url: $"ytsearch1:{query}",
                 format: AudioConversionFormat.Mp3,
-                overrideOptions: overrideOptions
+                overrideOptions: overrideOptions,
+                output: new Progress<string>(line => logger.LogInformation("{Line}", line))
             );
 
             if (!result.Success || string.IsNullOrEmpty(result.Data))

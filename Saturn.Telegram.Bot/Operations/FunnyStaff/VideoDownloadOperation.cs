@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Services;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -15,10 +16,12 @@ public partial class VideoDownloadOperation : IOperation
     private static readonly Regex TikTokUrlRegex = new(@"tiktok\.com", RegexOptions.IgnoreCase);
 
     private readonly TelegramBotClient _telegramBotClient;
+    private readonly ILogger<VideoDownloadOperation> _logger;
 
-    public VideoDownloadOperation(TelegramBotClient telegramBotClient)
+    public VideoDownloadOperation(TelegramBotClient telegramBotClient, ILogger<VideoDownloadOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
+        _logger = logger;
     }
 
     public bool Validate(Message msg, UpdateType type)
@@ -61,7 +64,8 @@ public partial class VideoDownloadOperation : IOperation
                 url: url,
                 format: format,
                 mergeFormat: DownloadMergeFormat.Mp4,
-                recodeFormat: VideoRecodeFormat.Mp4
+                recodeFormat: VideoRecodeFormat.Mp4,
+                output: new Progress<string>(line => _logger.LogInformation("{Line}", line))
             );
 
             if (!result.Success || string.IsNullOrEmpty(result.Data))
