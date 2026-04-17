@@ -9,5 +9,5 @@ public interface IOperation
     
     Task OnMessageAsync(Message msg, UpdateType type);
     
-    Task OnUpdateAsync(Update update);
+    Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

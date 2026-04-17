@@ -42,6 +42,4 @@ public class ShowFavStickOperation : IOperation
 
         await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters { MessageId = msg.Id });
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

@@ -54,8 +54,6 @@ public class ShowAllTimeStatOperation : IOperation
             new ReplyParameters { MessageId = msg.Id });
     }
 
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
-
     private string GetEmoji(int iterator) =>
         iterator switch
         {

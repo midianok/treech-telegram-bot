@@ -99,6 +99,4 @@ public class AnimateOperation : IOperation
             await _telegramBotClient.SendMessage(msg.Chat.Id, "слишком долго генерировал, сдался", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
         }
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

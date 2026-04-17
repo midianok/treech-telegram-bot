@@ -86,6 +86,4 @@ public class ImageDescriptionOperation : IOperation
             await _telegramBotClient.SendMessage(msg.Chat, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = replyMessageId });
         }
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

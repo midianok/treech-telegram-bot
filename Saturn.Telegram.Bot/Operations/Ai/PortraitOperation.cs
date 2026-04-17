@@ -126,6 +126,4 @@ public class PortraitOperation : IOperation
                 replyParameters: new ReplyParameters { MessageId = msg.Id });
         }
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

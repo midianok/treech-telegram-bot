@@ -67,8 +67,6 @@ public class ImageDistortionOperation : IOperation
         }
     }
 
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
-
     private Func<int, Task> CreateProgressCallback(long chatId, int messageId)
     {
         var lastReported = -1;

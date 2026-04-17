@@ -60,8 +60,6 @@ public class ShowTopStatOperation : IOperation
             new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);
     }
 
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
-
     private DateTime GetMondayDate() =>
         DateTime.Now.DayOfWeek switch
         {

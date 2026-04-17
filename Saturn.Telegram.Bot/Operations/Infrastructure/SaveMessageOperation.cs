@@ -18,6 +18,4 @@ public class SaveMessageOperation : IOperation
 
     public Task OnMessageAsync(Message msg, UpdateType type) =>
         _saveMessageService.SaveMessageAsync(msg);
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

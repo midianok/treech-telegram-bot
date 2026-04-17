@@ -23,6 +23,4 @@ public class RollOperation : IOperation
         var value = _random.Next(10, 99);
         await _telegramBotClient.SendMessage(msg.Chat, $"Ты выбросил *{value}*", ParseMode.MarkdownV2, new ReplyParameters { MessageId = msg.Id });
     }
-
-    public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }
