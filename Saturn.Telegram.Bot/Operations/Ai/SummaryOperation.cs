@@ -32,9 +32,17 @@ public class SummaryOperation : IOperation
         _logger = logger;
     }
 
-    public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) &&
-        msg.Text.Equals("саммари", StringComparison.CurrentCultureIgnoreCase);
+    public bool Validate(Message msg, UpdateType type)
+    {
+        if (string.IsNullOrEmpty(msg.Text))
+            return false;
+        var parts = msg.Text.Trim().Split(' ', 2);
+        if (!parts[0].Equals("саммари", StringComparison.CurrentCultureIgnoreCase))
+            return false;
+        if (parts.Length == 1)
+            return true;
+        return DateOnly.TryParseExact(parts[1].Trim(), "yyyy-MM-dd", out _);
+    }
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
@@ -42,7 +50,12 @@ public class SummaryOperation : IOperation
 
         await using var db = await _contextFactory.CreateDbContextAsync();
 
-        var today = DateTime.UtcNow.Date;
+        var parts = msg.Text!.Trim().Split(' ', 2);
+        DateTime today;
+        if (parts.Length == 2 && DateOnly.TryParseExact(parts[1].Trim(), "yyyy-MM-dd", out var parsedDate))
+            today = parsedDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        else
+            today = DateTime.UtcNow.Date;
         var tomorrow = today.AddDays(1);
 
         var messages = await db.Messages
@@ -57,7 +70,8 @@ public class SummaryOperation : IOperation
 
         if (messages.Count == 0)
         {
-            await _telegramBotClient.SendMessage(msg.Chat, "сегодня тут тишина, говорить не о чем",
+            var dateLabel = parts.Length == 2 ? parts[1].Trim() : "сегодня";
+            await _telegramBotClient.SendMessage(msg.Chat, $"{dateLabel} тут тишина, говорить не о чем",
                 replyParameters: new ReplyParameters { MessageId = msg.Id });
             return;
         }
@@ -71,8 +85,9 @@ public class SummaryOperation : IOperation
             transcript.AppendLine($"{username}: {m.Text}");
         }
 
+        var dayLabel = parts.Length == 2 ? parts[1].Trim() : "сегодня";
         var prompt =
-            "Ты — аналитик чата. Тебе дан лог сообщений из группового чата за сегодня. " +
+            $"Ты — аналитик чата. Тебе дан лог сообщений из группового чата за {dayLabel}. " +
             "Напиши живое и интересное саммари: о чём говорили, какие темы поднимались, самые яркие моменты. " +
             "Каждый новый участник — с новой строки, например: \"@vasya активно спорил о политике\". " +
             "Не используй никакую разметку: ни звёздочки, ни решётки, ни другие символы форматирования. " +
