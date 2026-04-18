@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Db;
 
 namespace Saturn.Telegram.Api.Controllers;
@@ -8,8 +9,30 @@ namespace Saturn.Telegram.Api.Controllers;
 [Route("api/stats")]
 public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
 {
-    [HttpGet("top")]
-    public async Task<IActionResult> GetTop(
+    [HttpGet("message-count")]
+    public async Task<MessageCountDto> GetCount(
+        [FromQuery] long chatId,
+        [FromQuery] DateTime? dateFrom,
+        [FromQuery] DateTime? dateTo,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var query = db.Messages.Where(x => x.ChatId == chatId);
+
+        if (dateFrom.HasValue)
+            query = query.Where(x => x.MessageDate >= dateFrom.Value);
+
+        if (dateTo.HasValue)
+            query = query.Where(x => x.MessageDate < dateTo.Value);
+
+        var count = await query.CountAsync(cancellationToken);
+
+        return new MessageCountDto(count);
+    }
+
+    [HttpGet("top-users")]
+    public async Task<IEnumerable<UserMessageCountDto>> GetTop(
         [FromQuery] long chatId,
         [FromQuery] DateTime? dateFrom,
         [FromQuery] DateTime? dateTo,
@@ -37,6 +60,6 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        return Ok(new { users });
+        return users.Select(x => new UserMessageCountDto(x.Name, x.Count));
     }
 }
