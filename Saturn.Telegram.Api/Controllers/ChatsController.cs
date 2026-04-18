@@ -10,7 +10,7 @@ namespace Saturn.Telegram.Api.Controllers;
 public class ChatsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
 {
     [HttpGet("{chatId:long}/ai-agent")]
-    public async Task<IActionResult> GetAiAgent(long chatId, CancellationToken cancellationToken)
+    public async Task<ActionResult<AiAgentDto?>> GetAiAgent(long chatId, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -28,11 +28,11 @@ public class ChatsController(IDbContextFactory<SaturnContext> contextFactory) : 
             return Ok(null);
         }
 
-        return Ok(new AiAgentDto(chat.AiAgent.Id, chat.AiAgent.Name, chat.AiAgent.Prompt));
+        return new AiAgentDto(chat.AiAgent.Id, chat.AiAgent.Name, chat.AiAgent.Prompt);
     }
 
     [HttpPut("{chatId:long}/ai-agent")]
-    public async Task<IActionResult> SetAiAgent(long chatId, [FromBody] SetChatAiAgentRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult> SetAiAgent(long chatId, [FromBody] SetChatAiAgentRequest request, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 

@@ -11,19 +11,17 @@ namespace Saturn.Telegram.Api.Controllers;
 public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IEnumerable<AiAgentDto>> GetAll(CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var agents = await db.AiAgents
+        return await db.AiAgents
             .Select(x => new AiAgentDto(x.Id, x.Name, x.Prompt))
             .ToListAsync(cancellationToken);
-
-        return Ok(agents);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateAiAgentRequest request, CancellationToken cancellationToken)
+    public async Task<AiAgentDto> Create([FromBody] CreateAiAgentRequest request, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -37,11 +35,11 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory)
         db.AiAgents.Add(agent);
         await db.SaveChangesAsync(cancellationToken);
 
-        return Ok(new AiAgentDto(agent.Id, agent.Name, agent.Prompt));
+        return new AiAgentDto(agent.Id, agent.Name, agent.Prompt);
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdatePrompt(Guid id, [FromBody] UpdateAiAgentPromptRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<AiAgentDto>> UpdatePrompt(Guid id, [FromBody] UpdateAiAgentPromptRequest request, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -57,11 +55,11 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory)
         await db.SaveChangesAsync(cancellationToken);
         await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('agent_invalidation', {0})", id.ToString());
 
-        return Ok(new AiAgentDto(agent.Id, agent.Name, agent.Prompt));
+        return new AiAgentDto(agent.Id, agent.Name, agent.Prompt);
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
