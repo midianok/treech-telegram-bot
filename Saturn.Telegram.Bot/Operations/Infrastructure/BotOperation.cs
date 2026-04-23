@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -10,7 +11,7 @@ public class BotOperation(TelegramBotClient telegramBotClient) : IOperation
 {
     
     public bool Validate(Message msg, UpdateType type) => 
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.ToLower() == "бот";
+        msg.HasText("бот");
 
     public Task OnMessageAsync(Message msg, UpdateType type)
     {

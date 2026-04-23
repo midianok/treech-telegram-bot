@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -19,9 +20,8 @@ public class ImageDistortionOperation : IOperation
 
     public bool Validate(Message msg, UpdateType type) =>
         type == UpdateType.Message &&
-        !string.IsNullOrEmpty(msg.Text) &&
         (msg.ReplyToMessage?.Photo != null || msg.ReplyToMessage?.Video != null || msg.ReplyToMessage?.Animation != null) &&
-        msg.Text.ToLower() == "жмыхни";
+        msg.HasText("жмыхни");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {

@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
@@ -20,7 +21,7 @@ public class ShowUserStatOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.Equals("стата", StringComparison.CurrentCultureIgnoreCase);
+        msg.HasText("стата");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {

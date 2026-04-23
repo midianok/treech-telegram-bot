@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Lib;
 using Saturn.Telegram.Db;
@@ -22,7 +23,7 @@ public class WhoTodayOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.StartsWith("кто сегодня ", StringComparison.CurrentCultureIgnoreCase);
+        msg.TextStartsWith("кто сегодня ");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {

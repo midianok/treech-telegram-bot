@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Microsoft.Extensions.Logging;
 using OpenAI.Images;
 using Saturn.Telegram.Lib.Operation;
@@ -25,7 +26,7 @@ public class ImageGenerationOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.StartsWith("покажи ", StringComparison.CurrentCultureIgnoreCase);
+        msg.TextStartsWith("покажи ");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
