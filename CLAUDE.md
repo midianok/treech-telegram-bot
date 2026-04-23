@@ -1,108 +1,66 @@
-/# CLAUDE.md
+# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
-
-Treech is a feature-rich Telegram bot for group chats built on .NET 9.0. It provides AI-powered features (via X.AI/Grok), message statistics, fun interactions, and persists all messages to PostgreSQL.
-
-## Commands
+## Build & Run
 
 ```bash
-# Build
+# Build entire solution
 dotnet build Saturn.Telegram.sln
 
-# Run locally (requires .env variables set)
-dotnet run --project Saturn.Telegram.Bot
+# Run locally (requires .env values as env vars)
+dotnet run --project Saturn.Telegram.Bot/Saturn.Telegram.Bot.csproj
+dotnet run --project Saturn.Telegram.Api/Saturn.Telegram.Api.csproj
 
-# Docker (full stack: bot + postgres + image-manipulation-service)
-docker-compose up -d
-
-# EF Core migrations
-dotnet ef database update --project Saturn.Telegram.Db
-dotnet ef migrations add <MigrationName> --project Saturn.Telegram.Db
+# Run via Docker Compose (recommended — starts bot + API + PostgreSQL)
+docker compose up
 ```
 
-There are no automated tests in this project.
+Database migrations are applied automatically at startup — no manual migration step needed.
 
 ## Architecture
 
-### Three-Project Solution
+Four projects:
 
-- **Saturn.Telegram.Bot** — Main executable; all feature operations, services, external clients, DI wiring
-- **Saturn.Telegram.Lib** — Reusable bot framework: `IOperation` interface, `OperationManager`, `TelegramHostedService`, `CooldownService`, logging
-- **Saturn.Telegram.Db** — EF Core + PostgreSQL layer: entities, repositories, migrations, `SaturnContext`
+- **Saturn.Telegram.Lib** — core abstractions: `IOperation`, `OperationManager`, `ICooldownService`, `TelegramHostedService`. This is where the operation dispatch loop lives.
+- **Saturn.Telegram.Bot** — concrete `IOperation` implementations (message handlers) and bot-specific services (FFmpeg setup, yt-dlp setup, message saving).
+- **Saturn.Telegram.Api** — ASP.NET Core REST API exposing stats, AI agents, and chat data for a web frontend. Validates callers via `TelegramInitDataMiddleware`.
+- **Saturn.Telegram.Db** — EF Core 10 + PostgreSQL (Npgsql). Entities: `MessageEntity`, `UserEntity`, `ChatEntity`, `AiAgentEntity`, `OperationCallEntity`. Uses snake_case naming convention and `IDbContextFactory<SaturnContext>` throughout.
 
-### IOperation Plugin Pattern
+## Operation Pattern
 
-All bot features implement `IOperation`:
+Every bot command is an `IOperation` (in `Saturn.Telegram.Lib/Operation/IOperation.cs`). To add a new command:
 
-```csharp
-public interface IOperation
-{
-    bool Validate(Message msg, UpdateType type);       // Should this operation handle the message?
-    Task OnMessageAsync(Message msg, UpdateType type); // Handle it
-    Task OnUpdateAsync(Update update);                 // Handle non-message updates
-}
-```
+1. Create a class implementing `IOperation` under `Saturn.Telegram.Bot/Operations/`.
+2. Implement `Validate(Message)` — return true if this operation should handle the message.
+3. Implement `OnMessageAsync(Message, CancellationToken)` — perform the action.
+4. Register it in the DI container; `OperationManager` discovers all `IOperation` instances automatically.
 
-`OperationManager` discovers all `IOperation` implementations via assembly reflection at startup, then routes each incoming Telegram message through them: calls `Validate()`, checks cooldown via `CooldownService`, then calls `OnMessageAsync()`. **To add a new feature, implement `IOperation` and register it in DI — it is auto-discovered.**
+Use `[ChatOnly]` attribute to restrict an operation to group chats. Use `ICooldownService` to rate-limit repeated calls.
 
-Use `[Cooldown(seconds)]` attribute on an operation class to rate-limit it per user.
+After adding a new operation, document it in `Saturn.Telegram.Bot/Help.md` in Russian — this file is sent to users in response to the `помощь` command (via `HelpOperation`). It is copied to the output directory at build time. Add the new command to the relevant section (ИИ, Статистика, Развлечения, Прочее) using the same format: `` `команда` — описание ``.
 
-### Operation Categories (Saturn.Telegram.Bot/Operations/)
+## Environment Variables
 
-- **Ai/** — Chat generation (`/` prefix), image generation (`покажи`), image editing (`отредактируй`/`измени`), image description (`нука`)
-- **Statistics/** — User stats, top talkers, favorite stickers, all-time stats
-- **FunnyStaff/** — Roll (`на дабл`), image distortion (`жмыхни`), who-today picker
-- **Infrastructure/** — `SaveMessageOperation` persists every message to DB; `HelpOperation` responds to `помощь` with bot usage guide
+Configured via `.env` (picked up by Docker Compose):
 
-> **Important:** When adding a new operation, update `Saturn.Telegram.Bot/help.md` to document the new trigger and what it does. This file is read once at startup and served verbatim by `HelpOperation`.
-
-### Data Flow
-
-```
-Telegram → TelegramHostedService (polling)
-         → OperationManager (iterates registered IOperations)
-         → Validate() → CooldownService → OnMessageAsync()
-         → Error logged to Telegram chat (LOG_CHAT_ID)
-```
-
-AI chat operations reconstruct conversation context by following reply-to chains via `MessageRepository.GetMessageChainAsync()`.
-
-### Key Services
-
-| Service | Role |
+| Variable | Purpose |
 |---|---|
-| `SaveMessageService` | Persists messages + user/chat metadata; uses `SemaphoreSlim` for thread safety |
-| `CooldownService` | Per-user per-operation rate limiting (in-memory) |
-| `ChatClient` / `ImageClient` | OpenAI SDK pointed at X.AI (Grok) endpoints |
-| `XaiImageEditClient` | Custom HTTP client for X.AI image editing API |
-| `IImageManipulationServiceClient` | HTTP client for external image distortion service |
-| `IChatCachedRepository` | Chat lookup with 30-hour memory cache (used for AI agent prompts) |
+| `BOT_TOKEN` | Telegram bot token |
+| `CONNECTION_STRING` | PostgreSQL connection string |
+| `POSTGRES_PASSWORD` | DB password |
+| `LOG_CHAT_ID` | Telegram chat ID for error logs |
+| `IMAGE_MANIPULATION_SERVICE_URL` | External image service endpoint |
+| `*OperationEnabled` | Feature flags per operation (e.g. `StatisticsOperationEnabled`) |
 
-### Database (EF Core + PostgreSQL)
+## Key Dependencies
 
-Entities: `UserEntity`, `ChatEntity`, `MessageEntity`, `AiAgentEntity`. Snake_case naming via `EFCore.NamingConventions`. DbContext is accessed via `IDbContextFactory<SaturnContext>` (transient pattern). AI agents are per-chat personality prompts stored in DB.
+- `Telegram.Bot` 22.9.6 — bot API client
+- `OpenAI` 2.10.0 — GPT integration
+- `Magick.NET-Q16-AnyCPU` 14.11.1 — image manipulation
+- `Xabe.FFmpeg` + `YoutubeDLSharp` — media download/processing
+- EF Core 10 + Npgsql 10 — data access
 
-### Configuration
+## Deployment
 
-All config via environment variables (`.env` file):
-- `BOT_TOKEN` — Telegram bot token
-- `CONNECTION_STRING` — PostgreSQL connection string  
-- `CHAT_GENERATION_API_KEY` / `IMAGE_GENERATION_API_KEY` — X.AI API keys
-- `INVOKE_COMMAND` — Prefix triggering AI chat (e.g. `/`)
-- `LOG_CHAT_ID` — Telegram chat ID for error/operation logs
-- Feature flags: `ImageDistortionOperationEnabled`, `SaveMessageOperationEnabled`, `ShowChatLinkOperationEnabled`
-- `IMAGE_MANIPULATION_SERVICE_URL` — URL for image distortion service
-
-### Logging
-
-A custom `TelegramLoggerProvider` sends application logs directly to `LOG_CHAT_ID`. Configured in `Program.cs` with filters to suppress noisy `Microsoft.*` logs below Error level.
-
-### DI Registration
-
-Services are registered via extension methods:
-- `Saturn.Bot.Service.Extensions.ServiceCollectionsExtensions` (bot-specific)
-- `Saturn.Telegram.Lib.Extensions.ServiceCollectionsExtensions` (framework)
-- `Saturn.Telegram.Db.Extensions.ServiceCollectionsExtensions` (database)
+CI/CD via GitHub Actions (`.github/workflows/deploy.yml`): push to `master` builds and pushes Docker images to Docker Hub (`midianok/saturn`, `midianok/saturn-api`), then SSHes into the server and runs `docker compose up`.
