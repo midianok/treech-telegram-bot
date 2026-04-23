@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db.Repositories.Abstractions;
-using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Operation;
@@ -48,41 +47,19 @@ public class OperationManager
 
     public async Task MessageHandler(Message msg, UpdateType type)
     {
-        try
-        {
-             await _saveMessageService.SaveMessageAsync(msg);
-        }
-        catch (Exception exception)
-        {
-            _logger.LogError(exception, "*Error* saving message: {Message}", exception.Message);
-        }
+        await _saveMessageService.SaveMessageAsync(msg);
 
         foreach (var operation in _operations)
         {
-            if (operation.GetAttribute<IgnoredAttribute>() != null)
-            {
-                continue;
-            }
+            if (operation.IsIgnored()) continue;
+            
+            if (!operation.Validate(msg, type)) continue;
 
-            if (!operation.Validate(msg, type))
-            {
-                continue;
-            }
+            if (!operation.IsAllowed(msg.From?.Id)) continue;
 
-            if (!IsAllowed(msg.From?.Id, operation))
-            {
-                continue;
-            }
+            if (await operation.IsChatOnlyViolatedAsync(msg, _botClient)) continue;
 
-            if (await IsChatOnlyViolatedAsync(msg, operation))
-            {
-                continue;
-            }
-
-            if (await _cooldownService.IsCooldownAsync(operation, msg))
-            {
-                continue;
-            }
+            if (await _cooldownService.IsCooldownAsync(operation, msg)) continue;
 
             try
             {
@@ -97,34 +74,11 @@ public class OperationManager
         }
     }
 
-    private static bool IsAllowed(long? userId, IOperation operation)
-    {
-        var allowAttr = operation.GetAttribute<AllowAttribute>();
-        return allowAttr == null || allowAttr.UserIds.Contains(userId ?? 0);
-    }
-
-    private async Task<bool> IsChatOnlyViolatedAsync(Message msg, IOperation operation)
-    {
-        var chatOnlyAttr = operation.GetAttribute<ChatOnlyAttribute>();
-        if (chatOnlyAttr == null)
-        {
-            return false;
-        }
-
-        if (msg.Chat.Type is ChatType.Group or ChatType.Supergroup)
-        {
-            return false;
-        }
-
-        await _botClient.SendMessage(msg.Chat, chatOnlyAttr.Message, replyParameters: new ReplyParameters { MessageId = msg.Id });
-        return true;
-    }
-
     public async Task UpdateHandler(Update update)
     {
         foreach (var operation in _operations)
         {
-            if (operation.GetAttribute<IgnoredAttribute>() != null)
+            if (operation.IsIgnored())
             {
                 continue;
             }
