@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Db;
@@ -21,7 +22,7 @@ public class ShowTopStatOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.Equals("топ стата", StringComparison.CurrentCultureIgnoreCase);
+        msg.HasText("топ стата");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
