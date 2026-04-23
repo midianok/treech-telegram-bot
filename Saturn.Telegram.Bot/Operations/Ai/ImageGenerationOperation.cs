@@ -12,6 +12,7 @@ namespace Saturn.Bot.Service.Operations.Ai;
 
 [Cooldown(120)]
 [GlobalCooldown(5)]
+[ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ImageGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
@@ -30,12 +31,6 @@ public class ImageGenerationOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
-        {
-            await _telegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
-            return;
-        }
-
         var request = msg.Text.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи ", string.Empty);
         try
         {

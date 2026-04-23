@@ -13,6 +13,7 @@ namespace Saturn.Bot.Service.Operations.Ai;
 
 [Cooldown(120)]
 [GlobalCooldown(5)]
+[ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ImageEditOperation : IOperation
 {
     private const string CommandPrefix1 = "отредактируй";
@@ -54,12 +55,6 @@ public class ImageEditOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
-        {
-            await _telegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
-            return;
-        }
-
         var text = msg.Text ?? msg.Caption;
         var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
         var prompt = text[prefix.Length..].Trim();
