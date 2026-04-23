@@ -9,6 +9,7 @@
       "applicationUrl": "http://localhost:5001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
+        "BOT_TOKEN": "1169135083:AAHbMyn4rzq5FyOyOpQw6R_IdEOMu5sWkJ0",
         "CONNECTION_STRING_local" : "Host=localhost;Port=5432;Database=saturn;Username=postgres;Password=mysecretpassword",
         "CONNECTION_STRING" : "Host=152.53.94.213;Port=5432;Database=saturn;Username=postgres;Password=2Y1Eqt35h7cE"
       }

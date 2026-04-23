@@ -55,7 +55,9 @@ Use `[Cooldown(seconds)]` attribute on an operation class to rate-limit it per u
 - **Ai/** — Chat generation (`/` prefix), image generation (`покажи`), image editing (`отредактируй`/`измени`), image description (`нука`)
 - **Statistics/** — User stats, top talkers, favorite stickers, all-time stats
 - **FunnyStaff/** — Roll (`на дабл`), image distortion (`жмыхни`), who-today picker
-- **Infrastructure/** — `SaveMessageOperation` runs on every message to persist to DB
+- **Infrastructure/** — `SaveMessageOperation` persists every message to DB; `HelpOperation` responds to `помощь` with bot usage guide
+
+> **Important:** When adding a new operation, update `Saturn.Telegram.Bot/help.md` to document the new trigger and what it does. This file is read once at startup and served verbatim by `HelpOperation`.
 
 ### Data Flow
 

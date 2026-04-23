@@ -32,4 +32,10 @@
       <Folder Include="Infrastructure\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="help.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>
