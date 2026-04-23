@@ -13,7 +13,7 @@ public class HelpOperation(TelegramBotClient telegramBotClient) : IOperation
         .EscapeMarkdownV2();
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.ToLower() == "помощь";
+        msg.HasText("помощь");
 
     public Task OnMessageAsync(Message msg, UpdateType type) =>
         telegramBotClient.SendMessage(msg.Chat, _helpText, ParseMode.MarkdownV2,

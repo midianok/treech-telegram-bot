@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
@@ -37,8 +38,7 @@ public class PortraitOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) &&
-        msg.Text.Equals("портрет", StringComparison.CurrentCultureIgnoreCase);
+        msg.HasText("портрет");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {

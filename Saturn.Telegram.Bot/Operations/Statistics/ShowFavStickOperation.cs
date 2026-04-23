@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
@@ -19,7 +20,7 @@ public class ShowFavStickOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.Equals("любимый стикер", StringComparison.CurrentCultureIgnoreCase);
+        msg.HasText("любимый стикер");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {

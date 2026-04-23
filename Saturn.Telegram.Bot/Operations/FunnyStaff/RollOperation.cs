@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -16,7 +17,7 @@ public class RollOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        !string.IsNullOrEmpty(msg.Text) && msg.Text.StartsWith("на дабл", StringComparison.CurrentCultureIgnoreCase);
+        msg.TextStartsWith("на дабл");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
