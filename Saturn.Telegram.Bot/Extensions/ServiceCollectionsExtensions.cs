@@ -34,7 +34,7 @@ public static class ServiceCollectionsExtensions
         serviceCollection.AddSingleton<ImageClient>(_ =>
         {
             var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
-            return new ImageClient("grok-imagine-image", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+            return new ImageClient("gpt-realtime-1.5", new ApiKeyCredential(apiKey));
         });
 
         serviceCollection.AddHttpClient<XaiImageEditClient>(x =>
