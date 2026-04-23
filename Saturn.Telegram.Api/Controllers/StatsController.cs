@@ -62,4 +62,39 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
 
         return users.Select(x => new UserMessageCountDto(x.Name, x.Count));
     }
+
+    [HttpGet("operation-calls")]
+    public async Task<IEnumerable<OperationCallDto>> GetOperationCalls(
+        [FromQuery] long chatId,
+        [FromQuery] DateTime? dateFrom,
+        [FromQuery] DateTime? dateTo,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var query = db.OperationCalls.Where(x => x.ChatId == chatId);
+
+        if (dateFrom.HasValue)
+        {
+            query = query.Where(x => x.CalledAt >= dateFrom.Value);
+        }
+
+        if (dateTo.HasValue)
+        {
+            query = query.Where(x => x.CalledAt < dateTo.Value);
+        }
+
+        var calls = await query
+            .Join(db.Users, c => c.UserId, u => u.Id, (c, u) => new
+            {
+                c.OperationName,
+                c.CalledAt,
+                c.UserId,
+                UserName = (u.FirstName + " " + u.LastName).Trim()
+            })
+            .OrderByDescending(x => x.CalledAt)
+            .ToListAsync(cancellationToken);
+
+        return calls.Select(x => new OperationCallDto(x.OperationName, x.CalledAt, x.UserId, x.UserName));
+    }
 }
