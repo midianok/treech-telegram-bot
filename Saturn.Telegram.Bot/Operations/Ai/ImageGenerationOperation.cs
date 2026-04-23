@@ -34,7 +34,7 @@ public class ImageGenerationOperation : IOperation
         var request = msg.Text.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи ", string.Empty);
         try
         {
-            var clientResult = _imageClient.GenerateImageAsync(request, new ImageGenerationOptions());
+            var clientResult = _imageClient.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes });
 
             while (!clientResult.IsCompleted)
             {
