@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Lib;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
@@ -12,24 +13,33 @@ public class SaveMessageService : ISaveMessageService
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
     private readonly IMemoryCache _memoryCache;
+    private readonly ILogger<SaveMessageService> _logger;
 
-    public SaveMessageService(IDbContextFactory<SaturnContext> contextFactory, IMemoryCache memoryCache)
+    public SaveMessageService(IDbContextFactory<SaturnContext> contextFactory, IMemoryCache memoryCache, ILogger<SaveMessageService> logger)
     {
         _contextFactory = contextFactory;
         _memoryCache = memoryCache;
+        _logger = logger;
     }
 
     public async Task SaveMessageAsync(Message msg)
     {
-        if (msg.From == null) return;
+        try
+        {
+            if (msg.From == null) return;
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+            await using var db = await _contextFactory.CreateDbContextAsync();
 
-        await ProcessUser(msg, db);
-        await ProcessChat(msg, db);
-        await ProcessMessage(msg, db);
+            await ProcessUser(msg, db);
+            await ProcessChat(msg, db);
+            await ProcessMessage(msg, db);
 
-        await db.SaveChangesAsync();
+            await db.SaveChangesAsync();
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "*Error* saving message: {Message}", exception.Message);
+        }
     }
     
     private async Task ProcessMessage(Message msg, SaturnContext db)
