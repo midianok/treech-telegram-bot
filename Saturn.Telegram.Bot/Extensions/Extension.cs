@@ -23,4 +23,22 @@ public static class Extension
         }
         throw new Exception($"Unable to parse long string {longString}");
     }
+
+    public static string EscapeMarkdownV2(this string text) => text
+        .Replace("_", "\\_")
+        .Replace("[", "\\[")
+        .Replace("]", "\\]")
+        .Replace("(", "\\(")
+        .Replace(")", "\\)")
+        .Replace("~", "\\~")
+        .Replace(">", "\\>")
+        .Replace("#", "\\#")
+        .Replace("+", "\\+")
+        .Replace("-", "\\-")
+        .Replace("=", "\\=")
+        .Replace("|", "\\|")
+        .Replace("{", "\\{")
+        .Replace("}", "\\}")
+        .Replace(".", "\\.")
+        .Replace("!", "\\!");
 }
