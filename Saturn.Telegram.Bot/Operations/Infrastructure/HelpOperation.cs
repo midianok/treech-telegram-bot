@@ -9,7 +9,7 @@ namespace Saturn.Bot.Service.Operations.Infrastructure;
 public class HelpOperation(TelegramBotClient telegramBotClient) : IOperation
 {
     private readonly string _helpText = File
-        .ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "help.md"))
+        .ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Help.md"))
         .EscapeMarkdownV2();
 
     public bool Validate(Message msg, UpdateType type) =>
