@@ -7,6 +7,7 @@ using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Operation;
+using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -20,6 +21,7 @@ public class OperationManager
     private readonly ICooldownService _cooldownService;
     private readonly IOperationCallRepository _operationCallRepository;
     private readonly ISaveMessageService _saveMessageService;
+    private readonly TelegramBotClient _botClient;
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -33,20 +35,22 @@ public class OperationManager
         ILogger<OperationManager> logger,
         ICooldownService cooldownService,
         IOperationCallRepository operationCallRepository,
-        ISaveMessageService saveMessageService)
+        ISaveMessageService saveMessageService,
+        TelegramBotClient botClient)
     {
         _operations = operations;
         _logger = logger;
         _cooldownService = cooldownService;
         _operationCallRepository = operationCallRepository;
         _saveMessageService = saveMessageService;
+        _botClient = botClient;
     }
 
     public async Task MessageHandler(Message msg, UpdateType type)
     {
         try
         {
-            await _saveMessageService.SaveMessageAsync(msg);
+             await _saveMessageService.SaveMessageAsync(msg);
         }
         catch (Exception exception)
         {
@@ -66,6 +70,11 @@ public class OperationManager
             }
 
             if (!IsAllowed(msg.From?.Id, operation))
+            {
+                continue;
+            }
+
+            if (await IsChatOnlyViolatedAsync(msg, operation))
             {
                 continue;
             }
@@ -92,6 +101,23 @@ public class OperationManager
     {
         var allowAttr = operation.GetAttribute<AllowAttribute>();
         return allowAttr == null || allowAttr.UserIds.Contains(userId ?? 0);
+    }
+
+    private async Task<bool> IsChatOnlyViolatedAsync(Message msg, IOperation operation)
+    {
+        var chatOnlyAttr = operation.GetAttribute<ChatOnlyAttribute>();
+        if (chatOnlyAttr == null)
+        {
+            return false;
+        }
+
+        if (msg.Chat.Type is ChatType.Group or ChatType.Supergroup)
+        {
+            return false;
+        }
+
+        await _botClient.SendMessage(msg.Chat, chatOnlyAttr.Message, replyParameters: new ReplyParameters { MessageId = msg.Id });
+        return true;
     }
 
     public async Task UpdateHandler(Update update)

@@ -13,6 +13,7 @@ using Telegram.Bot.Types.Enums;
 namespace Saturn.Bot.Service.Operations.Ai;
 
 [Cooldown(60)]
+[ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ImageDescriptionOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
@@ -38,12 +39,6 @@ public class ImageDescriptionOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
-        {
-            await _telegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
-            return;
-        }
-
         var fileId = msg.Photo?.MaxBy(x => x.FileSize)?.FileId ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
 
         if (string.IsNullOrEmpty(fileId))

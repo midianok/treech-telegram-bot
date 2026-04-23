@@ -12,6 +12,7 @@ using Telegram.Bot.Types.Enums;
 namespace Saturn.Bot.Service.Operations.Ai;
 
 [Allow(198607451)] //ilya_naprimer
+[ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class AnimateOperation : IOperation
 {
     private const string Command = "оживи";
@@ -48,12 +49,6 @@ public class AnimateOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        if (msg.Chat.Type is not (ChatType.Group or ChatType.Supergroup))
-        {
-            await _telegramBotClient.SendMessage(msg.Chat, "иди общайся в чат, хитрый пидарас");
-            return;
-        }
-
         var fileId = msg.Photo?.MaxBy(x => x.FileSize)?.FileId
             ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
 
