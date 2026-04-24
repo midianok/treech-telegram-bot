@@ -55,6 +55,7 @@ public static class ServiceCollectionsExtensions
         
         
         serviceCollection
+            .AddSingleton<IAiService, AiService>()
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
             .AddSingleton<IMessageRepository, MessageRepository>()
             .AddSingleton<IOperationCallRepository, OperationCallRepository>()

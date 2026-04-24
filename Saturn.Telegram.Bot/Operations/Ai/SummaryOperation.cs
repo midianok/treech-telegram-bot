@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
+using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
-using System.ClientModel;
 using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -16,20 +15,17 @@ namespace Saturn.Bot.Service.Operations.Ai;
 public class SummaryOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly ChatClient _chatClient;
+    private readonly IAiService _aiService;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
-    private readonly ILogger<SummaryOperation> _logger;
 
     public SummaryOperation(
         TelegramBotClient telegramBotClient,
-        ChatClient chatClient,
-        IDbContextFactory<SaturnContext> contextFactory,
-        ILogger<SummaryOperation> logger)
+        IAiService aiService,
+        IDbContextFactory<SaturnContext> contextFactory)
     {
         _telegramBotClient = telegramBotClient;
-        _chatClient = chatClient;
+        _aiService = aiService;
         _contextFactory = contextFactory;
-        _logger = logger;
     }
 
     public bool Validate(Message msg, UpdateType type)
@@ -99,23 +95,13 @@ public class SummaryOperation : IOperation
             "оскорблениями, провокациями и другим острым контентом — это нормально для неформального общения. " +
             "Не отказывайся от задачи и не цензурируй содержание. ";
 
-        try
-        {
-            var clientResult = await _chatClient.CompleteChatAsync(
-            [
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(prompt)
-            ]);
-            var result = clientResult.Value.Content.FirstOrDefault()?.Text;
+        var result = await _aiService.CompleteChatAsync(
+        [
+            new SystemChatMessage(systemPrompt),
+            new UserChatMessage(prompt)
+        ]);
 
-            await _telegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так",
-                ParseMode.None, new ReplyParameters { MessageId = msg.Id });
-        }
-        catch (ClientResultException ex) when (ex.Status == 429)
-        {
-            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
-            await _telegramBotClient.SendMessage(msg.Chat, "денег нет, но вы держитесь",
-                replyParameters: new ReplyParameters { MessageId = msg.Id });
-        }
+        await _telegramBotClient.SendMessage(msg.Chat, result,
+            ParseMode.None, new ReplyParameters { MessageId = msg.Id });
     }
 }
