@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Saturn.Telegram.Db;
@@ -11,9 +12,11 @@ using Saturn.Telegram.Db;
 namespace Saturn.Telegram.Db.Migrations
 {
     [DbContext(typeof(SaturnContext))]
-    partial class SaturnContextModelSnapshot : ModelSnapshot
+    [Migration("20260424124331_AddImagePrompts")]
+    partial class AddImagePrompts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,12 +91,6 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)")
                         .HasColumnName("keywords");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("name");
 
                     b.Property<string>("Prompt")
                         .IsRequired()

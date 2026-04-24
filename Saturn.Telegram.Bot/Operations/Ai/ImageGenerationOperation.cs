@@ -1,6 +1,7 @@
 using Saturn.Bot.Service.Extensions;
 using OpenAI.Images;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Saturn.Telegram.Lib.Attributes;
 using Telegram.Bot;
@@ -16,11 +17,13 @@ public class ImageGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
+    private readonly IImagePromptRepository _imagePromptRepository;
 
-    public ImageGenerationOperation(TelegramBotClient telegramBotClient, IAiService aiService)
+    public ImageGenerationOperation(TelegramBotClient telegramBotClient, IAiService aiService, IImagePromptRepository imagePromptRepository)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
+        _imagePromptRepository = imagePromptRepository;
     }
 
     public bool Validate(Message msg, UpdateType type) =>
@@ -28,9 +31,10 @@ public class ImageGenerationOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        var request = msg.Text.ToLower().Replace("покажи", string.Empty);
+        var rawQuery = msg.Text!.ToLower().Replace("покажи", string.Empty).Trim();
+        var prompt = await _imagePromptRepository.FindPromptAsync(rawQuery) ?? rawQuery;
 
-        var generationTask = _aiService.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes });
+        var generationTask = _aiService.GenerateImageAsync(prompt, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes });
 
         while (!generationTask.IsCompleted)
         {
