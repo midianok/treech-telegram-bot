@@ -1,9 +1,7 @@
-using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
+using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
-using System.Net;
 using Saturn.Telegram.Lib.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -21,16 +19,14 @@ public class ImageEditOperation : IOperation
     private const int MaxImages = 3;
 
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly XaiImageEditClient _xaiImageEditClient;
+    private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
-    private readonly ILogger<ImageEditOperation> _logger;
 
-    public ImageEditOperation(TelegramBotClient telegramBotClient, XaiImageEditClient xaiImageEditClient, ISaveMessageService saveMessageService, ILogger<ImageEditOperation> logger)
+    public ImageEditOperation(TelegramBotClient telegramBotClient, IAiService aiService, ISaveMessageService saveMessageService)
     {
         _telegramBotClient = telegramBotClient;
-        _xaiImageEditClient = xaiImageEditClient;
+        _aiService = aiService;
         _saveMessageService = saveMessageService;
-        _logger = logger;
     }
 
     public bool Validate(Message msg, UpdateType type)
@@ -42,11 +38,9 @@ public class ImageEditOperation : IOperation
 
         if (!hasPrefix) return false;
 
-        // Reply to a photo (existing behaviour)
         if (msg.ReplyToMessage is { Type: MessageType.Photo, Photo: not null })
             return true;
 
-        // Own message with photo(s) attached
         if (msg.Photo != null)
             return true;
 
@@ -61,14 +55,12 @@ public class ImageEditOperation : IOperation
 
         var images = new List<byte[]>();
 
-        // Photos from the replied-to message
         if (msg.ReplyToMessage?.Photo != null)
         {
             var fileId = msg.ReplyToMessage.Photo.MaxBy(x => x.FileSize)!.FileId;
             images.Add(await _telegramBotClient.DownloadFileAsync(fileId));
         }
 
-        // Photos attached to the user's own message
         if (msg.Photo != null)
         {
             var fileId = msg.Photo.MaxBy(x => x.FileSize)!.FileId;
@@ -80,30 +72,22 @@ public class ImageEditOperation : IOperation
 
     private async Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt)
     {
-        try
+        var editTask = _aiService.EditImageAsync(images, prompt);
+
+        while (!editTask.IsCompleted)
         {
-            var editTask = _xaiImageEditClient.EditImageAsync(images, prompt);
-
-            while (!editTask.IsCompleted)
-            {
-                await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
-
-            var resultBytes = await editTask;
-
-            using var resultStream = new MemoryStream(resultBytes);
-            var reply = await _telegramBotClient.SendPhoto(
-                msg.Chat.Id,
-                new InputFileStream(resultStream),
-                replyParameters: new ReplyParameters { MessageId = msg.MessageId });
-
-            await _saveMessageService.SaveMessageAsync(reply);
+            await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
+            await Task.Delay(TimeSpan.FromSeconds(1));
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
-        {
-            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
-            await _telegramBotClient.SendMessage(msg.Chat.Id, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
-        }
+
+        var resultBytes = await editTask;
+
+        using var resultStream = new MemoryStream(resultBytes);
+        var reply = await _telegramBotClient.SendPhoto(
+            msg.Chat.Id,
+            new InputFileStream(resultStream),
+            replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+
+        await _saveMessageService.SaveMessageAsync(reply);
     }
 }

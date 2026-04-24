@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Telegram.Lib.Exceptions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Operation;
@@ -66,6 +67,18 @@ public class OperationManager
                 await operation.OnMessageAsync(msg, type);
                 _cooldownService.SetCooldown(operation, msg);
                 await _operationCallRepository.RecordAsync(operation.GetType().Name, msg.Chat.Id, msg.From?.Id ?? 0);
+            }
+            catch (AiBudgetExhaustedException)
+            {
+                await _botClient.SendMessage(msg.Chat, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = msg.Id });
+            }
+            catch (AiContentModerationException)
+            {
+                await _botClient.SendMessage(msg.Chat, "запрос не прошёл модерацию контента", replyParameters: new ReplyParameters { MessageId = msg.Id });
+            }
+            catch (AiEmptyResponseException)
+            {
+                await _botClient.SendMessage(msg.Chat, "что-то пошло не так", replyParameters: new ReplyParameters { MessageId = msg.Id });
             }
             catch (Exception exception)
             {

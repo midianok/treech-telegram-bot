@@ -1,12 +1,11 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
+using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
-using System.ClientModel;
 using Saturn.Telegram.Lib.Attributes;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -20,31 +19,28 @@ namespace Saturn.Bot.Service.Operations.Ai;
 public class ChatGenerationOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly ChatClient _chatClient;
+    private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IMemoryCache _memoryCache;
-    private readonly ILogger<ChatGenerationOperation> _logger;
     private readonly string _invokeCommand;
 
     public ChatGenerationOperation(
         TelegramBotClient telegramBotClient,
-        ChatClient chatClient,
+        IAiService aiService,
         ISaveMessageService saveMessageService,
         IChatCachedRepository chatCachedRepository,
         IMessageRepository messageRepository,
         IMemoryCache memoryCache,
-        IConfiguration configuration,
-        ILogger<ChatGenerationOperation> logger)
+        IConfiguration configuration)
     {
         _telegramBotClient = telegramBotClient;
-        _chatClient = chatClient;
+        _aiService = aiService;
         _saveMessageService = saveMessageService;
         _chatCachedRepository = chatCachedRepository;
         _memoryCache = memoryCache;
         _messageRepository = messageRepository;
-        _logger = logger;
         _invokeCommand = configuration.GetSectionOrThrow("INVOKE_COMMAND");
     }
 
@@ -98,19 +94,10 @@ public class ChatGenerationOperation : IOperation
         messages.Add(new UserChatMessage(request));
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
-        try
-        {
-            var clientResult = await _chatClient.CompleteChatAsync(messages);
-            var result = clientResult.Value.Content.FirstOrDefault()?.Text;
+        var result = await _aiService.CompleteChatAsync(messages);
 
-            var reply = await _telegramBotClient.SendMessage(msg.Chat, result ?? "что-то пошло не так", ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
-            await _saveMessageService.SaveMessageAsync(reply);
-        }
-        catch (ClientResultException ex) when (ex.Status == 429)
-        {
-            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
-            await _telegramBotClient.SendMessage(msg.Chat, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = msg.Id });
-        }
+        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
+        await _saveMessageService.SaveMessageAsync(reply);
     }
 
     private bool IsReplyToBot(Message msg)
