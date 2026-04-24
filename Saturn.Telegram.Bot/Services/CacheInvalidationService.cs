@@ -10,6 +10,7 @@ namespace Saturn.Bot.Service.Services;
 public class CacheInvalidationService(
     IConfiguration configuration,
     IChatCachedRepository chatCachedRepository,
+    IImagePromptRepository imagePromptRepository,
     ILogger<CacheInvalidationService> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -50,6 +51,12 @@ public class CacheInvalidationService(
 
                     break;
                 }
+                case "image_prompt_invalidation":
+                {
+                    logger.LogInformation("Invalidating image prompts cache");
+                    await imagePromptRepository.InvalidateAsync();
+                    break;
+                }
             }
         };
 
@@ -58,6 +65,9 @@ public class CacheInvalidationService(
 
         await using var chatCmd = new NpgsqlCommand("LISTEN chat_invalidation", conn);
         await chatCmd.ExecuteNonQueryAsync(stoppingToken);
+
+        await using var imagePromptCmd = new NpgsqlCommand("LISTEN image_prompt_invalidation", conn);
+        await imagePromptCmd.ExecuteNonQueryAsync(stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
