@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Logging;
-using Saturn.Bot.Service.Infrastructure.XaiVideoGenerationClient;
+using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
-using System.Net;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -18,18 +17,18 @@ public class AnimateOperation : IOperation
     private const string Command = "оживи";
 
     private readonly TelegramBotClient _telegramBotClient;
-    private readonly XaiVideoGenerationClient _xaiVideoGenerationClient;
+    private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
     private readonly ILogger<AnimateOperation> _logger;
 
     public AnimateOperation(
         TelegramBotClient telegramBotClient,
-        XaiVideoGenerationClient xaiVideoGenerationClient,
+        IAiService aiService,
         ISaveMessageService saveMessageService,
         ILogger<AnimateOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
-        _xaiVideoGenerationClient = xaiVideoGenerationClient;
+        _aiService = aiService;
         _saveMessageService = saveMessageService;
         _logger = logger;
     }
@@ -60,7 +59,7 @@ public class AnimateOperation : IOperation
 
         try
         {
-            var generateTask = _xaiVideoGenerationClient.GenerateVideoFromImageAsync(imageBytes, cts.Token);
+            var generateTask = _aiService.GenerateVideoFromImageAsync(imageBytes, cts.Token);
 
             while (!generateTask.IsCompleted)
             {
@@ -77,11 +76,6 @@ public class AnimateOperation : IOperation
                 replyParameters: new ReplyParameters { MessageId = msg.MessageId });
 
             await _saveMessageService.SaveMessageAsync(reply);
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
-        {
-            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
-            await _telegramBotClient.SendMessage(msg.Chat.Id, "денег нет, но вы держитесь", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
         }
         catch (InvalidOperationException ex)
         {
