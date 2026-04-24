@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Services.Abstractions;
-using Saturn.Telegram.Lib;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
+using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;

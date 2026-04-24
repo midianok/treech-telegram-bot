@@ -1,13 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Saturn.Telegram.Lib;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
+using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Telegram.Bot.Types;
 using MessageEntity = Saturn.Telegram.Db.Entities.MessageEntity;
 
-namespace Saturn.Bot.Service.Services;
+namespace Saturn.Telegram.Lib.Infrastructure;
 
 public class SaveMessageService : ISaveMessageService
 {

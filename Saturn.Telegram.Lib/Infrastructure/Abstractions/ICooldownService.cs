@@ -1,7 +1,7 @@
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot.Types;
 
-namespace Saturn.Telegram.Lib.Infrastructure;
+namespace Saturn.Telegram.Lib.Infrastructure.Abstractions;
 
 public interface ICooldownService
 {
