@@ -11,6 +11,8 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib;
+using Saturn.Telegram.Lib.Infrastructure;
+using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Telegram.Bot;
 
 namespace Saturn.Bot.Service.Extensions;
