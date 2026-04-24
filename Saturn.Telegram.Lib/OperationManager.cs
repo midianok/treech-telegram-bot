@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Exceptions;
 using Saturn.Telegram.Lib.Extensions;
-using Saturn.Telegram.Lib.Infrastructure;
+using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Polling;

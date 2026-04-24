@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db;
-using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
 using System.Collections.Concurrent;
 using System.Text;

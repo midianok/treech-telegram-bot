@@ -1,6 +1,6 @@
 using Telegram.Bot.Types;
 
-namespace Saturn.Telegram.Lib;
+namespace Saturn.Telegram.Lib.Infrastructure.Abstractions;
 
 public interface ISaveMessageService
 {

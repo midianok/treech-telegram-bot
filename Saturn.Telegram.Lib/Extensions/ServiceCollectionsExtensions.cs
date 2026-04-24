@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Saturn.Telegram.Lib.Infrastructure;
+using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 
