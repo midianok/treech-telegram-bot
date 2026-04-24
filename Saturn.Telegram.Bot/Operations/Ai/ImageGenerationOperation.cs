@@ -27,11 +27,11 @@ public class ImageGenerationOperation : IOperation
     }
 
     public bool Validate(Message msg, UpdateType type) =>
-        msg.TextStartsWith("покажи ");
+        msg.TextStartsWith("покажи");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        var request = msg.Text.ToLower().Replace("сгенерируй ", string.Empty).Replace("покажи ", string.Empty);
+        var request = msg.Text.ToLower().Replace("покажи", string.Empty);
         try
         {
             var clientResult = _imageClient.GenerateImageAsync(request, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes });
