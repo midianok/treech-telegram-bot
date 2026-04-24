@@ -24,7 +24,10 @@
     depends_on:
       db:
         condition: service_healthy
-
+    networks:
+      - default
+      - proxy_net
+  
   db:
     image: postgres:17
     restart: always
@@ -43,4 +46,8 @@
 volumes:
   pgdata:
     driver: local
+    
+networks:
+  proxy_net:
+    external: true 
     
