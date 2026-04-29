@@ -8,7 +8,7 @@ namespace Saturn.Bot.Service.Operations.FunnyStaff;
 public class OlegexOperation : IOperation
 {
     private const string TargetUsername = "Olegex3";
-    private const double TriggerProbability = 0.30;
+    private const double TriggerProbability = 0.1;
 
     private static readonly string[] VideoExtensions = [".mp4", ".mov", ".avi"];
     private static readonly string[] PhotoExtensions = [".jpg", ".jpeg", ".png", ".gif"];
