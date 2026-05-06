@@ -49,9 +49,9 @@ public class ShowTopStatOperation : IOperation
 
         foreach (var user in topUsersByMessageCount)
         {
-            var userName = !string.IsNullOrEmpty(user.Username) ? $"@{user.Username}" : user.UserId.ToString();
+            var userName = FormatUser(user.UserId, user.Username, user.FirstName, user.LastName);
             var emoji = GetEmoji(iterator++);
-            replyMessage.Append($"{emoji} {user.FirstName} {user.LastName} ({userName}): {user.MessageCount}\n");
+            replyMessage.Append($"{emoji} {userName}: {user.MessageCount}\n");
         }
 
         var keyboard = new InlineKeyboardMarkup(
@@ -73,6 +73,19 @@ public class ShowTopStatOperation : IOperation
             DayOfWeek.Sunday => DateTime.Now.AddDays(-6).Date,
             _ => throw new ArgumentOutOfRangeException()
         };
+
+    private static string FormatUser(long userId, string? username, string? firstName, string? lastName)
+    {
+        if (!string.IsNullOrWhiteSpace(username))
+        {
+            return $"@{username}";
+        }
+
+        var fullName = string.Join(' ', new[] { firstName, lastName }
+            .Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        return string.IsNullOrWhiteSpace(fullName) ? userId.ToString() : fullName;
+    }
 
     private string GetEmoji(int iterator) =>
         iterator switch
