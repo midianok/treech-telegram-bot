@@ -18,6 +18,10 @@ public sealed class SaturnContext : DbContext
 
     public DbSet<ImagePromptEntity> ImagePrompts { get; set; } = null!;
 
+    public DbSet<UserKarmaEntity> UserKarma { get; set; } = null!;
+
+    public DbSet<KarmaChangeEntity> KarmaChanges { get; set; } = null!;
+
     public SaturnContext(DbContextOptions<SaturnContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -28,5 +32,7 @@ public sealed class SaturnContext : DbContext
         modelBuilder.ApplyConfiguration(new AiAgentEntityConfiguration());
         modelBuilder.ApplyConfiguration(new OperationCallEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ImagePromptEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new UserKarmaEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new KarmaChangeEntityConfiguration());
     }
 }
