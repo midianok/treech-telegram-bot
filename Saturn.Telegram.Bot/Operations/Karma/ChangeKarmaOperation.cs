@@ -152,8 +152,18 @@ public class ChangeKarmaOperation : IOperation
     private static string? Normalize(string? text) =>
         string.IsNullOrWhiteSpace(text) ? null : text.Trim().ToLowerInvariant();
 
-    private static string FormatUser(TelegramUser user) =>
-        string.IsNullOrWhiteSpace(user.Username) ? user.Id.ToString() : $"@{user.Username}";
+    private static string FormatUser(TelegramUser user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.Username))
+        {
+            return $"@{user.Username}";
+        }
+
+        var fullName = string.Join(' ', new[] { user.FirstName, user.LastName }
+            .Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        return string.IsNullOrWhiteSpace(fullName) ? user.Id.ToString() : fullName;
+    }
 
     private static string FormatDuration(TimeSpan duration)
     {
