@@ -20,7 +20,11 @@ public class ImageDistortionOperation : IOperation
 
     public bool Validate(Message msg, UpdateType type) =>
         type == UpdateType.Message &&
-        (msg.ReplyToMessage?.Photo != null || msg.ReplyToMessage?.Video != null || msg.ReplyToMessage?.Animation != null) &&
+        (msg.ReplyToMessage?.Photo != null ||
+         msg.ReplyToMessage?.Video != null ||
+         msg.ReplyToMessage?.Animation != null ||
+         msg.ReplyToMessage?.Sticker != null ||
+         msg.ReplyToMessage?.VideoNote != null) &&
         msg.HasText("жмыхни");
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
@@ -37,17 +41,30 @@ public class ImageDistortionOperation : IOperation
         await _telegramBotClient.DownloadFile(file.FilePath, downloadStream);
         var fileBytes = downloadStream.ToArray();
 
-        if (msg.ReplyToMessage!.Type == MessageType.Photo)
+        var replyParams = new ReplyParameters { MessageId = msg.MessageId };
+        var replyType = msg.ReplyToMessage!.Type;
+
+        if (replyType == MessageType.Sticker && msg.ReplyToMessage.Sticker!.IsAnimated)
+        {
+            await _telegramBotClient.SendMessage(msg.Chat.Id, "Анимированные стикеры (TGS) не поддерживаются",
+                replyParameters: replyParams);
+            return;
+        }
+
+        var isImageLike = replyType == MessageType.Photo ||
+                          (replyType == MessageType.Sticker && !msg.ReplyToMessage.Sticker!.IsVideo);
+
+        if (isImageLike)
         {
             var resultBytes = _distortionService.DistortImage(fileBytes);
             using var sendStream = new MemoryStream(resultBytes);
             await _telegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(sendStream),
-                replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+                replyParameters: replyParams);
         }
-        else if (msg.ReplyToMessage!.Type == MessageType.Video || msg.ReplyToMessage!.Type == MessageType.Animation)
+        else
         {
             var progressMsg = await _telegramBotClient.SendMessage(msg.Chat.Id, "Жмыхаем",
-                replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+                replyParameters: replyParams);
 
             var onProgress = CreateProgressCallback(msg.Chat.Id, progressMsg.MessageId);
 
@@ -62,8 +79,16 @@ public class ImageDistortionOperation : IOperation
             }
 
             using var sendStream = new MemoryStream(resultBytes);
-            await _telegramBotClient.SendVideo(msg.Chat.Id, new InputFileStream(sendStream),
-                replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+            if (replyType == MessageType.VideoNote)
+            {
+                await _telegramBotClient.SendVideoNote(msg.Chat.Id, new InputFileStream(sendStream),
+                    replyParameters: replyParams);
+            }
+            else
+            {
+                await _telegramBotClient.SendVideo(msg.Chat.Id, new InputFileStream(sendStream),
+                    replyParameters: replyParams);
+            }
         }
     }
 
@@ -104,6 +129,8 @@ public class ImageDistortionOperation : IOperation
             MessageType.Photo => msg.ReplyToMessage!.Photo!.MaxBy(x => x.FileSize)!.FileId,
             MessageType.Video => msg.ReplyToMessage!.Video!.FileId,
             MessageType.Animation => msg.ReplyToMessage!.Animation!.FileId,
+            MessageType.Sticker => msg.ReplyToMessage!.Sticker!.FileId,
+            MessageType.VideoNote => msg.ReplyToMessage!.VideoNote!.FileId,
             _ => string.Empty
         };
 }
