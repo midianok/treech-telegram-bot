@@ -34,7 +34,8 @@ public class YtDlpSetupService : IHostedService
 
         if (File.Exists(ytDlpBinary))
         {
-            _logger.LogInformation("yt-dlp found at {Path}", ytDlpBinary);
+            _logger.LogInformation("yt-dlp found at {Path}, updating...", ytDlpBinary);
+            await RunSelfUpdateAsync(_logger, cancellationToken);
             return;
         }
 
