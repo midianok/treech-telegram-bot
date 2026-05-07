@@ -87,15 +87,15 @@ public class DistortionService : IDistortionService
                 }
             }
 
-            var audioPath = Path.Combine(fileTempDir, $"{id}_audio.aac");
-            var distortedAudioPath = Path.Combine(fileTempDir, $"{id}_audio_distorted.aac");
+            var audioPath = Path.Combine(fileTempDir, $"{id}_audio.wav");
+            var distortedAudioPath = Path.Combine(fileTempDir, $"{id}_audio_distorted.wav");
             var hasAudio = false;
 
             using (var process = new Process())
             {
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.FileName = ffmpegExe;
-                process.StartInfo.Arguments = $"-i \"{videoFilePath}\" -vn -c:a aac -y \"{audioPath}\"";
+                process.StartInfo.Arguments = $"-i \"{videoFilePath}\" -vn -y \"{audioPath}\"";
                 process.Start();
                 await process.WaitForExitAsync();
                 hasAudio = process.ExitCode == 0 && new FileInfo(audioPath).Length > 0;
@@ -106,7 +106,7 @@ public class DistortionService : IDistortionService
                 using var process = new Process();
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.FileName = ffmpegExe;
-                process.StartInfo.Arguments = $"-i \"{audioPath}\" -af \"vibrato=f=10:d=1.0,tremolo=f=8:d=0.9\" -y \"{distortedAudioPath}\"";
+                process.StartInfo.Arguments = $"-i \"{audioPath}\" -af \"vibrato=f=10:d=0.8,tremolo=f=8:d=0.9\" -y \"{distortedAudioPath}\"";
                 process.Start();
                 await process.WaitForExitAsync();
                 hasAudio = process.ExitCode == 0 && new FileInfo(distortedAudioPath).Length > 0;
