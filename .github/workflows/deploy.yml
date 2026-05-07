@@ -9,6 +9,8 @@ jobs:
   build-and-push-bot:
     name: Build & Push Bot image
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
 
     steps:
       - name: Checkout
@@ -38,6 +40,8 @@ jobs:
   build-and-push-api:
     name: Build & Push API image
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
 
     steps:
       - name: Checkout
