@@ -17,11 +17,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -30,9 +31,9 @@ jobs:
           file: ./Saturn.Telegram.Bot/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: midianok/saturn:latest
-          cache-from: type=registry,ref=midianok/saturn:cache
-          cache-to: type=registry,ref=midianok/saturn:cache,mode=max
+          tags: ghcr.io/midianok/saturn:latest
+          cache-from: type=registry,ref=ghcr.io/midianok/saturn:cache
+          cache-to: type=registry,ref=ghcr.io/midianok/saturn:cache,mode=max
 
   build-and-push-api:
     name: Build & Push API image
@@ -45,11 +46,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -58,9 +60,9 @@ jobs:
           file: ./Saturn.Telegram.Api/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: midianok/saturn-api:latest
-          cache-from: type=registry,ref=midianok/saturn-api:cache
-          cache-to: type=registry,ref=midianok/saturn-api:cache,mode=max
+          tags: ghcr.io/midianok/saturn-api:latest
+          cache-from: type=registry,ref=ghcr.io/midianok/saturn-api:cache
+          cache-to: type=registry,ref=ghcr.io/midianok/saturn-api:cache,mode=max
 
   deploy:
     name: Deploy to server

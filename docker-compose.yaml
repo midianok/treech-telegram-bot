@@ -1,7 +1,7 @@
 ﻿services:
   saturn:
     platform: linux/amd64
-    image: midianok/saturn:latest
+    image: ghcr.io/midianok/saturn:latest
     build:
       context: .
       dockerfile: ./Saturn.Telegram.Bot/Dockerfile
@@ -16,7 +16,7 @@
 
   saturn-api:
     platform: linux/amd64
-    image: midianok/saturn-api:latest
+    image: ghcr.io/midianok/saturn-api:latest
     build:
       context: .
       dockerfile: ./Saturn.Telegram.Api/Dockerfile
