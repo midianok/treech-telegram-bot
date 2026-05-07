@@ -87,12 +87,40 @@ public class DistortionService : IDistortionService
                 }
             }
 
+            var audioPath = Path.Combine(fileTempDir, $"{id}_audio.aac");
+            var distortedAudioPath = Path.Combine(fileTempDir, $"{id}_audio_distorted.aac");
+            var hasAudio = false;
+
+            using (var process = new Process())
+            {
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.FileName = ffmpegExe;
+                process.StartInfo.Arguments = $"-i \"{videoFilePath}\" -vn -c:a aac -y \"{audioPath}\"";
+                process.Start();
+                await process.WaitForExitAsync();
+                hasAudio = process.ExitCode == 0 && new FileInfo(audioPath).Length > 0;
+            }
+
+            if (hasAudio)
+            {
+                using var process = new Process();
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.FileName = ffmpegExe;
+                process.StartInfo.Arguments = $"-i \"{audioPath}\" -af \"vibrato=f=10:d=1.0,tremolo=f=8:d=0.9\" -y \"{distortedAudioPath}\"";
+                process.Start();
+                await process.WaitForExitAsync();
+                hasAudio = process.ExitCode == 0 && new FileInfo(distortedAudioPath).Length > 0;
+            }
+            _logger.LogInformation("Audio extracted and distorted: {HasAudio}", hasAudio);
+
             var outputVideoPath = Path.Combine(fileTempDir, $"{id}_output.mp4");
             using (var process = new Process())
             {
                 process.StartInfo.CreateNoWindow = true;
                 process.StartInfo.FileName = ffmpegExe;
-                process.StartInfo.Arguments = $"-y -framerate 15 -i \"{Path.Combine(distortedDir, "frame_%d.png")}\" -vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" -c:v libx264 -pix_fmt yuv420p \"{outputVideoPath}\"";
+                var audioArgs = hasAudio ? $"-i \"{distortedAudioPath}\" " : "";
+                var audioCodec = hasAudio ? "-c:a aac -shortest " : "";
+                process.StartInfo.Arguments = $"-y -framerate 15 -i \"{Path.Combine(distortedDir, "frame_%d.png")}\" {audioArgs}-vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" -c:v libx264 -pix_fmt yuv420p {audioCodec}\"{outputVideoPath}\"";
                 process.Start();
                 await process.WaitForExitAsync();
             }
