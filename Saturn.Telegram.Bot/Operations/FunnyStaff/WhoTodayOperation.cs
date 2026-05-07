@@ -41,7 +41,7 @@ public class WhoTodayOperation : IOperation
             return;
         }
 
-        var todayMessage = msg.Text.ToLower().Replace("кто сегодня ", string.Empty);
+        var todayMessage = msg.Text!.ToLower().Replace("кто сегодня ", string.Empty);
         var message = await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
         await _saveMessageService.SaveMessageAsync(message);
     }

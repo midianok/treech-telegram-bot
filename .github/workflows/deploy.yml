@@ -10,6 +10,7 @@ jobs:
     name: Build & Push Bot image
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       packages: write
 
     steps:
@@ -41,6 +42,7 @@ jobs:
     name: Build & Push API image
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       packages: write
 
     steps:
