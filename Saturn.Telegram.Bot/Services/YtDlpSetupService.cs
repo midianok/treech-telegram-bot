@@ -8,6 +8,8 @@ public class YtDlpSetupService : IHostedService
 {
     public static readonly string ToolsFolder = Path.Combine(AppContext.BaseDirectory, "Tools");
     public static readonly string YtDlpBinaryName = OperatingSystem.IsWindows() ? "yt-dlp.exe" : "yt-dlp";
+    public static readonly string? YoutubeCookiesPath = Environment.GetEnvironmentVariable("YOUTUBE_COOKIES_PATH");
+    public static readonly string? InstagramCookiesPath = Environment.GetEnvironmentVariable("INSTAGRAM_COOKIES_PATH");
 
     private static string GetDownloadUrl()
     {

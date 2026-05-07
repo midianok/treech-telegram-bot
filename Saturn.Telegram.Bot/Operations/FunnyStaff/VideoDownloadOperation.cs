@@ -14,6 +14,7 @@ public partial class VideoDownloadOperation : IOperation
 {
     private static readonly Regex VideoUrlRegex = BuildVideoUrlRegex();
     private static readonly Regex TikTokUrlRegex = new(@"tiktok\.com", RegexOptions.IgnoreCase);
+    private static readonly Regex InstagramUrlRegex = new(@"instagram\.com", RegexOptions.IgnoreCase);
 
     private readonly TelegramBotClient _telegramBotClient;
     private readonly ILogger<VideoDownloadOperation> _logger;
@@ -62,6 +63,11 @@ public partial class VideoDownloadOperation : IOperation
 
             var overrideOptions = new OptionSet();
             overrideOptions.AddCustomOption("--extractor-args", "youtube:player_client=ios");
+            var cookiesPath = InstagramUrlRegex.IsMatch(url)
+                ? YtDlpSetupService.InstagramCookiesPath
+                : YtDlpSetupService.YoutubeCookiesPath;
+            if (!string.IsNullOrEmpty(cookiesPath) && File.Exists(cookiesPath))
+                overrideOptions.AddCustomOption("--cookies", cookiesPath);
 
             var result = await ytdl.RunVideoDownload(
                 url: url,

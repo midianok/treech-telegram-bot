@@ -51,6 +51,8 @@ Configured via `.env` (picked up by Docker Compose):
 | `POSTGRES_PASSWORD` | DB password |
 | `LOG_CHAT_ID` | Telegram chat ID for error logs |
 | `IMAGE_MANIPULATION_SERVICE_URL` | External image service endpoint |
+| `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
+| `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
 | `*OperationEnabled` | Feature flags per operation (e.g. `StatisticsOperationEnabled`) |
 
 ## Key Dependencies

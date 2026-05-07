@@ -7,6 +7,9 @@
       dockerfile: ./Saturn.Telegram.Bot/Dockerfile
     env_file:
       - ./.env
+    volumes:
+      - ./youtube_cookies.txt:/app/youtube_cookies.txt:ro
+      - ./instagram_cookies.txt:/app/instagram_cookies.txt:ro
     depends_on:
       db:
         condition: service_healthy
