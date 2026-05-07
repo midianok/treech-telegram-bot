@@ -8,8 +8,8 @@
     env_file:
       - ./.env
     volumes:
-      - ./youtube_cookies.txt:/app/youtube_cookies.txt:ro
-      - ./instagram_cookies.txt:/app/instagram_cookies.txt:ro
+      - ./youtube_cookies.txt:/app/youtube_cookies.txt
+      - ./instagram_cookies.txt:/app/instagram_cookies.txt
     depends_on:
       db:
         condition: service_healthy
