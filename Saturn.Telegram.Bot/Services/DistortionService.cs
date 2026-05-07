@@ -71,36 +71,43 @@ public class DistortionService : IDistortionService
             var distortedDir = Path.Combine(fileTempDir, "distorted");
             Directory.CreateDirectory(distortedDir);
 
-            _logger.LogInformation("Distorting {Count} frames", framePaths.Count);
-            for (var i = 0; i < framePaths.Count; i++)
-            {
-                using var image = new MagickImage(framePaths[i]);
-                image.LiquidRescale(new Percentage(40), new Percentage(40), 1, 0);
-                image.Resize(image.Width, image.Height);
-                
-                await image.WriteAsync(Path.Combine(distortedDir, $"frame_{i + 1}.png"));
-                _logger.LogInformation("Frame {N} distorted", i + 1);
-
-                if (onProgress != null)
-                {
-                    await onProgress((i + 1) * 100 / framePaths.Count);
-                }
-            }
-
             var audioPath = Path.Combine(fileTempDir, $"{id}_audio.wav");
             var distortedAudioPath = Path.Combine(fileTempDir, $"{id}_audio_distorted.wav");
-            var hasAudio = false;
 
-            using (var process = new Process())
+            _logger.LogInformation("Distorting {Count} frames (parallel) + extracting audio", framePaths.Count);
+
+            var completed = 0;
+            var framesTask = Parallel.ForEachAsync(
+                framePaths.Select((path, i) => (path, i)),
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
+                async (item, ct) =>
+                {
+                    using var image = new MagickImage(item.path);
+                    image.LiquidRescale(new Percentage(40), new Percentage(40), 1, 0);
+                    image.Resize(image.Width, image.Height);
+                    await image.WriteAsync(Path.Combine(distortedDir, $"frame_{item.i + 1}.png"), ct);
+
+                    if (onProgress != null)
+                    {
+                        var done = Interlocked.Increment(ref completed);
+                        await onProgress(done * 100 / framePaths.Count);
+                    }
+                });
+
+            var audioTask = Task.Run(async () =>
             {
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.FileName = ffmpegExe;
-                process.StartInfo.Arguments = $"-i \"{videoFilePath}\" -vn -y \"{audioPath}\"";
-                process.Start();
-                await process.WaitForExitAsync();
-                hasAudio = process.ExitCode == 0 && new FileInfo(audioPath).Length > 0;
-            }
+                using var extractProcess = new Process();
+                extractProcess.StartInfo.CreateNoWindow = true;
+                extractProcess.StartInfo.FileName = ffmpegExe;
+                extractProcess.StartInfo.Arguments = $"-i \"{videoFilePath}\" -vn -y \"{audioPath}\"";
+                extractProcess.Start();
+                await extractProcess.WaitForExitAsync();
+                return extractProcess.ExitCode == 0 && new FileInfo(audioPath).Length > 0;
+            });
 
+            await Task.WhenAll(framesTask, audioTask);
+
+            var hasAudio = await audioTask;
             if (hasAudio)
             {
                 using var process = new Process();
