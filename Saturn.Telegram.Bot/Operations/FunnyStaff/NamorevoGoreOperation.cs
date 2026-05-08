@@ -1,3 +1,4 @@
+using Saturn.Bot.Service.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -10,7 +11,7 @@ public class NamorevoGoreOperation(TelegramBotClient telegramBotClient) : IOpera
 {
     public bool Validate(Message msg, UpdateType type) =>
         !string.IsNullOrEmpty(msg.Text) &&
-        msg.Text.Contains("наморево горе", StringComparison.OrdinalIgnoreCase);
+        msg.HasText("наморево горе") || msg.HasText("наморово горе");
 
     public Task OnMessageAsync(Message msg, UpdateType type)
     {
