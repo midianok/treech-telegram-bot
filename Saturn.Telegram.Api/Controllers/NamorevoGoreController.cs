@@ -58,21 +58,17 @@ public class NamorevoGoreController(
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var entry = await db.NamorevoGoreScores
+        var entity = await db.NamorevoGoreScores
             .Include(x => x.User)
             .Where(x => x.UserId == userId)
-            .Select(x => new NamorevoGoreLeaderboardEntryDto(
-                x.UserId,
-                (x.User!.FirstName + " " + x.User.LastName).Trim(),
-                x.Score))
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (entry is null)
+        if (entity is null)
         {
             return NotFound();
         }
 
-        return entry;
+        return new NamorevoGoreLeaderboardEntryDto(entity.UserId, FormatUserName(entity.User!), entity.Score);
     }
 
     [HttpGet("leaderboard")]
@@ -82,22 +78,23 @@ public class NamorevoGoreController(
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var entries = await db.NamorevoGoreScores
+        var entities = await db.NamorevoGoreScores
             .Include(x => x.User)
             .OrderByDescending(x => x.Score)
             .Take(limit)
-            .Select(x => new NamorevoGoreLeaderboardEntryDto(
-                x.UserId,
-                (x.User!.FirstName + " " + x.User.LastName).Trim(),
-                x.Score))
             .ToListAsync(cancellationToken);
 
-        return entries;
+        return entities.Select(x => new NamorevoGoreLeaderboardEntryDto(x.UserId, FormatUserName(x.User!), x.Score));
     }
 
     private static string FormatUserName(UserEntity user)
     {
-        var name = (user.FirstName + " " + user.LastName).Trim();
-        return string.IsNullOrEmpty(name) ? user.Username ?? user.Id.ToString() : name;
+        if (!string.IsNullOrWhiteSpace(user.Username))
+        {
+            return $"@{user.Username}";
+        }
+
+        var fullName = (user.FirstName + " " + user.LastName).Trim();
+        return string.IsNullOrEmpty(fullName) ? user.Id.ToString() : fullName;
     }
 }
