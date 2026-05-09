@@ -41,11 +41,15 @@ public class NamorevoGoreOperation(
         var keyboard = new InlineKeyboardMarkup(
             InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/TreechBot/namorevogore?startapp={msg.Chat.Id}"));
 
-        await telegramBotClient.SendMessage(
+        var imagePath = Path.Combine(AppContext.BaseDirectory, "Media", "namorevo.jpg");
+        await using var stream = File.OpenRead(imagePath);
+        var inputFile = new InputFileStream(stream, "namorevo.jpg");
+
+        await telegramBotClient.SendPhoto(
             msg.Chat,
-            replyMessage.ToString(),
-            ParseMode.None,
-            new ReplyParameters { MessageId = msg.Id },
+            inputFile,
+            caption: replyMessage.ToString(),
+            replyParameters: new ReplyParameters { MessageId = msg.Id },
             replyMarkup: keyboard);
     }
 
