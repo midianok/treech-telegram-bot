@@ -53,7 +53,7 @@ public class NamorevoGoreOperation(
     {
         if (!string.IsNullOrWhiteSpace(username))
         {
-            return $"@{username}";
+            return $"{username}";
         }
 
         var fullName = string.Join(' ', new[] { firstName, lastName }
