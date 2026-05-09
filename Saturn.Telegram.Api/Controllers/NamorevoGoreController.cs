@@ -53,6 +53,28 @@ public class NamorevoGoreController(
         return Ok();
     }
 
+    [HttpGet("score/{userId:long}")]
+    public async Task<ActionResult<NamorevoGoreLeaderboardEntryDto>> GetScore(long userId, CancellationToken cancellationToken)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var entry = await db.NamorevoGoreScores
+            .Include(x => x.User)
+            .Where(x => x.UserId == userId)
+            .Select(x => new NamorevoGoreLeaderboardEntryDto(
+                x.UserId,
+                (x.User!.FirstName + " " + x.User.LastName).Trim(),
+                x.Score))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (entry is null)
+        {
+            return NotFound();
+        }
+
+        return entry;
+    }
+
     [HttpGet("leaderboard")]
     public async Task<IEnumerable<NamorevoGoreLeaderboardEntryDto>> GetLeaderboard(
         [FromQuery] int limit = 10,
