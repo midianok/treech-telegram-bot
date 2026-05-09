@@ -39,7 +39,7 @@ public class NamorevoGoreOperation(
         }
 
         var keyboard = new InlineKeyboardMarkup(
-            InlineKeyboardButton.WithUrl("Наморево горе", "https://t.me/TreechBot/namorevogore"));
+            InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/TreechBot/namorevogore?startapp={msg.Chat.Id}"));
 
         await telegramBotClient.SendMessage(
             msg.Chat,
