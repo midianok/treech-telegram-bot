@@ -33,12 +33,12 @@ public class NamorevoGoreController(
                 Score = request.Score
             });
         }
-        else
+        else if (request.Score > existing.Score)
         {
             db.NamorevoGoreScores.Update(new NamorevoGoreScoreEntity
             {
                 UserId = existing.UserId,
-                Score = existing.Score + request.Score
+                Score = request.Score
             });
         }
 
@@ -47,7 +47,7 @@ public class NamorevoGoreController(
         var userName = FormatUserName(user);
         await botClient.SendMessage(
             request.ChatId,
-            $"{userName} заработал {request.Score} очков в Наморево Горе! Всего: {(existing?.Score ?? 0) + request.Score}",
+            $"{userName} набрал {request.Score} очков в Наморево Горе!",
             cancellationToken: cancellationToken);
 
         return Ok();
