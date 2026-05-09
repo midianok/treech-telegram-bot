@@ -89,12 +89,17 @@ public class NamorevoGoreController(
 
     private static string FormatUserName(UserEntity user)
     {
+        var fullName = (user.FirstName + " " + user.LastName).Trim();
+        if (!string.IsNullOrEmpty(fullName))
+        {
+            return fullName;
+        }
+
         if (!string.IsNullOrWhiteSpace(user.Username))
         {
             return $"@{user.Username}";
         }
 
-        var fullName = (user.FirstName + " " + user.LastName).Trim();
-        return string.IsNullOrEmpty(fullName) ? user.Id.ToString() : fullName;
+        return user.Id.ToString();
     }
 }
