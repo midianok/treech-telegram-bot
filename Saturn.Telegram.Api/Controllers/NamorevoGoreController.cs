@@ -4,6 +4,9 @@ using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Saturn.Telegram.Api.Controllers;
 
@@ -44,10 +47,14 @@ public class NamorevoGoreController(
 
         await db.SaveChangesAsync(cancellationToken);
 
+        var keyboard = new InlineKeyboardMarkup(
+            InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/TreechBot/namorevogore?startapp={request.ChatId}"));
+        
         var userName = FormatUserName(user);
         await botClient.SendMessage(
             request.ChatId,
             $"{userName} набрал {request.Score} очков в Наморево Горе!",
+            replyMarkup: keyboard,
             cancellationToken: cancellationToken);
 
         return Ok();
