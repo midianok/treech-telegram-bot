@@ -20,7 +20,7 @@ public class OlegexOperation : IOperation
     public OlegexOperation(TelegramBotClient telegramBotClient)
     {
         _telegramBotClient = telegramBotClient;
-        var mediaDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media");
+        var mediaDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", "Oleg");
         _mediaFiles = Directory.Exists(mediaDir) ? Directory.GetFiles(mediaDir) : [];
     }
 
