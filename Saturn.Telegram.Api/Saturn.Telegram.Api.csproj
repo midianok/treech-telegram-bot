@@ -16,11 +16,4 @@
     <ItemGroup>
         <ProjectReference Include="..\Saturn.Telegram.Db\Saturn.Telegram.Db.csproj" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-    </ItemGroup>
-
 </Project>
