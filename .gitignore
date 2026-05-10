@@ -6,5 +6,6 @@ riderModule.iml
 .idea/
 Saturn.Telegram.Service/Properties/launchSettings.json
 Saturn.Telegram.Api/Properties/launchSettings.json
+Saturn.Telegram.Bot/Properties/launchSettings.json
 Saturn.Telegram.sln.DotSettings.user
 Saturn.Telegram.Db/bin
