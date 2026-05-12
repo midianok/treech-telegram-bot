@@ -108,7 +108,7 @@ public class ChatGenerationOperation : IOperation
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
         var result = await _aiService.CompleteChatAsync(messages);
 
-        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
+        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id });
         await _saveMessageService.SaveMessageAsync(reply);
     }
 
