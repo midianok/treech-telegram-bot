@@ -17,17 +17,19 @@ public class MessageRepository : IMessageRepository
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         
         var currentMessage = await dbContext.Messages
+            .Include(m => m.User)
             .FirstOrDefaultAsync(m => m.Id == messageId && m.ChatId == chatId);
-    
+
         if (currentMessage == null)
            return [];
-        
+
         var chain = new List<MessageEntity> { currentMessage };
 
         while (currentMessage is { ReplyToMessageId: not null, ReplyToMessageChatId: not null })
         {
             currentMessage = await dbContext.Messages
-                .FirstOrDefaultAsync(m => m.Id == currentMessage.ReplyToMessageId.Value && 
+                .Include(m => m.User)
+                .FirstOrDefaultAsync(m => m.Id == currentMessage.ReplyToMessageId.Value &&
                                           m.ChatId == currentMessage.ReplyToMessageChatId.Value);
         
             if (currentMessage == null)

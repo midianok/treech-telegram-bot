@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Saturn.Telegram.Lib.Attributes;
@@ -77,7 +78,12 @@ public class ChatGenerationOperation : IOperation
             if (messageChain.Count > 0)
             {
                 var userChatMessages = messageChain.OrderBy(x => x.MessageDate)
-                    .Select(x => new UserChatMessage(x.Text));
+                    .Select(x =>
+                    {
+                        var senderName = GetSenderName(x.User);
+                        var text = string.IsNullOrEmpty(senderName) ? x.Text : $"[{senderName}]: {x.Text}";
+                        return new UserChatMessage(text);
+                    });
                 messages.AddRange(userChatMessages);
             }
             else
@@ -91,6 +97,12 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
         }
 
+        var senderName = GetSenderName(msg.From);
+        if (!string.IsNullOrEmpty(senderName))
+        {
+            messages.Add(new SystemChatMessage($"Тебе сейчас пишет: {senderName}"));
+        }
+
         messages.Add(new UserChatMessage(request));
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
@@ -98,6 +110,28 @@ public class ChatGenerationOperation : IOperation
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.Markdown, new ReplyParameters { MessageId = msg.Id });
         await _saveMessageService.SaveMessageAsync(reply);
+    }
+
+    private static string GetSenderName(User? user)
+    {
+        if (user == null)
+        {
+            return string.Empty;
+        }
+
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrEmpty(user.Username) ? fullName : $"{fullName} (@{user.Username})";
+    }
+
+    private static string GetSenderName(UserEntity? user)
+    {
+        if (user == null)
+        {
+            return string.Empty;
+        }
+
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrEmpty(user.Username) ? fullName : $"{fullName} (@{user.Username})";
     }
 
     private bool IsReplyToBot(Message msg)

@@ -15,7 +15,7 @@ public class BotOperation(TelegramBotClient telegramBotClient) : IOperation
 
     public Task OnMessageAsync(Message msg, UpdateType type)
     {
-        var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/TreechBot/app?startapp={msg.Chat.Id}"));
+        var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/ilya_dev_bot/app?startapp={msg.Chat.Id}"));
         return telegramBotClient.SendMessage(msg.Chat, "Приложение", ParseMode.None, new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);
     }
 }
