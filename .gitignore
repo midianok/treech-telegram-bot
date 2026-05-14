@@ -1,6 +1,8 @@
 bin/
 obj/
 /packages/
+.DS_Store
+**/.DS_Store
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
