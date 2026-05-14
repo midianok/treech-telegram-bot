@@ -7,6 +7,7 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Saturn.Bot.Service</RootNamespace>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <NoWarn>$(NoWarn);NU1901;NU1902;NU1903;NU1904</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,16 +21,12 @@
         <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.11.1" />
         <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
         <PackageReference Include="Xabe.FFmpeg.Downloader" Version="6.0.2" />
-    <PackageReference Include="YoutubeDLSharp" Version="1.0.0" />
+        <PackageReference Include="YoutubeDLSharp" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Saturn.Telegram.Db\Saturn.Telegram.Db.csproj" />
       <ProjectReference Include="..\Saturn.Telegram.Lib\Saturn.Telegram.Lib.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Infrastructure\" />
     </ItemGroup>
 
     <ItemGroup>
