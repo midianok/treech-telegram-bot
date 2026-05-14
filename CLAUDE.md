@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build entire solution
-dotnet build Saturn.Telegram.sln
+dotnet build Saturn.Telegram.slnx
 
 # Run locally (requires .env values as env vars)
 dotnet run --project Saturn.Telegram.Bot/Saturn.Telegram.Bot.csproj

@@ -78,7 +78,7 @@ docker compose up
 ### Локальный запуск (без Docker)
 
 ```bash
-dotnet build Saturn.Telegram.sln
+dotnet build Saturn.Telegram.slnx
 dotnet run --project Saturn.Telegram.Bot/Saturn.Telegram.Bot.csproj
 dotnet run --project Saturn.Telegram.Api/Saturn.Telegram.Api.csproj
 ```

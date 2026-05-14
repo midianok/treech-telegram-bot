@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".github/workflows/deploy.yml" />
+    <File Path=".gitignore" />
+    <File Path="CLAUDE.md" />
+    <File Path="docker-compose.yaml" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="Saturn.Telegram.Api/Saturn.Telegram.Api.csproj" />
+  <Project Path="Saturn.Telegram.Bot/Saturn.Telegram.Bot.csproj" />
+  <Project Path="Saturn.Telegram.Db/Saturn.Telegram.Db.csproj" />
+  <Project Path="Saturn.Telegram.Lib/Saturn.Telegram.Lib.csproj" />
+</Solution>
