@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
@@ -23,7 +22,7 @@ public class LogsController(IDbContextFactory<SaturnContext> contextFactory) : C
             Source = request.Source,
             Level = request.Level,
             Message = request.Message,
-            Data = JsonDocument.Parse(request.Data.GetRawText()),
+            Data = request.Data.GetRawText(),
             CreatedAt = DateTime.UtcNow
         };
 
