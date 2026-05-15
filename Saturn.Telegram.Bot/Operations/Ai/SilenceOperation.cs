@@ -1,6 +1,7 @@
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -8,6 +9,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
+[Ignored]
 public class SilenceOperation : IOperation
 {
     private const string Prompt = "В чате долго молчат. Расскажи какойю-нибудь историю про человека которого ты знаешь";
