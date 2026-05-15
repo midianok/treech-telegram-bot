@@ -13,7 +13,7 @@ public class ChangeKarmaOperation : IOperation
 {
     private const int ChangeCooldownMinutes = 20;
 
-    private static readonly string[] PositiveMessages = ["спасибо", "+"];
+    private static readonly string[] PositiveMessages = ["спасибо"];
     private static readonly string[] NegativeMessages = ["фу", "-"];
 
     private readonly TelegramBotClient _telegramBotClient;
@@ -136,7 +136,7 @@ public class ChangeKarmaOperation : IOperation
             return null;
         }
 
-        if (PositiveMessages.Contains(text))
+        if (PositiveMessages.Contains(text) || (text.Length > 0 && text.All(c => c == '+')))
         {
             return 1;
         }
