@@ -15,7 +15,7 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("https://routefabric.ru", "https://midianok.github.io")
+        policy.WithOrigins("https://routefabric.ru", "https://midianok.github.io", "https://n0e7ni1rd9.cdn.twcstorage.ru/", "https://u598nb8u38.cdn.twcstorage.ru/")
             .AllowAnyHeader()
             .AllowAnyMethod());
 });
