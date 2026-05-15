@@ -24,6 +24,8 @@ public sealed class SaturnContext : DbContext
 
     public DbSet<NamorevoGoreScoreEntity> NamorevoGoreScores { get; set; } = null!;
 
+    public DbSet<LogEntity> Logs { get; set; } = null!;
+
     public SaturnContext(DbContextOptions<SaturnContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -37,5 +39,6 @@ public sealed class SaturnContext : DbContext
         modelBuilder.ApplyConfiguration(new UserKarmaEntityConfiguration());
         modelBuilder.ApplyConfiguration(new KarmaChangeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new NamorevoGoreScoreEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new LogEntityConfiguration());
     }
 }
