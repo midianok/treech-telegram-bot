@@ -62,12 +62,12 @@ public partial class VideoDownloadOperation : IOperation
             };
 
             var overrideOptions = new OptionSet();
-            overrideOptions.AddCustomOption("--extractor-args", "youtube:player_client=ios");
-            var cookiesPath = InstagramUrlRegex.IsMatch(url)
-                ? YtDlpSetupService.InstagramCookiesPath
-                : YtDlpSetupService.YoutubeCookiesPath;
-            if (!string.IsNullOrEmpty(cookiesPath) && File.Exists(cookiesPath))
-                overrideOptions.AddCustomOption("--cookies", cookiesPath);
+            if (InstagramUrlRegex.IsMatch(url))
+            {
+                var cookiesPath = YtDlpSetupService.InstagramCookiesPath;
+                if (!string.IsNullOrEmpty(cookiesPath) && File.Exists(cookiesPath))
+                    overrideOptions.AddCustomOption("--cookies", cookiesPath);
+            }
 
             var result = await ytdl.RunVideoDownload(
                 url: url,
@@ -106,7 +106,7 @@ public partial class VideoDownloadOperation : IOperation
     }
 
     [GeneratedRegex(
-        @"https?://(?:(?:www\.|vt\.|vm\.)?tiktok\.com/\S+|(?:www\.)?instagram\.com/reel/\S+|(?:www\.)?youtube\.com/shorts/\S+)",
+        @"https?://(?:(?:www\.|vt\.|vm\.)?tiktok\.com/\S+|(?:www\.)?instagram\.com/reel/\S+)",
         RegexOptions.IgnoreCase)]
     private static partial Regex BuildVideoUrlRegex();
 }
