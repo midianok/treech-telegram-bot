@@ -272,7 +272,7 @@ public class SilenceOperation : IOperation
 
         return texts
             .SelectMany(t => Regex.Split(t.ToLower(), @"[^\p{L}]+"))
-            .Where(w => w.Length >= 3 && !stopWords.Contains(w))
+            .Where(w => w.Length >= 3 && !stopWords.Contains(w) && Regex.IsMatch(w, @"^\p{IsCyrillic}+$"))
             .GroupBy(w => w)
             .Select(g => (Word: g.Key, Count: g.Count()))
             .OrderByDescending(x => x.Count)
