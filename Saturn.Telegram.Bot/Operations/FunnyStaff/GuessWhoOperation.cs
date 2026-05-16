@@ -68,7 +68,15 @@ public class GuessWhoOperation : IOperation
             .Select(g => g.Key)
             .ToListAsync();
 
-        if (eligibleUserIds.Count < ChoicesCount)
+        var allEligibleUsers = await db.Users
+            .Where(x => eligibleUserIds.Contains(x.Id))
+            .ToListAsync();
+
+        var eligibleUsers = allEligibleUsers
+            .Where(u => !string.IsNullOrEmpty((u.FirstName + u.LastName).Trim()) || !string.IsNullOrEmpty(u.Username))
+            .ToList();
+
+        if (eligibleUsers.Count < ChoicesCount)
         {
             await _telegramBotClient.SendMessage(
                 msg.Chat,
@@ -77,14 +85,10 @@ public class GuessWhoOperation : IOperation
             return;
         }
 
-        var chosen = eligibleUserIds.OrderBy(_ => Guid.NewGuid()).Take(ChoicesCount).ToList();
-        var correctUserId = chosen[0];
+        var chosen = eligibleUsers.OrderBy(_ => Guid.NewGuid()).Take(ChoicesCount).ToList();
+        var correctUserId = chosen[0].Id;
 
-        var userEntities = await db.Users
-            .Where(x => chosen.Contains(x.Id))
-            .ToListAsync();
-
-        var correctUser = userEntities.First(x => x.Id == correctUserId);
+        var correctUser = chosen[0];
 
         var messages = await db.Messages
             .Where(x => x.ChatId == chatId && x.UserId == correctUserId && x.Text != null)
@@ -111,7 +115,7 @@ public class GuessWhoOperation : IOperation
                 $"Вот {messages.Count} сообщений из группового чата:\n\n{transcript}\n\nОпиши этого человека, не называя его.")
         ]);
 
-        var choices = userEntities.OrderBy(_ => Guid.NewGuid()).ToList();
+        var choices = chosen.OrderBy(_ => Guid.NewGuid()).ToList();
         var keyboard = new InlineKeyboardMarkup(
             choices.Select(u =>
                 new[] { InlineKeyboardButton.WithCallbackData(GetDisplayName(u), $"{CallbackPrefix}{u.Id}") }));
@@ -171,8 +175,11 @@ public class GuessWhoOperation : IOperation
             replyParameters: new ReplyParameters { MessageId = callbackMsg.Id });
     }
 
-    private static string GetDisplayName(UserEntity user) =>
-        !string.IsNullOrEmpty(user.Username) ? $"@{user.Username}" : $"{user.FirstName} {user.LastName}".Trim();
+    private static string GetDisplayName(UserEntity user)
+    {
+        var name = $"{user.FirstName} {user.LastName}".Trim();
+        return !string.IsNullOrEmpty(name) ? name : $"@{user.Username}";
+    }
 
     private record GuessWhoGame(
         long CorrectUserId,
