@@ -72,7 +72,7 @@ public class DuelOperation : IOperation
 
         await using var db = await _contextFactory.CreateDbContextAsync();
 
-        Telegram.Bot.Types.User? opponent = null;
+        User? opponent = null;
 
         if (msg.ReplyToMessage?.From != null && !msg.ReplyToMessage.From.IsBot)
         {
@@ -88,7 +88,7 @@ public class DuelOperation : IOperation
                         x.Username.ToLower() == username.ToLower());
                 if (userEntity != null)
                 {
-                    opponent = new Telegram.Bot.Types.User
+                    opponent = new User
                     {
                         Id = userEntity.Id,
                         FirstName = userEntity.FirstName ?? "",
@@ -125,7 +125,7 @@ public class DuelOperation : IOperation
         }
     }
 
-    private async Task RunDuelAsync(SaturnContext db, Message msg, Telegram.Bot.Types.User challenger, Telegram.Bot.Types.User opponent)
+    private async Task RunDuelAsync(SaturnContext db, Message msg, User challenger, User opponent)
     {
         var challengerName = FormatName(challenger);
         var opponentName = FormatName(opponent);
@@ -294,7 +294,7 @@ public class DuelOperation : IOperation
     }
 
     private static (long winnerId, long loserId, string winnerName, string loserName) DetermineWinner(
-        Telegram.Bot.Types.User challenger, Telegram.Bot.Types.User opponent,
+        User challenger, User opponent,
         int hpA, int hpB, string nameA, string nameB)
     {
         if (hpA >= hpB)
@@ -335,7 +335,7 @@ public class DuelOperation : IOperation
         return string.IsNullOrEmpty(username) ? null : username;
     }
 
-    private static string FormatName(Telegram.Bot.Types.User user)
+    private static string FormatName(User user)
     {
         if (!string.IsNullOrWhiteSpace(user.Username)) return $"@{user.Username}";
         var name = $"{user.FirstName} {user.LastName}".Trim();
