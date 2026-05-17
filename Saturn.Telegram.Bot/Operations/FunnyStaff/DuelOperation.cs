@@ -11,6 +11,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
+[Ignored]
 [ChatOnly]
 [Cooldown(300, "подожди немного перед следующей дуэлью")]
 public class DuelOperation : IOperation
