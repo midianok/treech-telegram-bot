@@ -3,6 +3,7 @@ using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -12,6 +13,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
+[Ignored]
 public class SilenceOperation : IOperation
 {
     private const long BotUserId = 5990847351;
