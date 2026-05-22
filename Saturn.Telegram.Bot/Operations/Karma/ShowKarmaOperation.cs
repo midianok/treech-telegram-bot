@@ -34,7 +34,7 @@ public class ShowKarmaOperation : IOperation
 
         await using var db = await _contextFactory.CreateDbContextAsync();
         var karma = await db.UserKarma
-            .Where(x => x.UserId == targetUser.Id)
+            .Where(x => x.UserId == targetUser.Id && x.ChatId == msg.Chat.Id)
             .Select(x => x.Value)
             .FirstOrDefaultAsync();
 

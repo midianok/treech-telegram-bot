@@ -27,6 +27,7 @@ public class NamorevoGoreOperation(
 
         var top = await db.NamorevoGoreScores
             .Include(x => x.User)
+            .Where(x => x.ChatId == msg.Chat.Id)
             .OrderByDescending(x => x.Score)
             .Take(10)
             .ToListAsync();

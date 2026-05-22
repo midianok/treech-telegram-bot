@@ -8,10 +8,10 @@ public class NamorevoGoreScoreEntityConfiguration : IEntityTypeConfiguration<Nam
 {
     public void Configure(EntityTypeBuilder<NamorevoGoreScoreEntity> builder)
     {
-        builder.HasKey(x => x.UserId);
+        builder.HasKey(x => new { x.UserId, x.ChatId });
 
         builder.HasOne(x => x.User)
-            .WithOne()
-            .HasForeignKey<NamorevoGoreScoreEntity>(x => x.UserId);
+            .WithMany()
+            .HasForeignKey(x => x.UserId);
     }
 }

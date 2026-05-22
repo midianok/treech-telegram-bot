@@ -8,10 +8,10 @@ public class UserKarmaEntityConfiguration : IEntityTypeConfiguration<UserKarmaEn
 {
     public void Configure(EntityTypeBuilder<UserKarmaEntity> builder)
     {
-        builder.HasKey(x => x.UserId);
+        builder.HasKey(x => new { x.UserId, x.ChatId });
 
         builder.HasOne(x => x.User)
-            .WithOne()
-            .HasForeignKey<UserKarmaEntity>(x => x.UserId);
+            .WithMany()
+            .HasForeignKey(x => x.UserId);
     }
 }

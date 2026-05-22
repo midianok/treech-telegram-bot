@@ -55,7 +55,7 @@ public class ChangeKarmaOperation : IOperation
 
         var now = DateTime.UtcNow;
         var lastChangeAt = await db.KarmaChanges
-            .Where(x => x.FromUserId == fromUser.Id)
+            .Where(x => x.FromUserId == fromUser.Id && x.ChatId == msg.Chat.Id)
             .OrderByDescending(x => x.CreatedAt)
             .Select(x => (DateTime?)x.CreatedAt)
             .FirstOrDefaultAsync();
@@ -74,10 +74,11 @@ public class ChangeKarmaOperation : IOperation
             }
         }
 
-        var karma = await db.UserKarma.AsTracking().FirstOrDefaultAsync(x => x.UserId == toUser.Id);
+        var karma = await db.UserKarma.AsTracking()
+            .FirstOrDefaultAsync(x => x.UserId == toUser.Id && x.ChatId == msg.Chat.Id);
         if (karma == null)
         {
-            karma = new UserKarmaEntity { UserId = toUser.Id };
+            karma = new UserKarmaEntity { UserId = toUser.Id, ChatId = msg.Chat.Id };
             await db.UserKarma.AddAsync(karma);
         }
 

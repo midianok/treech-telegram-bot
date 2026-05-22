@@ -36,12 +36,13 @@ public class NamorevoGoreController : ControllerBase
             return NotFound($"User {request.UserId} not found");
         }
 
-        var existing = await db.NamorevoGoreScores.FindAsync([request.UserId], cancellationToken);
+        var existing = await db.NamorevoGoreScores.FindAsync([request.UserId, request.ChatId], cancellationToken);
         if (existing is null)
         {
             db.NamorevoGoreScores.Add(new NamorevoGoreScoreEntity
             {
                 UserId = request.UserId,
+                ChatId = request.ChatId,
                 Score = request.Score
             });
         }
@@ -50,6 +51,7 @@ public class NamorevoGoreController : ControllerBase
             db.NamorevoGoreScores.Update(new NamorevoGoreScoreEntity
             {
                 UserId = existing.UserId,
+                ChatId = existing.ChatId,
                 Score = request.Score
             });
         }
@@ -73,13 +75,16 @@ public class NamorevoGoreController : ControllerBase
     }
 
     [HttpGet("score/{userId:long}")]
-    public async Task<ActionResult<NamorevoGoreLeaderboardEntryDto>> GetScore(long userId, CancellationToken cancellationToken)
+    public async Task<ActionResult<NamorevoGoreLeaderboardEntryDto>> GetScore(
+        long userId,
+        [FromQuery] long chatId,
+        CancellationToken cancellationToken)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var entity = await db.NamorevoGoreScores
             .Include(x => x.User)
-            .Where(x => x.UserId == userId)
+            .Where(x => x.UserId == userId && x.ChatId == chatId)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (entity is null)
@@ -92,6 +97,7 @@ public class NamorevoGoreController : ControllerBase
 
     [HttpGet("leaderboard")]
     public async Task<IEnumerable<NamorevoGoreLeaderboardEntryDto>> GetLeaderboard(
+        [FromQuery] long chatId,
         [FromQuery] int limit = 10,
         CancellationToken cancellationToken = default)
     {
@@ -99,6 +105,7 @@ public class NamorevoGoreController : ControllerBase
 
         var entities = await db.NamorevoGoreScores
             .Include(x => x.User)
+            .Where(x => x.ChatId == chatId)
             .OrderByDescending(x => x.Score)
             .Take(limit)
             .ToListAsync(cancellationToken);

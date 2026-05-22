@@ -30,17 +30,15 @@
 
 ### 🔴 Критично
 
-#### 1. `NamorevoGoreScoreEntity` — глобальная таблица, нет `ChatId`
+#### ~~1. `NamorevoGoreScoreEntity` — глобальная таблица, нет `ChatId`~~ ✅
 
-Таблица `namorevo_gore_scores` имеет только `UserId` как PK — результаты игры едины для всех чатов.
-`NamorevoGoreOperation` показывает глобальный топ без фильтрации по чату.
-Если бот стоит в нескольких чатах — они делят один лидерборд.
+PK изменён на `(UserId, ChatId)`. `NamorevoGoreOperation` и API-контроллер фильтруют по `ChatId`.
+Миграция `20260522100000_AddChatIdToScoresAndKarma` добавляет колонку и проставляет `-1002680016267` существующим записям.
 
-#### 2. `UserKarmaEntity` — глобальная карма, нет `ChatId`
+#### ~~2. `UserKarmaEntity` — глобальная карма, нет `ChatId`~~ ✅
 
-Карма хранится только по `UserId`. Изменение кармы в чате A влияет на карму в чате B.
-Кулдаун на изменение тоже глобальный — `KarmaChangeEntity` проверяется по `fromUser.Id`
-без фильтрации по чату (`ChangeKarmaOperation.cs:57–65`).
+PK изменён на `(UserId, ChatId)`. `ChangeKarmaOperation` и `ShowKarmaOperation` фильтруют карму и кулдаун по `ChatId`.
+Миграция `20260522100000_AddChatIdToScoresAndKarma` добавляет колонку и проставляет `-1002680016267` существующим записям.
 
 #### ~~3. `ChatCachedRepository.GetAsync` — `SingleAsync` упадёт для нового чата~~ ✅
 
@@ -76,7 +74,7 @@
 |-----------|--------|--------|
 | 🔴 | Добавить `BOT_USERNAME` в env, заменить 5 хардкодов `TreechBot` | ✅ |
 | 🔴 | `ChatCachedRepository.GetAsync`: `SingleAsync` → `SingleOrDefaultAsync` с fallback | ✅ |
-| 🔴 | Решить, нужна ли `ChatId` в `NamorevoGoreScoreEntity` и `UserKarmaEntity` | ❌ |
+| 🔴 | Решить, нужна ли `ChatId` в `NamorevoGoreScoreEntity` и `UserKarmaEntity` | ✅ |
 | 🟡 | `WhoTodayOperation`: null username fallback на `FirstName` | ✅ |
 | 🟡 | Перенести `"ilya_naprimer"` / `198607451` в конфиг | ✅ |
 | 🟡 | Получать bot user ID вместо 4 хардкодов `5990847351` | ✅ (флаг `IsBot`) |
