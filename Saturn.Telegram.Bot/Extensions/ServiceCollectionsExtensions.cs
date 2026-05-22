@@ -4,10 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
 using OpenAI.Chat;
 using OpenAI.Images;
+using Saturn.Bot.Service.Infrastructure.CurrencyClient;
+using Saturn.Bot.Service.Infrastructure.WeatherClient;
 using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
 using Saturn.Bot.Service.Infrastructure.XaiVideoGenerationClient;
 using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools;
 using Saturn.Telegram.Db.Repositories;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib;
@@ -54,9 +57,23 @@ public static class ServiceCollectionsExtensions
             x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
             x.Timeout = TimeSpan.FromMinutes(10);
         });
+
+        serviceCollection.AddHttpClient<WeatherClient>(x =>
+        {
+            x.BaseAddress = new Uri("http://wttr.in/");
+            x.Timeout = TimeSpan.FromSeconds(10);
+        });
+
+        serviceCollection.AddHttpClient<CurrencyClient>(x =>
+        {
+            x.BaseAddress = new Uri("https://open.er-api.com/");
+            x.Timeout = TimeSpan.FromSeconds(10);
+        });
         
         
         serviceCollection
+            .AddSingleton<IChatTool, WeatherChatTool>()
+            .AddSingleton<IChatTool, CurrencyChatTool>()
             .AddSingleton<IAiService, AiService>()
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
             .AddSingleton<IMessageRepository, MessageRepository>()

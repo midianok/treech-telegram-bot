@@ -26,6 +26,7 @@ public class ChatGenerationOperation : IOperation
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IMemoryCache _memoryCache;
+    private readonly IReadOnlyList<IChatTool> _tools;
     private readonly string _invokeCommand;
 
     public ChatGenerationOperation(
@@ -35,6 +36,7 @@ public class ChatGenerationOperation : IOperation
         IChatCachedRepository chatCachedRepository,
         IMessageRepository messageRepository,
         IMemoryCache memoryCache,
+        IEnumerable<IChatTool> tools,
         IConfiguration configuration)
     {
         _telegramBotClient = telegramBotClient;
@@ -43,6 +45,7 @@ public class ChatGenerationOperation : IOperation
         _chatCachedRepository = chatCachedRepository;
         _memoryCache = memoryCache;
         _messageRepository = messageRepository;
+        _tools = tools.ToList();
         _invokeCommand = configuration.GetSectionOrThrow("INVOKE_COMMAND");
     }
 
@@ -118,7 +121,7 @@ public class ChatGenerationOperation : IOperation
         }
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
-        var result = await _aiService.CompleteChatAsync(messages);
+        var result = await _aiService.CompleteChatAsync(messages, _tools);
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id });
         await _saveMessageService.SaveMessageAsync(reply);

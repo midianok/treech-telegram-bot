@@ -51,6 +51,56 @@ public class AiService : IAiService
         }
     }
 
+    public async Task<string> CompleteChatAsync(
+        IList<ChatMessage> messages,
+        IReadOnlyList<IChatTool> tools,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var options = new ChatCompletionOptions();
+            foreach (var tool in tools)
+            {
+                options.Tools.Add(tool.Definition);
+            }
+
+            var messagesList = messages.ToList();
+
+            while (true)
+            {
+                var result = await _chatClient.CompleteChatAsync(messagesList, options, ct);
+                var completion = result.Value;
+
+                if (completion.FinishReason != ChatFinishReason.ToolCalls)
+                {
+                    return completion.Content.FirstOrDefault()?.Text ?? 
+                           throw new AiEmptyResponseException();
+                }
+                
+                messagesList.Add(new AssistantChatMessage(completion));
+
+                foreach (var toolCall in completion.ToolCalls)
+                {
+                    var tool = tools.FirstOrDefault(t => t.FunctionName == toolCall.FunctionName);
+                    var toolResult = tool != null
+                        ? await tool.ExecuteAsync(toolCall.FunctionArguments.ToString(), ct)
+                        : """{"error":"Unknown tool"}""";
+                    messagesList.Add(new ToolChatMessage(toolCall.Id, toolResult));
+                }
+            }
+        }
+        catch (ClientResultException ex) when (ex.Status == 400)
+        {
+            _logger.LogError("xAI content moderation rejection (400 Bad Request)");
+            throw new AiContentModerationException();
+        }
+        catch (ClientResultException ex) when (ex.Status == 429)
+        {
+            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
+            throw new AiBudgetExhaustedException();
+        }
+    }
+
     public async Task<GeneratedImage> GenerateImageAsync(string prompt, ImageGenerationOptions? options = null)
     {
         try
