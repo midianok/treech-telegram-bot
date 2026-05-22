@@ -7,7 +7,9 @@ public class MessageEntity
     public long ChatId { get; set; }
     
     public long UserId { get; set; }
-    
+
+    public bool IsBot { get; set; }
+
     public int Type { get; set; }
 
     public string? Text { get; set; }

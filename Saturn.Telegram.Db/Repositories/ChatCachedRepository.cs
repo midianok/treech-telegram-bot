@@ -22,7 +22,8 @@ public class ChatCachedRepository : IChatCachedRepository
         var result = await _memoryCache.GetOrCreateAsync(key, async _ =>
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync();
-            return await context.Chats.Include(x => x.AiAgent).SingleAsync(x => x.Id == chatId);
+            return await context.Chats.Include(x => x.AiAgent).SingleOrDefaultAsync(x => x.Id == chatId)
+                   ?? new ChatEntity { Id = chatId };
         });
         return result!;
     }

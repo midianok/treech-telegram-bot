@@ -117,6 +117,7 @@ public class SaveMessageService : ISaveMessageService
             MessageDate = msg.Date,
             StickerId = msg.Sticker?.FileId,
             UserId = msg.From!.Id,
+            IsBot = msg.From.IsBot,
             ReplyToMessageId = msg.ReplyToMessage?.Id,
             ReplyToMessageChatId = msg.ReplyToMessage?.Chat.Id,
         };

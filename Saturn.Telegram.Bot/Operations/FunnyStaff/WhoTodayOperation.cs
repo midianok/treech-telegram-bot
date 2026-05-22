@@ -30,7 +30,7 @@ public class WhoTodayOperation : IOperation
         await using var db = await _contextFactory.CreateDbContextAsync();
         var randomUser = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id && x.MessageDate > DateTime.Now.Date)
-            .Select(x => x.User!.Username)
+            .Select(x => new { x.User!.Username, x.User!.FirstName })
             .Distinct()
             .OrderBy(_ => Guid.NewGuid())
             .FirstOrDefaultAsync();
@@ -41,8 +41,9 @@ public class WhoTodayOperation : IOperation
             return;
         }
 
+        var displayName = randomUser.Username != null ? $"@{randomUser.Username}" : randomUser.FirstName;
         var todayMessage = msg.Text!.ToLower().Replace("кто сегодня ", string.Empty);
-        var message = await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
+        var message = await _telegramBotClient.SendMessage(msg.Chat, $"{displayName} сегодня {todayMessage}");
         await _saveMessageService.SaveMessageAsync(message);
     }
 }

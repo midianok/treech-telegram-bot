@@ -56,7 +56,7 @@ public class OperationManager
             
             if (!operation.Validate(msg, type)) continue;
 
-            if (!operation.IsAllowed(msg.From?.Id)) continue;
+            if (!operation.IsAllowed(msg.From?.Username)) continue;
 
             if (await operation.IsChatOnlyViolatedAsync(msg, _botClient)) continue;
 

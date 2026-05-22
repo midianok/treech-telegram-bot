@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
@@ -10,7 +12,6 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
-[Allow(198607451)] //ilya_naprimer
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class AnimateOperation : IOperation
 {
@@ -20,22 +21,28 @@ public class AnimateOperation : IOperation
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
     private readonly ILogger<AnimateOperation> _logger;
+    private readonly BotOptions _botOptions;
 
     public AnimateOperation(
         TelegramBotClient telegramBotClient,
         IAiService aiService,
         ISaveMessageService saveMessageService,
-        ILogger<AnimateOperation> logger)
+        ILogger<AnimateOperation> logger,
+        IOptions<BotOptions> botOptions)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
         _saveMessageService = saveMessageService;
         _logger = logger;
+        _botOptions = botOptions.Value;
     }
 
     public bool Validate(Message msg, UpdateType type)
     {
         if (type != UpdateType.Message) return false;
+
+        if (string.IsNullOrEmpty(_botOptions.AdminUsername) || !string.Equals(msg.From?.Username, _botOptions.AdminUsername, StringComparison.OrdinalIgnoreCase))
+            return false;
 
         var text = msg.Text ?? msg.Caption;
         if (!string.Equals(text?.Trim(), Command, StringComparison.CurrentCultureIgnoreCase)) return false;

@@ -12,7 +12,6 @@ namespace Saturn.Bot.Service.Operations.Statistics;
 
 public class ShowTopWordsOperation : IOperation
 {
-    private const long BotUserId = 5990847351;
     private const int LookbackDays = 90;
 
     private readonly TelegramBotClient _telegramBotClient;
@@ -39,7 +38,7 @@ public class ShowTopWordsOperation : IOperation
         var texts = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id &&
                         x.UserId == targetUser.Id &&
-                        x.UserId != BotUserId &&
+                        !x.IsBot &&
                         x.MessageDate >= since &&
                         x.Text != null)
             .Select(x => x.Text!)

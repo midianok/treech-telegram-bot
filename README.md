@@ -62,7 +62,6 @@ BOT_TOKEN=your_telegram_bot_token
 CONNECTION_STRING=Host=db;Port=5432;Database=postgres;Username=postgres;Password=your_password
 POSTGRES_PASSWORD=your_password
 LOG_CHAT_ID=your_chat_id_for_error_logs
-IMAGE_MANIPULATION_SERVICE_URL=http://your-image-service
 # Feature flags (опционально)
 StatisticsOperationEnabled=true
 ```

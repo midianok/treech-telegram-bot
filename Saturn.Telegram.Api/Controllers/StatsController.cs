@@ -41,7 +41,7 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
     {
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var query = db.Messages.Where(x => x.ChatId == chatId && x.UserId != 5990847351);
+        var query = db.Messages.Where(x => x.ChatId == chatId && !x.IsBot);
 
         if (dateFrom.HasValue)
             query = query.Where(x => x.MessageDate >= dateFrom.Value);

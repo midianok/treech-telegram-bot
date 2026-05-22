@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
+using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
@@ -37,7 +38,7 @@ public class ChatGenerationOperation : IOperation
         IMessageRepository messageRepository,
         IMemoryCache memoryCache,
         IEnumerable<IChatTool> tools,
-        IConfiguration configuration)
+        IOptions<BotOptions> botOptions)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
@@ -46,7 +47,7 @@ public class ChatGenerationOperation : IOperation
         _memoryCache = memoryCache;
         _messageRepository = messageRepository;
         _tools = tools.ToList();
-        _invokeCommand = configuration.GetSectionOrThrow("INVOKE_COMMAND");
+        _invokeCommand = botOptions.Value.InvokeCommand;
     }
 
     public bool Validate(Message msg, UpdateType type)

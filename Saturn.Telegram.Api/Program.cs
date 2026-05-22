@@ -4,12 +4,13 @@ using Saturn.Telegram.Db.Extensions;
 using Telegram.Bot;
 
 var builder = WebApplication.CreateBuilder(args);
+
 var pathBase = builder.Configuration["PATH_BASE"];
 
 builder.Services.AddSaturnContext(builder.Configuration);
 
-var botToken = builder.Configuration["BOT_TOKEN"]
-    ?? throw new InvalidOperationException("BOT_TOKEN is not configured");
+var botToken = builder.Configuration["BOT_TOKEN"] ?? throw new InvalidOperationException("BOT_TOKEN is not configured");
+
 builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botToken));
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>

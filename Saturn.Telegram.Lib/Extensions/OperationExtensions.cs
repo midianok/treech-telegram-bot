@@ -19,10 +19,10 @@ public static class OperationExtensions
         public bool IsIgnored() =>
             operation.GetAttribute<IgnoredAttribute>() != null;
 
-        public bool IsAllowed(long? userId)
+        public bool IsAllowed(string? username)
         {
             var attr = operation.GetAttribute<AllowAttribute>();
-            return attr == null || attr.UserIds.Contains(userId ?? 0);
+            return attr == null || attr.Usernames.Contains(username, StringComparer.OrdinalIgnoreCase);
         }
 
         public async Task<bool> IsChatOnlyViolatedAsync(Message msg, TelegramBotClient botClient)

@@ -1,6 +1,8 @@
 using Saturn.Bot.Service.Extensions;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Saturn.Bot.Service.Options;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -14,11 +16,13 @@ public class ShowTopStatOperation : IOperation
 {
     private readonly TelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
+    private readonly BotOptions _botOptions;
 
-    public ShowTopStatOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
+    public ShowTopStatOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory, IOptions<BotOptions> botOptions)
     {
         _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;
+        _botOptions = botOptions.Value;
     }
 
     public bool Validate(Message msg, UpdateType type) =>
@@ -55,7 +59,7 @@ public class ShowTopStatOperation : IOperation
         }
 
         var keyboard = new InlineKeyboardMarkup(
-            InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/TreechBot/app?startapp={msg.Chat.Id}"));
+            InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/{_botOptions.BotUsername}/app?startapp={msg.Chat.Id}"));
 
         await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
             new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);

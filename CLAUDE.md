@@ -50,9 +50,11 @@ Configured via `.env` (picked up by Docker Compose):
 | `CONNECTION_STRING` | PostgreSQL connection string |
 | `POSTGRES_PASSWORD` | DB password |
 | `LOG_CHAT_ID` | Telegram chat ID for error logs |
-| `IMAGE_MANIPULATION_SERVICE_URL` | External image service endpoint |
 | `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
 | `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
+| `BOT_USERNAME` | Telegram bot username without @, used in Mini App deep links |
+| `ADMIN_USERNAME` | Username without @ that bypasses cooldowns and has access to restricted commands (e.g. `оживи`) |
+| `EASTER_EGG_USERNAME` | Username without @ that triggers easter egg media responses; operation disabled if not set |
 | `*OperationEnabled` | Feature flags per operation (e.g. `StatisticsOperationEnabled`) |
 
 ## Key Dependencies

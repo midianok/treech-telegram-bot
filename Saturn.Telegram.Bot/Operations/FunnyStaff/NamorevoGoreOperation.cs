@@ -1,6 +1,8 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Saturn.Bot.Service.Extensions;
+using Saturn.Bot.Service.Options;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -12,7 +14,8 @@ namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class NamorevoGoreOperation(
     TelegramBotClient telegramBotClient,
-    IDbContextFactory<SaturnContext> contextFactory) : IOperation
+    IDbContextFactory<SaturnContext> contextFactory,
+    IOptions<BotOptions> botOptions) : IOperation
 {
     public bool Validate(Message msg, UpdateType type) =>
         !string.IsNullOrEmpty(msg.Text) &&
@@ -39,7 +42,7 @@ public class NamorevoGoreOperation(
         }
 
         var keyboard = new InlineKeyboardMarkup(
-            InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/TreechBot/namorevogore?startapp={msg.Chat.Id}"));
+            InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/{botOptions.Value.BotUsername}/namorevogore?startapp={msg.Chat.Id}"));
 
         var imagePath = Path.Combine(AppContext.BaseDirectory, "Media", "namorevo.jpg");
         await using var stream = File.OpenRead(imagePath);

@@ -16,7 +16,6 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [Ignored]
 public class SilenceOperation : IOperation
 {
-    private const long BotUserId = 5990847351;
     private const int MinSilenceMinutes = 10;
     private const int MaxSilenceMinutes = 40;
 
@@ -135,7 +134,7 @@ public class SilenceOperation : IOperation
 
         var messages = await db.Messages
             .Where(x => x.ChatId == chatId &&
-                        x.UserId != BotUserId &&
+                        !x.IsBot &&
                         x.MessageDate >= weekStart &&
                         x.MessageDate < weekEnd &&
                         x.Text != null)
@@ -167,7 +166,7 @@ public class SilenceOperation : IOperation
 
         var availableDates = await db.Messages
             .Where(x => x.ChatId == chatId &&
-                        x.UserId != BotUserId &&
+                        !x.IsBot &&
                         x.MessageDate < upperBound &&
                         x.Text != null)
             .GroupBy(x => new { x.MessageDate.Year, x.MessageDate.Month, x.MessageDate.Day })
@@ -183,7 +182,7 @@ public class SilenceOperation : IOperation
 
         var messages = await db.Messages
             .Where(x => x.ChatId == chatId &&
-                        x.UserId != BotUserId &&
+                        !x.IsBot &&
                         x.MessageDate >= randomDate &&
                         x.MessageDate < nextDay &&
                         x.Text != null)
@@ -218,7 +217,7 @@ public class SilenceOperation : IOperation
 
         var messages = await db.Messages
             .Where(x => x.ChatId == chatId &&
-                        x.UserId != BotUserId &&
+                        !x.IsBot &&
                         x.MessageDate >= since &&
                         x.Text != null)
             .Include(x => x.User)

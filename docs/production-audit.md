@@ -4,42 +4,25 @@
 
 ## Захардкоженные значения для трич-чата
 
-### 1. Имя бота `TreechBot` — 5 мест
+### ~~1. Имя бота `TreechBot` — 5 мест~~ ✅
 
-| Файл | Строка |
-|------|--------|
-| `Saturn.Telegram.Bot/Operations/Infrastructure/BotOperation.cs` | 18 |
-| `Saturn.Telegram.Bot/Operations/Statistics/ShowUserStatOperation.cs` | 48 |
-| `Saturn.Telegram.Bot/Operations/Statistics/ShowTopStatOperation.cs` | 58 |
-| `Saturn.Telegram.Bot/Operations/FunnyStaff/NamorevoGoreOperation.cs` | 42 |
-| `Saturn.Telegram.Api/Controllers/NamorevoGoreController.cs` | 51 |
+Заменено на `BotOptions.BotUsername` (env: `BOT_USERNAME`).
 
-Нет конфигурационной переменной `BOT_USERNAME`. Нужно добавить её в env и заменить хардкоды, либо получать через `botClient.GetMe()`.
+### ~~2. Юзернейм `"Olegex3"` — `OlegexOperation.cs:10`~~ ✅
 
-### 2. Юзернейм `"Olegex3"` — `OlegexOperation.cs:10`
+Перенесён в `AdminOptions.EasterEggUsername` (env: `EASTER_EGG_USERNAME`). Если переменная не задана, операция отключена.
 
-Пасхалка для конкретного участника трич-чата. Полностью чат-специфична.
+### ~~3. Юзернейм `"ilya_naprimer"` — `CooldownService.cs:27,60`~~ ✅
 
-### 3. Юзернейм `"ilya_naprimer"` — `CooldownService.cs:27,60`
+Перенесён в `AdminOptions.AdminUsername` (env: `ADMIN_USERNAME`).
 
-Хардкод для обхода кулдауна администратором. Должен быть в конфиге.
+### ~~4. User ID `198607451` — `AnimateOperation.cs:13`~~ ✅
 
-### 4. User ID `198607451` — `AnimateOperation.cs:13`
+Атрибут `[Allow(198607451)]` убран. Доступ проверяется по `AdminOptions.AdminUsername`.
 
-`[Allow(198607451)]` — доступ к команде только Илье. Закомментирован как `//ilya_naprimer`. Должен быть в конфиге.
+### ~~5. Bot User ID `5990847351` — 4 места~~ ✅
 
-### 5. Bot User ID `5990847351` — 4 места
-
-ID самого бота используется для фильтрации его сообщений из выборок:
-
-| Файл | Строка |
-|------|--------|
-| `Saturn.Telegram.Bot/Operations/Ai/SilenceOperation.cs` | 19 |
-| `Saturn.Telegram.Bot/Operations/Statistics/ShowTopWordsOperation.cs` | 15 |
-| `Saturn.Telegram.Bot/Operations/Ai/SummaryOperation.cs` | 59 |
-| `Saturn.Telegram.Api/Controllers/StatsController.cs` | 44 |
-
-Можно получать динамически через `botClient.GetMe()` — по аналогии с `ChatGenerationOperation.IsReplyToBot`.
+Заменено флагом `IsBot` в таблице `messages` (миграция `20260522000000_AddIsBotToMessages`). Флаг выставляется при сохранении сообщения через `msg.From.IsBot`.
 
 ---
 
@@ -59,30 +42,16 @@ ID самого бота используется для фильтрации е
 Кулдаун на изменение тоже глобальный — `KarmaChangeEntity` проверяется по `fromUser.Id`
 без фильтрации по чату (`ChangeKarmaOperation.cs:57–65`).
 
-#### 3. `ChatCachedRepository.GetAsync` — `SingleAsync` упадёт для нового чата
+#### ~~3. `ChatCachedRepository.GetAsync` — `SingleAsync` упадёт для нового чата~~ ✅
 
-```csharp
-// Saturn.Telegram.Db/Repositories/ChatCachedRepository.cs:26
-return await context.Chats.Include(x => x.AiAgent).SingleAsync(x => x.Id == chatId);
-```
-
-Если `SaveMessageAsync` упал молча (он глотает все исключения), а потом `ChatGenerationOperation`
-вызывает `GetAsync` для незарегистрированного чата — `SingleAsync` бросит `InvalidOperationException`.
-Нужно заменить на `SingleOrDefaultAsync` с fallback.
+`SingleAsync` заменён на `SingleOrDefaultAsync` с fallback `new ChatEntity { Id = chatId }`.
+Если чат ещё не сохранён в БД — возвращается минимальная сущность без агента, операция продолжается без краша.
 
 ### 🟡 Значимо
 
-#### 4. `WhoTodayOperation` — null Username → `"@ сегодня ..."`
+#### ~~4. `WhoTodayOperation` — null Username → `"@ сегодня ..."`~~ ✅
 
-```csharp
-// Saturn.Telegram.Bot/Operations/FunnyStaff/WhoTodayOperation.cs:31-45
-.Select(x => x.User!.Username) // может быть null у пользователей без юзернейма
-...
-await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {todayMessage}");
-```
-
-Если у случайного пользователя нет юзернейма — бот отправит `"@ сегодня ..."`.
-Нужен fallback на `FirstName`.
+Запрос теперь выбирает `{ Username, FirstName }`. Отображаемое имя: `@username` если есть, иначе `FirstName`.
 
 #### 5. `GuessWhoOperation.ActiveGames` — статический словарь теряется при рестарте
 
@@ -91,27 +60,25 @@ await _telegramBotClient.SendMessage(msg.Chat, $"@{randomUser} сегодня {t
 
 ### 🟠 Безопасность
 
-#### 6. `.env` содержит реальные секреты в корне репозитория
+#### ~~6. `.env` не добавлен в `.gitignore`~~ ✅
 
-Файл `.env` содержит токен бота, строку подключения к БД и ключи xAI.
-Необходимо убедиться, что файл добавлен в `.gitignore` и не закоммичен.
+`.env` добавлен в `.gitignore`.
 
-#### 7. `launchSettings.json` содержит реальные API-ключи
+#### ~~7. `launchSettings.json` содержит реальные API-ключи~~ ✅ частично
 
-`Saturn.Telegram.Bot/Properties/launchSettings.json` содержит ключи xAI и строку подключения
-к продакшн БД (`152.53.94.213:15432`). Этот файл обычно коммитится — ключи нужно убрать.
+Оба `launchSettings.json` добавлены в `.gitignore` и не коммитятся. Реальные ключи на диске остаются — для локальной разработки допустимо.
 
 ---
 
 ## Сводка задач
 
-| Приоритет | Задача |
-|-----------|--------|
-| 🔴 | Добавить `BOT_USERNAME` в env, заменить 5 хардкодов `TreechBot` |
-| 🔴 | `ChatCachedRepository.GetAsync`: `SingleAsync` → `SingleOrDefaultAsync` с fallback |
-| 🔴 | Решить, нужна ли `ChatId` в `NamorevoGoreScoreEntity` и `UserKarmaEntity` |
-| 🟡 | `WhoTodayOperation`: null username fallback на `FirstName` |
-| 🟡 | Перенести `"ilya_naprimer"` / `198607451` в конфиг (`ADMIN_USER_IDS`) |
-| 🟡 | Получать bot user ID через `GetMe()` вместо 4 хардкодов `5990847351` |
-| 🟠 | Убедиться что `.env` в `.gitignore` |
-| 🟠 | Убрать реальные ключи из `launchSettings.json` |
+| Приоритет | Задача | Статус |
+|-----------|--------|--------|
+| 🔴 | Добавить `BOT_USERNAME` в env, заменить 5 хардкодов `TreechBot` | ✅ |
+| 🔴 | `ChatCachedRepository.GetAsync`: `SingleAsync` → `SingleOrDefaultAsync` с fallback | ✅ |
+| 🔴 | Решить, нужна ли `ChatId` в `NamorevoGoreScoreEntity` и `UserKarmaEntity` | ❌ |
+| 🟡 | `WhoTodayOperation`: null username fallback на `FirstName` | ✅ |
+| 🟡 | Перенести `"ilya_naprimer"` / `198607451` в конфиг | ✅ |
+| 🟡 | Получать bot user ID вместо 4 хардкодов `5990847351` | ✅ (флаг `IsBot`) |
+| 🟠 | Добавить `.env` в `.gitignore` | ✅ |
+| 🟠 | Убрать реальные ключи из `launchSettings.json` | ✅ (файл в `.gitignore`) |

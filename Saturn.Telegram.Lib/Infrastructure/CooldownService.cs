@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Infrastructure.Abstractions;
@@ -15,16 +16,19 @@ public class CooldownService : ICooldownService
 
     private readonly IMemoryCache _cache;
     private readonly TelegramBotClient _botClient;
+    private readonly string? _adminUsername;
 
-    public CooldownService(IMemoryCache cache, TelegramBotClient botClient)
+    public CooldownService(IMemoryCache cache, TelegramBotClient botClient, IConfiguration configuration)
     {
         _cache = cache;
         _botClient = botClient;
+        _adminUsername = configuration["ADMIN_USERNAME"];
     }
 
     public async Task<bool> IsCooldownAsync(IOperation operation, Message msg)
     {
-        if (msg.From?.Username == "ilya_naprimer")
+        if (!string.IsNullOrEmpty(_adminUsername) &&
+            msg.From?.Username == _adminUsername)
         {
             return false;
         }
@@ -57,7 +61,8 @@ public class CooldownService : ICooldownService
 
     public void SetCooldown(IOperation operation, Message msg)
     {
-        if (msg.From?.Username == "ilya_naprimer")
+        if (!string.IsNullOrEmpty(_adminUsername) &&
+            msg.From?.Username == _adminUsername)
         {
             return;
         }

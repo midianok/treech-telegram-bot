@@ -4,22 +4,31 @@ using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 using Telegram.Bot;
-using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/namorevo-gore")]
-public class NamorevoGoreController(
-    IDbContextFactory<SaturnContext> contextFactory,
-    ITelegramBotClient botClient) : ControllerBase
+public class NamorevoGoreController : ControllerBase
 {
+    private readonly IDbContextFactory<SaturnContext> _contextFactory;
+    private readonly ITelegramBotClient _botClient;
+    private readonly string? _botUsername;
+
+    public NamorevoGoreController(IDbContextFactory<SaturnContext> contextFactory,
+        ITelegramBotClient botClient,
+        IConfiguration configuration)
+    {
+        _contextFactory = contextFactory;
+        _botClient = botClient;
+        _botUsername = configuration["BOT_USERNAME"];
+    }
+
     [HttpPost("score")]
     public async Task<ActionResult> AddScore([FromBody] AddNamorevoGoreScoreRequest request, CancellationToken cancellationToken)
     {
-        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var user = await db.Users.FindAsync([request.UserId], cancellationToken);
         if (user is null)
@@ -47,11 +56,14 @@ public class NamorevoGoreController(
 
         await db.SaveChangesAsync(cancellationToken);
 
-        var keyboard = new InlineKeyboardMarkup(
-            InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/TreechBot/namorevogore?startapp={request.ChatId}"));
+        if (!string.IsNullOrEmpty(_botUsername))
+        {
+            
+        }
+        var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/{_botUsername}/namorevogore?startapp={request.ChatId}"));
         
         var userName = FormatUserName(user);
-        await botClient.SendMessage(
+        await _botClient.SendMessage(
             request.ChatId,
             $"{userName} набрал {request.Score} очков в Наморево Горе!",
             replyMarkup: keyboard,
@@ -63,7 +75,7 @@ public class NamorevoGoreController(
     [HttpGet("score/{userId:long}")]
     public async Task<ActionResult<NamorevoGoreLeaderboardEntryDto>> GetScore(long userId, CancellationToken cancellationToken)
     {
-        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var entity = await db.NamorevoGoreScores
             .Include(x => x.User)
@@ -83,7 +95,7 @@ public class NamorevoGoreController(
         [FromQuery] int limit = 10,
         CancellationToken cancellationToken = default)
     {
-        await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var entities = await db.NamorevoGoreScores
             .Include(x => x.User)
