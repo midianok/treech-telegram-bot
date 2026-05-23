@@ -18,7 +18,7 @@ public class TelegramLogger : ILogger
         _telegramLoggerOptions = options.Value;
     }
 
-    public IDisposable BeginScope<TState>(TState state) => null!;
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => null!;
 
     public bool IsEnabled(LogLevel logLevel)
     {

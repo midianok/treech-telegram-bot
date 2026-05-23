@@ -10,5 +10,5 @@ public class UserEntity
     
     public string? LastName { get; set; }
     
-    public virtual List<MessageEntity> Messages { get; set; }
+    public virtual List<MessageEntity>? Messages { get; set; }
 }
