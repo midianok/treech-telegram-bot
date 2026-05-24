@@ -5,6 +5,8 @@
     build:
       context: .
       dockerfile: ./Saturn.Telegram.Bot/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
     env_file:
       - ./.env
     volumes:
@@ -20,6 +22,8 @@
     build:
       context: .
       dockerfile: ./Saturn.Telegram.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
     env_file:
       - ./.env
     depends_on:

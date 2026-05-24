@@ -49,12 +49,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger(options => options.RouteTemplate = "swagger/{documentName}/swagger.json");
     app.UseSwaggerUI(options => options.SwaggerEndpoint("v1/swagger.json", "Saturn API v1"));
 }
-
-if (app.Environment.IsProduction())
+else
 {
     app.UseCors();
     app.UseMiddleware<TelegramInitDataMiddleware>();
 }
+
 app.MapControllers();
 
 app.Run("http://0.0.0.0:5001");
