@@ -11,3 +11,4 @@ Saturn.Telegram.Api/Properties/launchSettings.json
 Saturn.Telegram.Bot/Properties/launchSettings.json
 Saturn.Telegram.sln.DotSettings.user
 Saturn.Telegram.Db/bin
+.gitleaks.toml

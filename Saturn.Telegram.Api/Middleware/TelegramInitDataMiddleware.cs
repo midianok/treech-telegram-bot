@@ -29,6 +29,13 @@ public class TelegramInitDataMiddleware(RequestDelegate next, IConfiguration con
             return false;
         }
 
+        if (!pairs.TryGetValue("auth_date", out var authDateStr)
+            || !long.TryParse(authDateStr, out var unix)
+            || DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(unix) > TimeSpan.FromHours(24))
+        {
+            return false;
+        }
+
         var p = pairs.Where(p => p.Key != "hash")
             .OrderBy(p => p.Key)
             .Select(p => $"{p.Key}={p.Value}");
@@ -36,8 +43,10 @@ public class TelegramInitDataMiddleware(RequestDelegate next, IConfiguration con
 
         var secretKey = HMACSHA256.HashData(Encoding.UTF8.GetBytes("WebAppData"), Encoding.UTF8.GetBytes(botToken));
 
-        var expectedHash = Convert.ToHexString(HMACSHA256.HashData(secretKey, Encoding.UTF8.GetBytes(dataCheckString)));
+        var expectedHashBytes = HMACSHA256.HashData(secretKey, Encoding.UTF8.GetBytes(dataCheckString));
 
-        return string.Equals(expectedHash, hash, StringComparison.OrdinalIgnoreCase);
+        return CryptographicOperations.FixedTimeEquals(
+            expectedHashBytes,
+            Convert.FromHexString(hash));
     }
 }
