@@ -54,9 +54,7 @@ Configured via `.env` (picked up by Docker Compose):
 | `EASTER_EGG_USERNAME` | Username without @ that triggers easter egg media responses; operation disabled if not set |
 | `CONNECTION_STRING` | PostgreSQL connection string |
 | `POSTGRES_PASSWORD` | DB password |
-| `CHAT_GENERATION_API_KEY` | xAI API key for text generation (Grok) |
-| `IMAGE_GENERATION_API_KEY` | xAI API key for video generation (used by `XaiVideoGenerationClient`) |
-| `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for image generation (`seedream-v5.0-lite`) and editing (`seedream-v5.0-lite/edit`) |
+| `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for text generation (`qwen/qwen3-vl-8b-instruct`), image generation (`seedream-v5.0-lite`), image editing (`seedream-v5.0-lite/edit`), and video generation |
 | `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
 | `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
 | `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |
@@ -64,7 +62,7 @@ Configured via `.env` (picked up by Docker Compose):
 ## Key Dependencies
 
 - `Telegram.Bot` 22.10.0.1 — bot API client
-- `OpenAI` 2.10.0 — used with xAI endpoint (`https://api.x.ai/v1`, model `grok-4-1-fast-non-reasoning`)
+- `OpenAI` 2.10.0 — used with AtlasCloud endpoint (`https://api.atlascloud.ai/v1`, model `qwen/qwen3-vl-8b-instruct`)
 - `Magick.NET-Q16-AnyCPU` 14.13.1 — image manipulation
 - `Xabe.FFmpeg` + `YoutubeDLSharp` — media download/processing
 - EF Core 10 + Npgsql 10 — data access

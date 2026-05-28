@@ -31,8 +31,8 @@ public static class ServiceCollectionsExtensions
         
         serviceCollection.AddSingleton<ChatClient>(_ =>
         {
-            var apiKey = configuration.GetSectionOrThrow("CHAT_GENERATION_API_KEY");
-            return new ChatClient("grok-4-1-fast-non-reasoning", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
+            var apiKey = configuration.GetSectionOrThrow("ATLAS_CLOUD_API_KEY");
+            return new ChatClient("qwen/qwen3-vl-8b-instruct", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.atlascloud.ai/v1") });
         });
         
         serviceCollection.AddHttpClient<AtlasCloudImageClient>(x =>

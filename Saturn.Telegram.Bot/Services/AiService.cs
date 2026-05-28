@@ -33,12 +33,12 @@ public class AiService : IAiService
         }
         catch (ClientResultException ex) when (ex.Status == 400)
         {
-            _logger.LogError("xAI content moderation rejection (400 Bad Request)");
+            _logger.LogError("AtlasCloud content moderation rejection (400 Bad Request)");
             throw new AiContentModerationException();
         }
         catch (ClientResultException ex) when (ex.Status == 429)
         {
-            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
+            _logger.LogError("AtlasCloud balance exhausted (429 Too Many Requests)");
             throw new AiBudgetExhaustedException();
         }
     }
@@ -83,12 +83,12 @@ public class AiService : IAiService
         }
         catch (ClientResultException ex) when (ex.Status == 400)
         {
-            _logger.LogError("xAI content moderation rejection (400 Bad Request)");
+            _logger.LogError("AtlasCloud content moderation rejection (400 Bad Request)");
             throw new AiContentModerationException();
         }
         catch (ClientResultException ex) when (ex.Status == 429)
         {
-            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
+            _logger.LogError("AtlasCloud balance exhausted (429 Too Many Requests)");
             throw new AiBudgetExhaustedException();
         }
     }
