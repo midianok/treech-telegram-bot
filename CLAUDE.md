@@ -33,7 +33,7 @@ Every bot command is an `IOperation` (in `Saturn.Telegram.Lib/Operation/IOperati
 
 1. Create a class implementing `IOperation` under `Saturn.Telegram.Bot/Operations/`.
 2. Implement `Validate(Message)` — return true if this operation should handle the message.
-3. Implement `OnMessageAsync(Message, CancellationToken)` — perform the action.
+3. Implement `OnMessageAsync(Message, UpdateType)` — perform the action.
 4. Register it in the DI container; `OperationManager` discovers all `IOperation` instances automatically.
 
 Use `[ChatOnly]` attribute to restrict an operation to group chats. Use `ICooldownService` to rate-limit repeated calls.
@@ -47,24 +47,28 @@ Configured via `.env` (picked up by Docker Compose):
 | Variable | Purpose |
 |---|---|
 | `BOT_TOKEN` | Telegram bot token |
-| `CONNECTION_STRING` | PostgreSQL connection string |
-| `POSTGRES_PASSWORD` | DB password |
-| `LOG_CHAT_ID` | Telegram chat ID for error logs |
-| `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
-| `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
 | `BOT_USERNAME` | Telegram bot username without @, used in Mini App deep links |
+| `INVOKE_COMMAND` | Trigger word for the AI command (e.g. `трич`); **required** — bot fails to start without it |
+| `LOG_CHAT_ID` | Telegram chat ID for error logs |
 | `ADMIN_USERNAME` | Username without @ that bypasses cooldowns and has access to restricted commands (e.g. `оживи`) |
 | `EASTER_EGG_USERNAME` | Username without @ that triggers easter egg media responses; operation disabled if not set |
-| `*OperationEnabled` | Feature flags per operation (e.g. `StatisticsOperationEnabled`) |
+| `CONNECTION_STRING` | PostgreSQL connection string |
+| `POSTGRES_PASSWORD` | DB password |
+| `CHAT_GENERATION_API_KEY` | xAI API key for text generation (Grok) |
+| `IMAGE_GENERATION_API_KEY` | xAI API key for image generation |
+| `IMAGE_EDIT_API_KEY` | xAI API key for image editing |
+| `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
+| `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
+| `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |
 
 ## Key Dependencies
 
-- `Telegram.Bot` 22.9.6 — bot API client
-- `OpenAI` 2.10.0 — GPT integration
-- `Magick.NET-Q16-AnyCPU` 14.11.1 — image manipulation
+- `Telegram.Bot` 22.10.0.1 — bot API client
+- `OpenAI` 2.10.0 — used with xAI endpoint (`https://api.x.ai/v1`, model `grok-4-1-fast-non-reasoning`)
+- `Magick.NET-Q16-AnyCPU` 14.13.1 — image manipulation
 - `Xabe.FFmpeg` + `YoutubeDLSharp` — media download/processing
 - EF Core 10 + Npgsql 10 — data access
 
 ## Deployment
 
-CI/CD via GitHub Actions (`.github/workflows/deploy.yml`): push to `master` builds and pushes Docker images to Docker Hub (`midianok/saturn`, `midianok/saturn-api`), then SSHes into the server and runs `docker compose up`.
+CI/CD via GitHub Actions (`.github/workflows/deploy.yml`): push to `master` builds and pushes Docker images to GitHub Container Registry (`ghcr.io/midianok/saturn`, `ghcr.io/midianok/saturn-api`) using `GITHUB_TOKEN`, then SSHes into the server and runs `docker compose up`.

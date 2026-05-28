@@ -110,12 +110,12 @@ await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('chat_invalidation', {0})
 | Команда `найти [запрос]` — «скачать трек с YouTube» | Реализации нет (поиск по коду пуст) |
 | Список команд | Не упомянуты: `топ слов`, `карма`, `спасибо`/`+`/`фу`/`-`, `наморево горе`, `оживи` (есть в `Help.md`) |
 
-### 2.2 CLAUDE.md / AGENTS.md
+### ✅ 2.2 CLAUDE.md / AGENTS.md
 - `IMAGE_MANIPULATION_SERVICE_URL` упоминается как переменная — **в коде не используется**, мёртвая конфигурация. Удалить из документации и `.env`.
 - Сигнатура `OnMessageAsync(Message, CancellationToken)` указана неверно — реально `OnMessageAsync(Message, UpdateType)`, **CancellationToken не передаётся вообще** (см. §3.16).
 - Не упомянут `BOT_USERNAME` в README (есть в CLAUDE.md), `INVOKE_COMMAND`, `EASTER_EGG_USERNAME`, ключи xAI.
 
-### 2.3 `.env.example` пробелы
+### ✅ 2.3 `.env.example` пробелы
 Текущий файл:
 ```
 BOT_TOKEN=, BOT_USERNAME=, LOG_CHAT_ID=, ADMIN_USERNAME=,
@@ -129,7 +129,7 @@ YOUTUBE_COOKIES_PATH=, INSTAGRAM_COOKIES_PATH=, PATH_BASE=
 - 🟡 `EASTER_EGG_USERNAME` — опциональная, но фича без неё молча выключена.
 - 🟡 Feature-флаги `*OperationEnabled` (см. файл `.env`: `ImageDistortionOperationEnabled` и др.). По grep — нигде в коде не читаются. Либо удалить из `.env`, либо реализовать и описать.
 
-### 2.4 Текущий `.env` содержит мёртвую конфигурацию
+### ✅ 2.4 Текущий `.env` содержит мёртвую конфигурацию
 - `IMAGE_MANIPULATION_SERVICE_URL` — не используется кодом.
 - `*OperationEnabled` — не читаются. Если фичи опциональны, нужен реальный механизм (см. §3.21).
 
