@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Saturn.Telegram.Api.Middleware;
+using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db.Extensions;
 using Telegram.Bot;
 
@@ -12,6 +13,8 @@ builder.Services.AddSaturnContext(builder.Configuration);
 var botToken = builder.Configuration["BOT_TOKEN"] ?? throw new InvalidOperationException("BOT_TOKEN is not configured");
 
 builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botToken));
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ChatMembershipService>();
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {

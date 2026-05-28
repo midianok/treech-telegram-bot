@@ -1,21 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
+using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/stats")]
-public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
+public class StatsController(IDbContextFactory<SaturnContext> contextFactory, ChatMembershipService membershipService) : ApiControllerBase
 {
     [HttpGet("message-count")]
-    public async Task<MessageCountDto> GetCount(
+    public async Task<ActionResult<MessageCountDto>> GetCount(
         [FromQuery] long chatId,
         [FromQuery] DateTime? dateFrom,
         [FromQuery] DateTime? dateTo,
         CancellationToken cancellationToken = default)
     {
+        if (!await membershipService.IsMemberAsync(chatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var query = db.Messages.Where(x => x.ChatId == chatId);
@@ -32,13 +36,16 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
     }
 
     [HttpGet("top-users")]
-    public async Task<IEnumerable<UserMessageCountDto>> GetTop(
+    public async Task<ActionResult<IEnumerable<UserMessageCountDto>>> GetTop(
         [FromQuery] long chatId,
         [FromQuery] DateTime? dateFrom,
         [FromQuery] DateTime? dateTo,
         [FromQuery] int limit = 10,
         CancellationToken cancellationToken = default)
     {
+        if (!await membershipService.IsMemberAsync(chatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var query = db.Messages.Where(x => x.ChatId == chatId && !x.IsBot);
@@ -60,16 +67,19 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        return users.Select(x => new UserMessageCountDto(x.Name, x.Count));
+        return Ok(users.Select(x => new UserMessageCountDto(x.Name, x.Count)));
     }
 
     [HttpGet("operation-calls")]
-    public async Task<IEnumerable<OperationCallDto>> GetOperationCalls(
+    public async Task<ActionResult<IEnumerable<OperationCallDto>>> GetOperationCalls(
         [FromQuery] long chatId,
         [FromQuery] DateTime? dateFrom,
         [FromQuery] DateTime? dateTo,
         CancellationToken cancellationToken = default)
     {
+        if (!await membershipService.IsMemberAsync(chatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var query = db.OperationCalls.Where(x => x.ChatId == chatId);
@@ -95,6 +105,6 @@ public class StatsController(IDbContextFactory<SaturnContext> contextFactory) : 
             .OrderByDescending(x => x.CalledAt)
             .ToListAsync(cancellationToken);
 
-        return calls.Select(x => new OperationCallDto(x.OperationName, x.CalledAt, x.UserId, x.UserName));
+        return Ok(calls.Select(x => new OperationCallDto(x.OperationName, x.CalledAt, x.UserId, x.UserName)));
     }
 }

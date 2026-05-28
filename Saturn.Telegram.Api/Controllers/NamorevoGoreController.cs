@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
+using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 using Telegram.Bot;
@@ -10,24 +11,30 @@ namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/namorevo-gore")]
-public class NamorevoGoreController : ControllerBase
+public class NamorevoGoreController : ApiControllerBase
 {
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
     private readonly ITelegramBotClient _botClient;
+    private readonly ChatMembershipService _membershipService;
     private readonly string? _botUsername;
 
     public NamorevoGoreController(IDbContextFactory<SaturnContext> contextFactory,
         ITelegramBotClient botClient,
+        ChatMembershipService membershipService,
         IConfiguration configuration)
     {
         _contextFactory = contextFactory;
         _botClient = botClient;
+        _membershipService = membershipService;
         _botUsername = configuration["BOT_USERNAME"];
     }
 
     [HttpPost("score")]
     public async Task<ActionResult> AddScore([FromBody] AddNamorevoGoreScoreRequest request, CancellationToken cancellationToken)
     {
+        if (!await _membershipService.IsMemberAsync(request.ChatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var user = await db.Users.FindAsync([request.UserId], cancellationToken);
@@ -60,16 +67,14 @@ public class NamorevoGoreController : ControllerBase
 
         if (!string.IsNullOrEmpty(_botUsername))
         {
-            
+            var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/{_botUsername}/namorevogore?startapp={request.ChatId}"));
+            var userName = FormatUserName(user);
+            await _botClient.SendMessage(
+                request.ChatId,
+                $"{userName} набрал {request.Score} очков в Наморево Горе!",
+                replyMarkup: keyboard,
+                cancellationToken: cancellationToken);
         }
-        var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/{_botUsername}/namorevogore?startapp={request.ChatId}"));
-        
-        var userName = FormatUserName(user);
-        await _botClient.SendMessage(
-            request.ChatId,
-            $"{userName} набрал {request.Score} очков в Наморево Горе!",
-            replyMarkup: keyboard,
-            cancellationToken: cancellationToken);
 
         return Ok();
     }
@@ -80,6 +85,9 @@ public class NamorevoGoreController : ControllerBase
         [FromQuery] long chatId,
         CancellationToken cancellationToken)
     {
+        if (!await _membershipService.IsMemberAsync(chatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var entity = await db.NamorevoGoreScores
@@ -96,11 +104,14 @@ public class NamorevoGoreController : ControllerBase
     }
 
     [HttpGet("leaderboard")]
-    public async Task<IEnumerable<NamorevoGoreLeaderboardEntryDto>> GetLeaderboard(
+    public async Task<ActionResult<IEnumerable<NamorevoGoreLeaderboardEntryDto>>> GetLeaderboard(
         [FromQuery] long chatId,
         [FromQuery] int limit = 10,
         CancellationToken cancellationToken = default)
     {
+        if (!await _membershipService.IsMemberAsync(chatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var entities = await db.NamorevoGoreScores
@@ -110,7 +121,7 @@ public class NamorevoGoreController : ControllerBase
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        return entities.Select(x => new NamorevoGoreLeaderboardEntryDto(x.UserId, FormatUserName(x.User!), x.Score));
+        return Ok(entities.Select(x => new NamorevoGoreLeaderboardEntryDto(x.UserId, FormatUserName(x.User!), x.Score)));
     }
 
     private static string FormatUserName(UserEntity user)

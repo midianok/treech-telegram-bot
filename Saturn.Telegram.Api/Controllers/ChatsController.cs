@@ -1,17 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
+using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/chats")]
-public class ChatsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
+public class ChatsController(IDbContextFactory<SaturnContext> contextFactory, ChatMembershipService membershipService) : ApiControllerBase
 {
     [HttpGet("{chatId:long}/ai-agent")]
     public async Task<ActionResult<AiAgentDto?>> GetAiAgent(long chatId, CancellationToken cancellationToken)
     {
+        if (!await membershipService.IsMemberAsync(chatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var chat = await db.Chats
@@ -34,6 +38,9 @@ public class ChatsController(IDbContextFactory<SaturnContext> contextFactory) : 
     [HttpPut("{chatId:long}/ai-agent")]
     public async Task<ActionResult> SetAiAgent(long chatId, [FromBody] SetChatAiAgentRequest request, CancellationToken cancellationToken)
     {
+        if (!await membershipService.IsMemberAsync(chatId, GetCurrentUserId(), cancellationToken))
+            return Forbid();
+
         await using var db = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var chat = await db.Chats.FindAsync([chatId], cancellationToken);
