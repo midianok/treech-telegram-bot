@@ -55,8 +55,8 @@ Configured via `.env` (picked up by Docker Compose):
 | `CONNECTION_STRING` | PostgreSQL connection string |
 | `POSTGRES_PASSWORD` | DB password |
 | `CHAT_GENERATION_API_KEY` | xAI API key for text generation (Grok) |
-| `IMAGE_GENERATION_API_KEY` | xAI API key for image generation |
-| `IMAGE_EDIT_API_KEY` | xAI API key for image editing |
+| `IMAGE_GENERATION_API_KEY` | xAI API key for video generation (used by `XaiVideoGenerationClient`) |
+| `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for image generation (`seedream-v5.0-lite`) and editing (`seedream-v5.0-lite/edit`) |
 | `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
 | `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
 | `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |

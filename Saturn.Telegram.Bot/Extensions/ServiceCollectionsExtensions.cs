@@ -3,10 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenAI;
 using OpenAI.Chat;
-using OpenAI.Images;
+using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 using Saturn.Bot.Service.Infrastructure.CurrencyClient;
 using Saturn.Bot.Service.Infrastructure.WeatherClient;
-using Saturn.Bot.Service.Infrastructure.XaiImageEditClient;
 using Saturn.Bot.Service.Infrastructure.XaiVideoGenerationClient;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services;
@@ -37,16 +36,10 @@ public static class ServiceCollectionsExtensions
             return new ChatClient("grok-4-1-fast-non-reasoning", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
         });
         
-        serviceCollection.AddSingleton<ImageClient>(_ =>
+        serviceCollection.AddHttpClient<AtlasCloudImageClient>(x =>
         {
-            var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
-            return new ImageClient("grok-imagine-image", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.x.ai/v1") });
-        });
-
-        serviceCollection.AddHttpClient<XaiImageEditClient>(x =>
-        {
-            var apiKey = configuration.GetSectionOrThrow("IMAGE_EDIT_API_KEY");
-            x.BaseAddress = new Uri("https://api.x.ai/");
+            var apiKey = configuration.GetSectionOrThrow("ATLAS_CLOUD_API_KEY");
+            x.BaseAddress = new Uri("https://api.atlascloud.ai/");
             x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
             x.Timeout = TimeSpan.FromMinutes(5);
         });

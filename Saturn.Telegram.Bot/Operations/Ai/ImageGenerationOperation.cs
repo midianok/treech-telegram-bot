@@ -1,5 +1,4 @@
 using Saturn.Bot.Service.Extensions;
-using OpenAI.Images;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
@@ -34,7 +33,7 @@ public class ImageGenerationOperation : IOperation
         var rawQuery = msg.Text!.ToLower().Replace("покажи", string.Empty).Trim();
         var prompt = await _imagePromptRepository.FindPromptAsync(rawQuery) ?? rawQuery;
 
-        var generationTask = _aiService.GenerateImageAsync(prompt, new ImageGenerationOptions { ResponseFormat = GeneratedImageFormat.Bytes });
+        var generationTask = _aiService.GenerateImageAsync(prompt);
 
         while (!generationTask.IsCompleted)
         {
@@ -42,8 +41,7 @@ public class ImageGenerationOperation : IOperation
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        var generatedImage = await generationTask;
-        var result = generatedImage.ImageBytes!.ToArray();
+        var result = await generationTask;
 
         using var generatedStream = new MemoryStream(result);
         await _telegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedStream), replyParameters: new ReplyParameters { MessageId = msg.MessageId });
