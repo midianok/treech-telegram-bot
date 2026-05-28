@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
@@ -26,9 +25,9 @@ public class ChatGenerationOperation : IOperation
     private readonly ISaveMessageService _saveMessageService;
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
-    private readonly IMemoryCache _memoryCache;
     private readonly IReadOnlyList<IChatTool> _tools;
     private readonly string _invokeCommand;
+    private readonly string _botUsername;
 
     public ChatGenerationOperation(
         TelegramBotClient telegramBotClient,
@@ -36,7 +35,6 @@ public class ChatGenerationOperation : IOperation
         ISaveMessageService saveMessageService,
         IChatCachedRepository chatCachedRepository,
         IMessageRepository messageRepository,
-        IMemoryCache memoryCache,
         IEnumerable<IChatTool> tools,
         IOptions<BotOptions> botOptions)
     {
@@ -44,10 +42,10 @@ public class ChatGenerationOperation : IOperation
         _aiService = aiService;
         _saveMessageService = saveMessageService;
         _chatCachedRepository = chatCachedRepository;
-        _memoryCache = memoryCache;
         _messageRepository = messageRepository;
         _tools = tools.ToList();
         _invokeCommand = botOptions.Value.InvokeCommand;
+        _botUsername = botOptions.Value.BotUsername;
     }
 
     public bool Validate(Message msg, UpdateType type)
@@ -152,11 +150,10 @@ public class ChatGenerationOperation : IOperation
 
     private bool IsReplyToBot(Message msg)
     {
-        var bot = _memoryCache.GetOrCreate($"{nameof(ChatGenerationOperation)}_user_bot", async _ => await _telegramBotClient.GetMe())?.GetAwaiter().GetResult();
-        if (bot == null || msg.ReplyToMessage == null || msg.ReplyToMessage.From == null)
+        if (string.IsNullOrEmpty(_botUsername) || msg.ReplyToMessage == null || msg.ReplyToMessage.From == null)
         {
             return false;
         }
-        return msg.ReplyToMessage.Type == MessageType.Text && msg.ReplyToMessage.From.Username == bot.Username;
+        return msg.ReplyToMessage.Type == MessageType.Text && msg.ReplyToMessage.From.Username == _botUsername;
     }
 }

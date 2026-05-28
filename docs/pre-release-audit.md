@@ -137,7 +137,7 @@ YOUTUBE_COOKIES_PATH=, INSTAGRAM_COOKIES_PATH=, PATH_BASE=
 
 ## 3. Архитектура и качество кода
 
-### 🔴 3.1 Sync-over-async в `ChatGenerationOperation`
+### ✅ 3.1 Sync-over-async в `ChatGenerationOperation`
 `Saturn.Telegram.Bot/Operations/Ai/ChatGenerationOperation.cs:155`:
 ```csharp
 var bot = _memoryCache.GetOrCreate($"...", async _ => await _telegramBotClient.GetMe())
@@ -321,7 +321,7 @@ await process.WaitForExitAsync();   // без CT, без timeout
 1. ✅ §1.2 — проверка `auth_date` + `FixedTimeEquals` в `TelegramInitDataMiddleware`.
 2. ✅ §1.3 — зафиксировать `ASPNETCORE_ENVIRONMENT=Production` в compose.
 3. ✅ §1.1 — `git rm --cached .env`, добавить secret-scanning hook.
-4. 🔴 §3.1 — починить sync-over-async в `ChatGenerationOperation.IsReplyToBot`.
+4. ✅ §3.1 — починить sync-over-async в `ChatGenerationOperation.IsReplyToBot`.
 5. 🔴 §3.2 — `SetCooldown` ставить даже при исключении операции (в `finally`).
 6. 🟡 §1.6 — убрать `<NoWarn>NU1901-NU1904</NoWarn>`, прогнать `dotnet list package --vulnerable`.
 7. 🔴 §2.3 — добавить `INVOKE_COMMAND` в `.env.example`.
