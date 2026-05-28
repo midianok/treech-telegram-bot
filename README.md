@@ -7,7 +7,7 @@ Telegram-бот для групповых чатов с поддержкой И�
 ### 🤖 ИИ
 | Команда | Описание |
 |---|---|
-| `трич [вопрос]` | Задать вопрос ИИ (GPT) |
+| `трич [вопрос]` | Задать вопрос ИИ (xAI Grok) |
 | Ответ на сообщение бота | Продолжить диалог |
 | `покажи [описание]` | Сгенерировать изображение |
 | `измени описание` | Отредактировать фото (ответ на фото или фото с подписью) |
@@ -31,11 +31,20 @@ Telegram-бот для групповых чатов с поддержкой И�
 | `жмыхни` | Исказить медиа (ответ на фото, видео или гифку) |
 | `кто сегодня [роль]` | Случайный участник из активных сегодня |
 | `найти [запрос]` | Скачать трек с YouTube |
+| `карма` | Показать свою карму (или ответ на сообщение) |
+| `спасибо`, `+`, `фу`, `-` | Изменить карму пользователя (ответ на сообщение) |
+| `наморево горе` | Открыть приложение «Наморево горе» |
+
+### 📊 Дополнительно
+| Команда | Описание |
+|---|---|
+| `топ слов` | Топ-10 любимых слов за 3 месяца |
 
 ### ⚙️ Прочее
 - `бот` — открыть веб-приложение
 - `помощь` — список команд
-- Ссылки TikTok, Instagram Reels и YouTube Shorts скачиваются **автоматически**
+- `оживи` — восстановить медиа (команда для администратора)
+- Ссылки TikTok и Instagram Reels скачиваются **автоматически** (YouTube не поддерживается)
 
 ## Архитектура
 
@@ -51,7 +60,7 @@ Saturn.Telegram.Db    — EF Core 10 + PostgreSQL (Npgsql), snake_case, IDbConte
 ### Требования
 - Docker & Docker Compose
 - Telegram Bot Token (`@BotFather`)
-- OpenAI API Key
+- xAI API Key (`https://api.x.ai/`)
 
 ### Запуск
 
@@ -84,16 +93,16 @@ dotnet run --project Saturn.Telegram.Api/Saturn.Telegram.Api.csproj
 
 ## Деплой
 
-CI/CD настроен через GitHub Actions: при пуше в `master` собираются Docker-образы и публикуются на Docker Hub (`midianok/saturn`, `midianok/saturn-api`), затем по SSH выполняется `docker compose up` на сервере.
+CI/CD настроен через GitHub Actions: при пуше в `master` собираются Docker-образы и публикуются в GitHub Container Registry (`ghcr.io/midianok/saturn`, `ghcr.io/midianok/saturn-api`), затем по SSH выполняется `docker compose up` на сервере.
 
-Необходимые секреты в GitHub: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SSH_HOST`, `SSH_USER`, `SSH_PASSWORD`, `DEPLOY_PATH`.
+Необходимые секреты в GitHub: `SSH_HOST`, `SSH_USER`, `SSH_PASSWORD`, `DEPLOY_PATH`. Публикация в GHCR использует встроенный `GITHUB_TOKEN`.
 
 ## Стек
 
 - [.NET 10](https://dotnet.microsoft.com/)
-- [Telegram.Bot 22.9.6](https://github.com/TelegramBots/Telegram.Bot)
-- [OpenAI .NET SDK 2.10.0](https://github.com/openai/openai-dotnet)
+- [Telegram.Bot 22.10.0.1](https://github.com/TelegramBots/Telegram.Bot)
+- [OpenAI .NET SDK 2.10.0](https://github.com/openai/openai-dotnet) — используется с xAI endpoint (`https://api.x.ai/v1`, модель `grok-4-1-fast-non-reasoning`)
 - [EF Core 10](https://learn.microsoft.com/en-us/ef/core/) + [Npgsql 10](https://www.npgsql.org/)
-- [Magick.NET 14.11.1](https://github.com/dlemstra/Magick.NET) — обработка изображений
+- [Magick.NET 14.13.1](https://github.com/dlemstra/Magick.NET) — обработка изображений
 - [Xabe.FFmpeg](https://github.com/tomaszzmuda/Xabe.FFmpeg) + [YoutubeDLSharp](https://github.com/Bluegrams/YoutubeDLSharp) — медиа
 - PostgreSQL 17

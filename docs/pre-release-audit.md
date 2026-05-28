@@ -74,20 +74,20 @@ if (app.Environment.IsProduction())
 - серверная подпись `chatId` при выдаче ссылки `t.me/...?startapp=<signed>`;
 - хранение и проверка whitelist `(userId, chatId)`.
 
-### 🟠 1.5 SSH-деплой по паролю
+### 🚫 1.5 SSH-деплой по паролю [игнорируется]
 `.github/workflows/deploy.yml` — `appleboy/ssh-action` использует `SSH_PASSWORD`. Переключиться на key-based auth (`SSH_KEY`).
 
-### 🟡 1.6 Подавление security-warning'ов NuGet
+### 🚫 1.6 Подавление security-warning'ов NuGet [игнорируется]
 `Saturn.Telegram.Bot/Saturn.Telegram.Bot.csproj`:
 ```xml
 <NoWarn>$(NoWarn);NU1901;NU1902;NU1903;NU1904</NoWarn>
 ```
 Это коды о CVE в транзитивных зависимостях. Убрать; добавить в CI `dotnet list package --vulnerable --include-transitive`.
 
-### 🟡 1.7 PostgreSQL открыт наружу
+### 🚫 1.7 PostgreSQL открыт наружу [игнорируется]
 `docker-compose.yaml`: `ports: ["15432:5432"]` — БД доступна из любого внешнего адреса, если файрвол сервера открыт. На проде либо удалить, либо биндить на `127.0.0.1:15432:5432`.
 
-### 🟡 1.8 Сырая интерполяция в `pg_notify` через `ExecuteSqlRawAsync`
+### 🚫 1.8 Сырая интерполяция в `pg_notify` через `ExecuteSqlRawAsync` [игнорируется]
 `ChatsController.cs:54`, `AiAgentsController.cs:56,79`, `ImagePromptsController.cs:38,57`:
 ```csharp
 await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('chat_invalidation', {0})", chatId.ToString());
@@ -98,7 +98,7 @@ await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('chat_invalidation', {0})
 
 ## 2. Документация vs реальность
 
-### 2.1 README.md — несоответствия
+### ✅ 2.1 README.md — несоответствия
 
 | README | Факт |
 |---|---|
