@@ -80,14 +80,16 @@ public class ChatGenerationOperation : IOperation
             var messageChain = await _messageRepository.GetMessageChainAsync(msg.Chat.Id, msg.ReplyToMessage!.Id);
             if (messageChain.Count > 0)
             {
-                var userChatMessages = messageChain.OrderBy(x => x.MessageDate)
+                var chainMessages = messageChain.OrderBy(x => x.MessageDate)
                     .Select(x =>
                     {
+                        if (x.IsBot)
+                            return (ChatMessage)new AssistantChatMessage(x.Text ?? string.Empty);
                         var senderName = GetSenderName(x.User);
                         var text = string.IsNullOrEmpty(senderName) ? x.Text : $"[{senderName}]: {x.Text}";
                         return new UserChatMessage(text);
                     });
-                messages.AddRange(userChatMessages);
+                messages.AddRange(chainMessages);
             }
             else
             {
