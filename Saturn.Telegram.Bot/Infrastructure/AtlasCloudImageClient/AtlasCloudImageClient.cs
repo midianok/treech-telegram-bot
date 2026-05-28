@@ -35,12 +35,14 @@ public class AtlasCloudImageClient
 
         var request = new
         {
-            model = "bytedance/seedance-v1-pro-fast/image-to-video",
+            model = "bytedance/seedance-2.0-fast/image-to-video",
             prompt = effectivePrompt,
             image = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}",
-            resolution = "480p",
+            resolution = "720p",
             duration = 5,
-            aspect_ratio = aspectRatio
+            ratio = aspectRatio,
+            generate_audio = true,
+            watermark = false
         };
 
         var response = await _httpClient.PostAsJsonAsync("api/v1/model/generateVideo", request, cancellationToken);
