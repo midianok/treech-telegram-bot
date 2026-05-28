@@ -50,7 +50,7 @@ public class AiService : IAiService
     {
         try
         {
-            var options = new ChatCompletionOptions();
+            var options = new ChatCompletionOptions { MaxOutputTokenCount = 500 };
             foreach (var tool in tools)
             {
                 options.Tools.Add(tool.Definition);
