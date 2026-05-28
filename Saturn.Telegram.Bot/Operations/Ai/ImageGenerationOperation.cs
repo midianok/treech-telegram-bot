@@ -9,8 +9,8 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
-[Cooldown(120)]
-[GlobalCooldown(5)]
+[Cooldown(10 * 60)]
+[GlobalCooldown(2)]
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ImageGenerationOperation : IOperation
 {
