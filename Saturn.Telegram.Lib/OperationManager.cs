@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Exceptions;
@@ -22,6 +23,7 @@ public class OperationManager
     private readonly IOperationCallRepository _operationCallRepository;
     private readonly ISaveMessageService _saveMessageService;
     private readonly TelegramBotClient _botClient;
+    private readonly string? _adminUsername;
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
@@ -36,7 +38,8 @@ public class OperationManager
         ICooldownService cooldownService,
         IOperationCallRepository operationCallRepository,
         ISaveMessageService saveMessageService,
-        TelegramBotClient botClient)
+        TelegramBotClient botClient,
+        IConfiguration configuration)
     {
         _operations = operations;
         _logger = logger;
@@ -44,6 +47,7 @@ public class OperationManager
         _operationCallRepository = operationCallRepository;
         _saveMessageService = saveMessageService;
         _botClient = botClient;
+        _adminUsername = configuration["ADMIN_USERNAME"];
     }
 
     public async Task MessageHandler(Message msg, UpdateType type)
@@ -58,7 +62,7 @@ public class OperationManager
 
             if (!operation.IsAllowed(msg.From?.Username)) continue;
 
-            if (await operation.IsChatOnlyViolatedAsync(msg, _botClient)) continue;
+            if (await operation.IsChatOnlyViolatedAsync(msg, _botClient, _adminUsername)) continue;
 
             if (await _cooldownService.IsCooldownAsync(operation, msg)) continue;
 

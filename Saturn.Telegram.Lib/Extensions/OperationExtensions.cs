@@ -25,10 +25,15 @@ public static class OperationExtensions
             return attr == null || attr.Usernames.Contains(username, StringComparer.OrdinalIgnoreCase);
         }
 
-        public async Task<bool> IsChatOnlyViolatedAsync(Message msg, TelegramBotClient botClient)
+        public async Task<bool> IsChatOnlyViolatedAsync(Message msg, TelegramBotClient botClient, string? adminUsername)
         {
             var attr = operation.GetAttribute<ChatOnlyAttribute>();
             if (attr == null || msg.Chat.Type is ChatType.Group or ChatType.Supergroup)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(adminUsername) && msg.From?.Username == adminUsername)
             {
                 return false;
             }
