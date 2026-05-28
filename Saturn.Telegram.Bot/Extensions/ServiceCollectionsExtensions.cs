@@ -6,7 +6,6 @@ using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 using Saturn.Bot.Service.Infrastructure.CurrencyClient;
 using Saturn.Bot.Service.Infrastructure.WeatherClient;
-using Saturn.Bot.Service.Infrastructure.XaiVideoGenerationClient;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
@@ -42,14 +41,6 @@ public static class ServiceCollectionsExtensions
             x.BaseAddress = new Uri("https://api.atlascloud.ai/");
             x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
             x.Timeout = TimeSpan.FromMinutes(5);
-        });
-
-        serviceCollection.AddHttpClient<XaiVideoGenerationClient>(x =>
-        {
-            var apiKey = configuration.GetSectionOrThrow("IMAGE_GENERATION_API_KEY");
-            x.BaseAddress = new Uri("https://api.x.ai/");
-            x.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-            x.Timeout = TimeSpan.FromMinutes(10);
         });
 
         serviceCollection.AddHttpClient<WeatherClient>(x =>

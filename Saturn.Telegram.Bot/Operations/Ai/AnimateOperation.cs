@@ -37,6 +37,22 @@ public class AnimateOperation : IOperation
         _botOptions = botOptions.Value;
     }
 
+    private static readonly (string ratio, double value)[] AspectRatios =
+    [
+        ("21:9", 21.0 / 9),
+        ("16:9", 16.0 / 9),
+        ("4:3",  4.0  / 3),
+        ("1:1",  1.0),
+        ("3:4",  3.0  / 4),
+        ("9:16", 9.0  / 16)
+    ];
+
+    private static string DetectAspectRatio(int width, int height)
+    {
+        var ratio = (double)width / height;
+        return AspectRatios.MinBy(x => Math.Abs(x.value - ratio)).ratio;
+    }
+
     public bool Validate(Message msg, UpdateType type)
     {
         if (type != UpdateType.Message) return false;
@@ -45,7 +61,10 @@ public class AnimateOperation : IOperation
             return false;
 
         var text = msg.Text ?? msg.Caption;
-        if (!string.Equals(text?.Trim(), Command, StringComparison.CurrentCultureIgnoreCase)) return false;
+        if (text == null) return false;
+
+        var trimmed = text.Trim();
+        if (!trimmed.StartsWith(Command, StringComparison.CurrentCultureIgnoreCase)) return false;
 
         if (msg.ReplyToMessage is { Type: MessageType.Photo, Photo: not null }) return true;
         if (msg.Photo != null) return true;
@@ -55,18 +74,24 @@ public class AnimateOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type)
     {
-        var fileId = msg.Photo?.MaxBy(x => x.FileSize)?.FileId
-            ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
+        var photo = msg.Photo?.MaxBy(x => x.FileSize)
+            ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize);
 
-        if (string.IsNullOrEmpty(fileId)) return;
+        if (photo == null) return;
 
-        var imageBytes = await _telegramBotClient.DownloadFileAsync(fileId);
+        var text = (msg.Text ?? msg.Caption)?.Trim() ?? string.Empty;
+        var customPrompt = text.Length > Command.Length
+            ? text[Command.Length..].Trim()
+            : null;
+
+        var aspectRatio = DetectAspectRatio(photo.Width, photo.Height);
+        var imageBytes = await _telegramBotClient.DownloadFileAsync(photo.FileId);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
 
         try
         {
-            var generateTask = _aiService.GenerateVideoFromImageAsync(imageBytes, cts.Token);
+            var generateTask = _aiService.GenerateVideoFromImageAsync(imageBytes, customPrompt, aspectRatio, cts.Token);
 
             while (!generateTask.IsCompleted)
             {

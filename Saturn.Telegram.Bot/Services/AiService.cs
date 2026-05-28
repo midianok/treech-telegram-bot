@@ -3,7 +3,6 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
-using Saturn.Bot.Service.Infrastructure.XaiVideoGenerationClient;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Lib.Exceptions;
 
@@ -13,18 +12,15 @@ public class AiService : IAiService
 {
     private readonly ChatClient _chatClient;
     private readonly AtlasCloudImageClient _atlasCloudImageClient;
-    private readonly XaiVideoGenerationClient _xaiVideoGenerationClient;
     private readonly ILogger<AiService> _logger;
 
     public AiService(
         ChatClient chatClient,
         AtlasCloudImageClient atlasCloudImageClient,
-        XaiVideoGenerationClient xaiVideoGenerationClient,
         ILogger<AiService> logger)
     {
         _chatClient = chatClient;
         _atlasCloudImageClient = atlasCloudImageClient;
-        _xaiVideoGenerationClient = xaiVideoGenerationClient;
         _logger = logger;
     }
 
@@ -133,20 +129,20 @@ public class AiService : IAiService
         }
     }
 
-    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, CancellationToken ct = default)
+    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, string? prompt, string aspectRatio, CancellationToken ct = default)
     {
         try
         {
-            return await _xaiVideoGenerationClient.GenerateVideoFromImageAsync(image, ct);
+            return await _atlasCloudImageClient.GenerateVideoFromImageAsync(image, prompt, aspectRatio, ct);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
-            _logger.LogError("xAI content moderation rejection (400 Bad Request)");
+            _logger.LogError("AtlasCloud content moderation rejection (400 Bad Request)");
             throw new AiContentModerationException();
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
         {
-            _logger.LogError("xAI balance exhausted (429 Too Many Requests)");
+            _logger.LogError("AtlasCloud balance exhausted (429 Too Many Requests)");
             throw new AiBudgetExhaustedException();
         }
     }
