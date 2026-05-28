@@ -129,11 +129,11 @@ public class AiService : IAiService
         }
     }
 
-    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, string? prompt, string aspectRatio, CancellationToken ct = default)
+    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, string? prompt, string aspectRatio, bool generateAudio = false, CancellationToken ct = default)
     {
         try
         {
-            return await _atlasCloudImageClient.GenerateVideoFromImageAsync(image, prompt, aspectRatio, ct);
+            return await _atlasCloudImageClient.GenerateVideoFromImageAsync(image, prompt, aspectRatio, generateAudio, ct);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {

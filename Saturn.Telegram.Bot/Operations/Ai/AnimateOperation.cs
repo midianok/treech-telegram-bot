@@ -16,6 +16,7 @@ namespace Saturn.Bot.Service.Operations.Ai;
 public class AnimateOperation : IOperation
 {
     private const string Command = "оживи";
+    private const string CommandWithAudio = "оживи со звуком";
 
     private readonly TelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
@@ -64,7 +65,7 @@ public class AnimateOperation : IOperation
         if (text == null) return false;
 
         var trimmed = text.Trim();
-        if (!trimmed.StartsWith(Command, StringComparison.CurrentCultureIgnoreCase)) return false;
+        if (!trimmed.StartsWith(Command, StringComparison.OrdinalIgnoreCase)) return false;
 
         if (msg.ReplyToMessage is { Type: MessageType.Photo, Photo: not null }) return true;
         if (msg.Photo != null) return true;
@@ -80,8 +81,10 @@ public class AnimateOperation : IOperation
         if (photo == null) return;
 
         var text = (msg.Text ?? msg.Caption)?.Trim() ?? string.Empty;
-        var customPrompt = text.Length > Command.Length
-            ? text[Command.Length..].Trim()
+        var withAudio = text.StartsWith(CommandWithAudio, StringComparison.OrdinalIgnoreCase);
+        var activeCommand = withAudio ? CommandWithAudio : Command;
+        var customPrompt = text.Length > activeCommand.Length
+            ? text[activeCommand.Length..].Trim()
             : null;
 
         var aspectRatio = DetectAspectRatio(photo.Width, photo.Height);
@@ -91,7 +94,7 @@ public class AnimateOperation : IOperation
 
         try
         {
-            var generateTask = _aiService.GenerateVideoFromImageAsync(imageBytes, customPrompt, aspectRatio, cts.Token);
+            var generateTask = _aiService.GenerateVideoFromImageAsync(imageBytes, customPrompt, aspectRatio, withAudio, cts.Token);
 
             while (!generateTask.IsCompleted)
             {

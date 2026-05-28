@@ -27,7 +27,7 @@ public class AtlasCloudImageClient
             enable_base64_output = true
         });
 
-    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] imageBytes, string? prompt, string aspectRatio, CancellationToken cancellationToken = default)
+    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] imageBytes, string? prompt, string aspectRatio, bool generateAudio = false, CancellationToken cancellationToken = default)
     {
         var effectivePrompt = string.IsNullOrWhiteSpace(prompt)
             ? "Animate this image naturally. If any person speaks or mouths words, they must speak Russian."
@@ -41,7 +41,7 @@ public class AtlasCloudImageClient
             resolution = "720p",
             duration = 5,
             ratio = aspectRatio,
-            generate_audio = true,
+            generate_audio = generateAudio,
             watermark = false
         };
 
