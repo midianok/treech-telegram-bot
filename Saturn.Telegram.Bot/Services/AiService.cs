@@ -1,5 +1,6 @@
 using System.ClientModel;
 using System.Net;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
@@ -11,24 +12,35 @@ namespace Saturn.Bot.Service.Services;
 public class AiService : IAiService
 {
     private readonly ChatClient _chatClient;
+    private readonly ChatClient _visionChatClient;
     private readonly AtlasCloudImageClient _atlasCloudImageClient;
     private readonly ILogger<AiService> _logger;
 
     public AiService(
-        ChatClient chatClient,
+        [FromKeyedServices("chat")] ChatClient chatClient,
+        [FromKeyedServices("vision")] ChatClient visionChatClient,
         AtlasCloudImageClient atlasCloudImageClient,
         ILogger<AiService> logger)
     {
         _chatClient = chatClient;
+        _visionChatClient = visionChatClient;
         _atlasCloudImageClient = atlasCloudImageClient;
         _logger = logger;
     }
+
+    private static bool HasImageContent(IList<ChatMessage> messages) =>
+        messages.OfType<UserChatMessage>()
+            .SelectMany(m => m.Content)
+            .Any(p => p.Kind == ChatMessageContentPartKind.Image);
+
+    private ChatClient SelectClient(IList<ChatMessage> messages) =>
+        HasImageContent(messages) ? _visionChatClient : _chatClient;
 
     public async Task<string> CompleteChatAsync(IList<ChatMessage> messages, CancellationToken ct = default)
     {
         try
         {
-            var result = await _chatClient.CompleteChatAsync(messages, cancellationToken: ct);
+            var result = await SelectClient(messages).CompleteChatAsync(messages, cancellationToken: ct);
             return result.Value.Content.FirstOrDefault()?.Text ?? throw new AiEmptyResponseException();
         }
         catch (ClientResultException ex) when (ex.Status == 400)
@@ -60,7 +72,7 @@ public class AiService : IAiService
 
             while (true)
             {
-                var result = await _chatClient.CompleteChatAsync(messagesList, options, ct);
+                var result = await SelectClient(messagesList).CompleteChatAsync(messagesList, options, ct);
                 var completion = result.Value;
 
                 if (completion.FinishReason != ChatFinishReason.ToolCalls)

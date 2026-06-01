@@ -29,7 +29,13 @@ public static class ServiceCollectionsExtensions
             return new TelegramBotClient(botToken);
         });
         
-        serviceCollection.AddSingleton<ChatClient>(_ =>
+        serviceCollection.AddKeyedSingleton<ChatClient>("chat", (_, _) =>
+        {
+            var apiKey = configuration.GetSectionOrThrow("ATLAS_CLOUD_API_KEY");
+            return new ChatClient("deepseek-ai/deepseek-v4-flash", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.atlascloud.ai/v1") });
+        });
+
+        serviceCollection.AddKeyedSingleton<ChatClient>("vision", (_, _) =>
         {
             var apiKey = configuration.GetSectionOrThrow("ATLAS_CLOUD_API_KEY");
             return new ChatClient("qwen/qwen3-vl-8b-instruct", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.atlascloud.ai/v1") });
