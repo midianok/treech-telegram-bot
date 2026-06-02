@@ -11,10 +11,10 @@ namespace Saturn.Bot.Service.Operations.Statistics;
 
 public class ShowAllTimeStatOperation : IOperation
 {
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ShowAllTimeStatOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
+    public ShowAllTimeStatOperation(ITelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
     {
         _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;

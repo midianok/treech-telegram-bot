@@ -13,6 +13,7 @@ using Saturn.Bot.Service.Services.Tools;
 using Saturn.Telegram.Db.Repositories;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib;
+using Saturn.Telegram.Lib.Abstractions;
 using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Telegram.Bot;
@@ -27,7 +28,7 @@ public static class ServiceCollectionsExtensions
         {
             var botToken = configuration.GetSectionOrThrow("BOT_TOKEN");
             return new TelegramBotClient(botToken);
-        });
+        }).AddSingleton<ITelegramBotClient>(sp => sp.GetRequiredService<TelegramBotClient>());
         
         serviceCollection.AddKeyedSingleton<ChatClient>("chat", (_, _) =>
         {
@@ -81,7 +82,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IImagePromptRepository, ImagePromptRepository>()
             .AddSingleton<IDistortionService, DistortionService>()
             .AddSingleton<ISaveMessageService, SaveMessageService>()
-            .AddSingleton<OperationManager>()
+            .AddSingleton<IOperationManager, OperationManager>()
             .AddHostedService<FfmpegSetupService>()
             .AddHostedService<YtDlpSetupService>()
             .AddHostedService<YtDlpUpdateService>()

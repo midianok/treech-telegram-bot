@@ -8,10 +8,10 @@ namespace Saturn.Telegram.Lib.Logging;
 public class TelegramLogger : ILogger
 {
     private readonly TelegramLoggerOptions _telegramLoggerOptions;
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly string _categoryName;
 
-    public TelegramLogger(string categoryName, TelegramBotClient telegramBotClient, IOptions<TelegramLoggerOptions> options)
+    public TelegramLogger(string categoryName, ITelegramBotClient telegramBotClient, IOptions<TelegramLoggerOptions> options)
     {
         _categoryName = categoryName;
         _telegramBotClient = telegramBotClient;

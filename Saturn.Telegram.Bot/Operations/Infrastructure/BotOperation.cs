@@ -9,7 +9,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Saturn.Bot.Service.Operations.Infrastructure;
 
-public class BotOperation(TelegramBotClient telegramBotClient, IOptions<BotOptions> botOptions) : IOperation
+public class BotOperation(ITelegramBotClient telegramBotClient, IOptions<BotOptions> botOptions) : IOperation
 {
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("бот");

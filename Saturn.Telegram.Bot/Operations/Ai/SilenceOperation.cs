@@ -19,7 +19,7 @@ public class SilenceOperation : IOperation
     private const int MinSilenceMinutes = 10;
     private const int MaxSilenceMinutes = 40;
 
-    private readonly TelegramBotClient _botClient;
+    private readonly ITelegramBotClient _botClient;
     private readonly IAiService _aiService;
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
@@ -29,7 +29,7 @@ public class SilenceOperation : IOperation
     private readonly HashSet<long> _fired = [];
 
     public SilenceOperation(
-        TelegramBotClient botClient,
+        ITelegramBotClient botClient,
         IAiService aiService,
         IChatCachedRepository chatCachedRepository,
         IDbContextFactory<SaturnContext> contextFactory)

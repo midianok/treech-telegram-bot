@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Telegram.Lib.Abstractions;
 using Saturn.Telegram.Lib.Exceptions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Infrastructure.Abstractions;
@@ -15,14 +16,14 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Telegram.Lib;
 
-public class OperationManager
+public class OperationManager : IOperationManager
 {
     private readonly IEnumerable<IOperation> _operations;
     private readonly ILogger<OperationManager> _logger;
     private readonly ICooldownService _cooldownService;
     private readonly IOperationCallRepository _operationCallRepository;
     private readonly ISaveMessageService _saveMessageService;
-    private readonly TelegramBotClient _botClient;
+    private readonly ITelegramBotClient _botClient;
     private readonly string? _adminUsername;
 
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -38,7 +39,7 @@ public class OperationManager
         ICooldownService cooldownService,
         IOperationCallRepository operationCallRepository,
         ISaveMessageService saveMessageService,
-        TelegramBotClient botClient,
+        ITelegramBotClient botClient,
         IConfiguration configuration)
     {
         _operations = operations;

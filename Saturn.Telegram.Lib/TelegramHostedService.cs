@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Saturn.Telegram.Lib.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -11,7 +12,7 @@ internal sealed class TelegramHostedService : IHostedService
 {
     private readonly TelegramBotClient _telegramBotClient;
     private readonly ILogger<TelegramHostedService> _logger;
-    private readonly OperationManager _operationManager;
+    private readonly IOperationManager _operationManager;
 
     private readonly CancellationTokenSource _stoppingCts = new();
     private readonly ConcurrentDictionary<Task, byte> _inFlight = new();
@@ -19,7 +20,7 @@ internal sealed class TelegramHostedService : IHostedService
     public TelegramHostedService(
         TelegramBotClient telegramBotClient,
         ILogger<TelegramHostedService> logger,
-        OperationManager operationManager)
+        IOperationManager operationManager)
     {
         _telegramBotClient = telegramBotClient;
         _logger = logger;

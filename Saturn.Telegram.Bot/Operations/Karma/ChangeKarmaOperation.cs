@@ -16,10 +16,10 @@ public class ChangeKarmaOperation : IOperation
     private static readonly string[] PositiveMessages = ["спасибо"];
     private static readonly string[] NegativeMessages = ["фу", "-"];
 
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ChangeKarmaOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
+    public ChangeKarmaOperation(ITelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
     {
         _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;

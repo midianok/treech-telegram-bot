@@ -18,11 +18,11 @@ public class ImageEditOperation : IOperation
     private const string CommandPrefix2 = "измени";
     private const int MaxImages = 3;
 
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
 
-    public ImageEditOperation(TelegramBotClient telegramBotClient, IAiService aiService, ISaveMessageService saveMessageService)
+    public ImageEditOperation(ITelegramBotClient telegramBotClient, IAiService aiService, ISaveMessageService saveMessageService)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;

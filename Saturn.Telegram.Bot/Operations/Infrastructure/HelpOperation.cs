@@ -6,7 +6,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.Infrastructure;
 
-public class HelpOperation(TelegramBotClient telegramBotClient) : IOperation
+public class HelpOperation(ITelegramBotClient telegramBotClient) : IOperation
 {
     private readonly string _helpText = File
         .ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Help.md"))

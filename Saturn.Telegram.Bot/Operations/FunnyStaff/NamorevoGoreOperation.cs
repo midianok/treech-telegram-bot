@@ -13,7 +13,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class NamorevoGoreOperation(
-    TelegramBotClient telegramBotClient,
+    ITelegramBotClient telegramBotClient,
     IDbContextFactory<SaturnContext> contextFactory,
     IOptions<BotOptions> botOptions) : IOperation
 {

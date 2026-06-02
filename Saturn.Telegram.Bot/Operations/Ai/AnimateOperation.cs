@@ -18,14 +18,14 @@ public class AnimateOperation : IOperation
     private const string Command = "оживи";
     private const string CommandWithAudio = "оживи со звуком";
 
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
     private readonly ILogger<AnimateOperation> _logger;
     private readonly BotOptions _botOptions;
 
     public AnimateOperation(
-        TelegramBotClient telegramBotClient,
+        ITelegramBotClient telegramBotClient,
         IAiService aiService,
         ISaveMessageService saveMessageService,
         ILogger<AnimateOperation> logger,

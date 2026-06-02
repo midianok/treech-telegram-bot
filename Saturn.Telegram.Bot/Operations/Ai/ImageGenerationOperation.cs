@@ -14,11 +14,11 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ImageGenerationOperation : IOperation
 {
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly IImagePromptRepository _imagePromptRepository;
 
-    public ImageGenerationOperation(TelegramBotClient telegramBotClient, IAiService aiService, IImagePromptRepository imagePromptRepository)
+    public ImageGenerationOperation(ITelegramBotClient telegramBotClient, IAiService aiService, IImagePromptRepository imagePromptRepository)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;

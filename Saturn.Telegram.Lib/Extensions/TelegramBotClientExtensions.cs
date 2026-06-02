@@ -4,7 +4,7 @@ namespace Saturn.Telegram.Lib.Extensions;
 
 public static class TelegramBotClientExtensions
 {
-    public static async Task<byte[]> DownloadFileAsync(this TelegramBotClient telegramBotClient, string fileId) 
+    public static async Task<byte[]> DownloadFileAsync(this ITelegramBotClient telegramBotClient, string fileId)
     {
         ArgumentException.ThrowIfNullOrEmpty(fileId);
 

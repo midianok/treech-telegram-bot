@@ -9,10 +9,10 @@ namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class ImageDistortionOperation : IOperation
 {
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IDistortionService _distortionService;
 
-    public ImageDistortionOperation(TelegramBotClient telegramBotClient, IDistortionService distortionService)
+    public ImageDistortionOperation(ITelegramBotClient telegramBotClient, IDistortionService distortionService)
     {
         _telegramBotClient = telegramBotClient;
         _distortionService = distortionService;

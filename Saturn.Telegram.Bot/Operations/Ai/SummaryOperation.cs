@@ -14,12 +14,12 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [GlobalCooldown(1)]
 public class SummaryOperation : IOperation
 {
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
     public SummaryOperation(
-        TelegramBotClient telegramBotClient,
+        ITelegramBotClient telegramBotClient,
         IAiService aiService,
         IDbContextFactory<SaturnContext> contextFactory)
     {

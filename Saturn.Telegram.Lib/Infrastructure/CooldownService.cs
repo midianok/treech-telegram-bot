@@ -15,10 +15,10 @@ public class CooldownService : ICooldownService
     private const string DefaultGlobalCooldownMessage = "Лимит вызовов на этот час исчерпан.";
 
     private readonly IMemoryCache _cache;
-    private readonly TelegramBotClient _botClient;
+    private readonly ITelegramBotClient _botClient;
     private readonly string? _adminUsername;
 
-    public CooldownService(IMemoryCache cache, TelegramBotClient botClient, IConfiguration configuration)
+    public CooldownService(IMemoryCache cache, ITelegramBotClient botClient, IConfiguration configuration)
     {
         _cache = cache;
         _botClient = botClient;

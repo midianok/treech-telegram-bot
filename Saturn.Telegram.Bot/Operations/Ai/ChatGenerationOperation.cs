@@ -20,7 +20,7 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ChatGenerationOperation : IOperation
 {
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
     private readonly IChatCachedRepository _chatCachedRepository;
@@ -30,7 +30,7 @@ public class ChatGenerationOperation : IOperation
     private readonly string _botUsername;
 
     public ChatGenerationOperation(
-        TelegramBotClient telegramBotClient,
+        ITelegramBotClient telegramBotClient,
         IAiService aiService,
         ISaveMessageService saveMessageService,
         IChatCachedRepository chatCachedRepository,

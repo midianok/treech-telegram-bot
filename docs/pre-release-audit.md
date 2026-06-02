@@ -203,7 +203,7 @@ conn.Notification += async (_, args) => { ... };   // async void
 - зависимость от `IDbContextFactory` — корректна;
 - `AddDbContextFactory<SaturnContext>(..., ServiceLifetime.Transient)` — параметр `lifetime` управляет лайфтаймом DbContext'а, выдаваемого фабрикой; сама фабрика всегда Singleton. Имя параметра путает; для ясности оставить дефолт (`Scoped`) и явно создавать через `CreateDbContextAsync()`.
 
-### 🟡 3.8 Внедрение конкретных типов вместо интерфейсов
+### ✅ 3.8 Внедрение конкретных типов вместо интерфейсов
 `TelegramBotClient` (вместо `ITelegramBotClient`), `OperationManager`, `CooldownService` инжектятся как concrete-классы в операциях и контроллерах. Это блокирует unit-тесты, моки, замену реализации.
 
 ### 🟡 3.9 `ShowFavStickOperation` — выборка всех стикеров в память
@@ -340,7 +340,7 @@ await process.WaitForExitAsync();   // без CT, без timeout
 
 ### Технический долг (P2)
 18. 🟡 §3.16 — добавить `CancellationToken` в `IOperation.OnMessageAsync`, прокинуть из менеджера.
-19. 🟡 §3.8 — заменить инжекцию `TelegramBotClient` на `ITelegramBotClient`; ввести интерфейсы для `OperationManager`/`CooldownService` где это даёт пользу.
+19. ✅ §3.8 — заменить инжекцию `TelegramBotClient` на `ITelegramBotClient`; ввести интерфейсы для `OperationManager`/`CooldownService` где это даёт пользу.
 20. 🟡 §3.13 — вынести `pg_notify` в `ICacheInvalidator`, имена каналов — в константы.
 21. ✅ §3.6 — убрать двойную регистрацию `TelegramBotClient` и пустой `Configure<BotOptions>`; удалить неиспользуемый `BotOptions.BotToken`.
 22. 🟡 §3.9 — `ShowFavStickOperation` на SQL-агрегацию.

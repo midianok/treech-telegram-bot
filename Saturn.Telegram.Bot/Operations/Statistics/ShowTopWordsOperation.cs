@@ -14,10 +14,10 @@ public class ShowTopWordsOperation : IOperation
 {
     private const int LookbackDays = 90;
 
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ShowTopWordsOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
+    public ShowTopWordsOperation(ITelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
     {
         _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;

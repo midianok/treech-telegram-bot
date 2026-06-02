@@ -11,11 +11,11 @@ namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class WhoTodayOperation : IOperation
 {
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
     private readonly ISaveMessageService _saveMessageService;
 
-    public WhoTodayOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory, ISaveMessageService saveMessageService)
+    public WhoTodayOperation(ITelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory, ISaveMessageService saveMessageService)
     {
         _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;

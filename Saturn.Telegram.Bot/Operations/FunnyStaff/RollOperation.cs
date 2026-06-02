@@ -8,10 +8,10 @@ namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 public class RollOperation : IOperation
 {
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly Random _random = new();
 
-    public RollOperation(TelegramBotClient telegramBotClient)
+    public RollOperation(ITelegramBotClient telegramBotClient)
     {
         _telegramBotClient = telegramBotClient;
     }

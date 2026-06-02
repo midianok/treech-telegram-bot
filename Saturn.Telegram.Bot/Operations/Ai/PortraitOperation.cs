@@ -18,12 +18,12 @@ public class PortraitOperation : IOperation
 
     private static readonly ConcurrentDictionary<(long ChatId, long UserId), string> Cache = new();
 
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
     public PortraitOperation(
-        TelegramBotClient telegramBotClient,
+        ITelegramBotClient telegramBotClient,
         IAiService aiService,
         IDbContextFactory<SaturnContext> contextFactory)
     {

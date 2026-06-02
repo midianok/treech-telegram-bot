@@ -16,10 +16,10 @@ public partial class VideoDownloadOperation : IOperation
     private static readonly Regex TikTokUrlRegex = new(@"tiktok\.com", RegexOptions.IgnoreCase);
     private static readonly Regex InstagramUrlRegex = new(@"instagram\.com", RegexOptions.IgnoreCase);
 
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly ILogger<VideoDownloadOperation> _logger;
 
-    public VideoDownloadOperation(TelegramBotClient telegramBotClient, ILogger<VideoDownloadOperation> logger)
+    public VideoDownloadOperation(ITelegramBotClient telegramBotClient, ILogger<VideoDownloadOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
         _logger = logger;

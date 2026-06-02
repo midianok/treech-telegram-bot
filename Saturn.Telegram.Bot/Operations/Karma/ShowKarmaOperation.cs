@@ -12,10 +12,10 @@ public class ShowKarmaOperation : IOperation
 {
     private const string ShowKarmaMessage = "карма";
 
-    private readonly TelegramBotClient _telegramBotClient;
+    private readonly ITelegramBotClient _telegramBotClient;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
 
-    public ShowKarmaOperation(TelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
+    public ShowKarmaOperation(ITelegramBotClient telegramBotClient, IDbContextFactory<SaturnContext> contextFactory)
     {
         _telegramBotClient = telegramBotClient;
         _contextFactory = contextFactory;
