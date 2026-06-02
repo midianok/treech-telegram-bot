@@ -225,7 +225,7 @@ conn.Notification += async (_, args) => { ... };   // async void
 ### ✅ 3.13 `pg_notify` вызывается напрямую из контроллеров
 `AiAgentsController`, `ChatsController`, `ImagePromptsController` — знание о механике инвалидации (имена каналов, формат) уехало в HTTP-слой. Вынести в `ICacheInvalidator` (Db-layer или отдельный сервис), имена каналов — в константы общего ассембли.
 
-### 🟡 3.14 `NamorevoGoreController` — мёртвый блок и битый URL при отсутствии BOT_USERNAME
+### ✅ 3.14 `NamorevoGoreController` — мёртвый блок и битый URL при отсутствии BOT_USERNAME
 ```csharp
 if (!string.IsNullOrEmpty(_botUsername))
 {

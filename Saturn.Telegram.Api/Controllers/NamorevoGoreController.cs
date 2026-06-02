@@ -65,16 +65,17 @@ public class NamorevoGoreController : ApiControllerBase
 
         await db.SaveChangesAsync(cancellationToken);
 
-        if (!string.IsNullOrEmpty(_botUsername))
-        {
-            var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/{_botUsername}/namorevogore?startapp={request.ChatId}"));
-            var userName = user.GetDisplayName();
-            await _botClient.SendMessage(
-                request.ChatId,
-                $"{userName} набрал {request.Score} очков в Наморево Горе!",
-                replyMarkup: keyboard,
-                cancellationToken: cancellationToken);
-        }
+        var keyboard = string.IsNullOrEmpty(_botUsername)
+            ? null
+            : new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl(
+                "Наморево горе",
+                $"https://t.me/{_botUsername}/namorevogore?startapp={request.ChatId}"));
+
+        await _botClient.SendMessage(
+            request.ChatId,
+            $"{user.GetDisplayName()} набрал {request.Score} очков в Наморево Горе!",
+            replyMarkup: keyboard,
+            cancellationToken: cancellationToken);
 
         return Ok();
     }
