@@ -175,7 +175,7 @@ _telegramBotClient.OnMessage += (msg, type) =>
 - Брошенный `Task` несвязан; исключение вне внутреннего try/catch потеряется (UnobservedTaskException).
 - `StopAsync` возвращает `Task.CompletedTask` мгновенно — graceful shutdown отсутствует.
 
-### 🟠 3.4 `CacheInvalidationService` — async-void в event handler, без reconnect
+### ✅ 3.4 `CacheInvalidationService` — async-void в event handler, без reconnect
 `Saturn.Telegram.Bot/Services/CacheInvalidationService.cs:22-61`:
 ```csharp
 conn.Notification += async (_, args) => { ... };   // async void
@@ -330,7 +330,7 @@ await process.WaitForExitAsync();   // без CT, без timeout
 8. ✅ §1.4 — авторизация по `chat_id` в контроллерах API.
 9. 🟠 §1.5 — SSH-деплой по ключу.
 10. §2.1–2.4 — синхронизировать README/CLAUDE.md/AGENTS.md с реальностью (xAI вместо OpenAI, GHCR вместо Docker Hub, актуальные версии пакетов, реальные команды, убрать `IMAGE_MANIPULATION_SERVICE_URL`).
-11. 🟠 §3.4 — try/catch + reconnect в `CacheInvalidationService`.
+11. ✅ §3.4 — try/catch + reconnect в `CacheInvalidationService`.
 12. 🟠 §3.5 — `ON CONFLICT DO NOTHING` в `SaveMessageService`.
 13. 🟠 §4 — `restart: always` + healthcheck'и для bot/api; убрать `15432:5432` наружу (§1.7); закэшировать ffmpeg/yt-dlp в volume или image.
 14. 🟡 §4 — выровнять API EXPOSE и `Run("...:5001")`.

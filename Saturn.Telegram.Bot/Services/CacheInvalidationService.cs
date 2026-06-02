@@ -13,65 +13,97 @@ public class CacheInvalidationService(
     IImagePromptRepository imagePromptRepository,
     ILogger<CacheInvalidationService> logger) : BackgroundService
 {
+    private const string AgentInvalidationChannel = "agent_invalidation";
+    private const string ChatInvalidationChannel = "chat_invalidation";
+    private const string ImagePromptInvalidationChannel = "image_prompt_invalidation";
+
+    private const string ListenCommand =
+        $"LISTEN {AgentInvalidationChannel};" +
+        $"LISTEN {ChatInvalidationChannel};" +
+        $"LISTEN {ImagePromptInvalidationChannel};";
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var connectionString = configuration.GetSectionOrThrow("CONNECTION_STRING");
-        await using var conn = new NpgsqlConnection(connectionString);
-        await conn.OpenAsync(stoppingToken);
-
-        conn.Notification += async (_, args) =>
-        {
-            switch (args.Channel)
-            {
-                case "agent_invalidation":
-                {
-                    if (Guid.TryParse(args.Payload, out var agentId))
-                    {
-                        logger.LogInformation("Invalidating cache for agent {AgentId}", agentId);
-                        await chatCachedRepository.InvalidateByAgentAsync(agentId, stoppingToken);
-                    }
-                    else
-                    {
-                        logger.LogWarning("Received invalid agent_invalidation payload: {Payload}", args.Payload);
-                    }
-
-                    break;
-                }
-                case "chat_invalidation":
-                {
-                    if (long.TryParse(args.Payload, out var chatId))
-                    {
-                        logger.LogInformation("Invalidating cache for chat {ChatId}", chatId);
-                        await chatCachedRepository.InvalidateChatAsync(chatId);
-                    }
-                    else
-                    {
-                        logger.LogWarning("Received invalid chat_invalidation payload: {Payload}", args.Payload);
-                    }
-
-                    break;
-                }
-                case "image_prompt_invalidation":
-                {
-                    logger.LogInformation("Invalidating image prompts cache");
-                    await imagePromptRepository.InvalidateAsync();
-                    break;
-                }
-            }
-        };
-
-        await using var agentCmd = new NpgsqlCommand("LISTEN agent_invalidation", conn);
-        await agentCmd.ExecuteNonQueryAsync(stoppingToken);
-
-        await using var chatCmd = new NpgsqlCommand("LISTEN chat_invalidation", conn);
-        await chatCmd.ExecuteNonQueryAsync(stoppingToken);
-
-        await using var imagePromptCmd = new NpgsqlCommand("LISTEN image_prompt_invalidation", conn);
-        await imagePromptCmd.ExecuteNonQueryAsync(stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await conn.WaitAsync(stoppingToken);
+            try
+            {
+                await using var connection = new NpgsqlConnection(connectionString);
+                await connection.OpenAsync(stoppingToken);
+
+                connection.Notification += (sender, args) => 
+                    _ = HandleNotificationAsync(args, stoppingToken);
+
+                await using (var command = new NpgsqlCommand(ListenCommand, connection))
+                {
+                    await command.ExecuteNonQueryAsync(stoppingToken);
+                }
+                
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    await connection.WaitAsync(stoppingToken);
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "CacheInvalidationService: connection lost, reconnecting in 5 s");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+            }
         }
+    }
+
+    private async Task HandleNotificationAsync(NpgsqlNotificationEventArgs args, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var notificationHandler = args.Channel switch
+            {
+                AgentInvalidationChannel => HandleAgentInvalidationAsync(args.Payload, cancellationToken),
+                ChatInvalidationChannel => HandleChatInvalidationAsync(args.Payload, cancellationToken),
+                ImagePromptInvalidationChannel => HandleImagePromptInvalidationAsync(),
+                _ => Task.CompletedTask
+            };
+            await notificationHandler;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "CacheInvalidationService: error handling notification from channel {Channel}", args.Channel);
+        }
+    }
+
+    private async Task HandleAgentInvalidationAsync(string payload, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(payload, out var agentId))
+        {
+            logger.LogWarning("Received invalid agent_invalidation payload: {Payload}", payload);
+            return;
+        }
+
+        logger.LogInformation("Invalidating cache for agent {AgentId}", agentId);
+        await chatCachedRepository.InvalidateByAgentAsync(agentId, cancellationToken);
+    }
+
+    private async Task HandleChatInvalidationAsync(string payload, CancellationToken cancellationToken)
+    {
+        if (!long.TryParse(payload, out var chatId))
+        {
+            logger.LogWarning("Received invalid chat_invalidation payload: {Payload}", payload);
+            return;
+        }
+
+        logger.LogInformation("Invalidating cache for chat {ChatId}", chatId);
+        await chatCachedRepository.InvalidateChatAsync(chatId);
+    }
+
+    private async Task HandleImagePromptInvalidationAsync()
+    {
+        logger.LogInformation("Invalidating image prompts cache");
+        await imagePromptRepository.InvalidateAsync();
     }
 }
