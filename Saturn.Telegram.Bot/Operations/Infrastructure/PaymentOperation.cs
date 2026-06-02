@@ -31,7 +31,7 @@ public class PaymentOperation : IOperation
         if (msg.From != null)
         {
             var balance = await _sparkShop.GetBalanceAsync(msg.From.Id, сancellationToken);
-            await _sparkShop.SendOfferAsync(msg, $"Баланс: {balance} искр.", сancellationToken);
+            await _sparkShop.SendOfferAsync(msg, $"Баланс: {balance} трич койнов.", сancellationToken);
         }
     }
 

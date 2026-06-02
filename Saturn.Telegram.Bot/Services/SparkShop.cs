@@ -44,12 +44,12 @@ public class SparkShop : ISparkShop
         var rows = Bundles
             .Select(b => new[]
             {
-                InlineKeyboardButton.WithCallbackData($"{b.Sparks} искр — {b.Stars} ⭐", $"{BuyCallbackPrefix}{b.Stars}"),
+                InlineKeyboardButton.WithCallbackData($"{b.Sparks} трич койнов — {b.Stars} ⭐", $"{BuyCallbackPrefix}{b.Stars}"),
             });
 
         await _bot.SendMessage(
             msg.Chat,
-            $"{reason}\nОдно редактирование — {ImageEditCost} искр. Пополни баланс:",
+            $"{reason}\nОдно редактирование — {ImageEditCost} трич койнов. Пополни баланс:",
             replyParameters: new ReplyParameters { MessageId = msg.MessageId },
             replyMarkup: new InlineKeyboardMarkup(rows),
             cancellationToken: cancellationToken);
@@ -98,7 +98,7 @@ public class SparkShop : ISparkShop
         var balance = await _coinRepository.GetBalanceAsync(msg.From.Id, cancellationToken);
         await _bot.SendMessage(
             msg.Chat,
-            $"Зачислено {sparks} искр ✨ Баланс: {balance}.",
+            $"Зачислено {sparks} трич койнов ✨ Баланс: {balance}.",
             replyParameters: new ReplyParameters { MessageId = msg.MessageId },
             cancellationToken: cancellationToken);
     }
@@ -121,12 +121,12 @@ public class SparkShop : ISparkShop
 
         await _bot.SendInvoice(
             chatId: callback.Message.Chat,
-            title: "Искры",
-            description: $"{bundle.Sparks} искр для редактирования изображений",
+            title: "Трич койны",
+            description: $"{bundle.Sparks} трич койнов для редактирования изображений",
             payload: $"{PayloadPrefix}:{bundle.Stars}:{bundle.Sparks}",
             providerToken: "", // empty for Telegram Stars (XTR)
             currency: Currency,
-            prices: [new LabeledPrice($"{bundle.Sparks} искр", bundle.Stars)],
+            prices: [new LabeledPrice($"{bundle.Sparks} трич койнов", bundle.Stars)],
             cancellationToken: cancellationToken);
     }
 

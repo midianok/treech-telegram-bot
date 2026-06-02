@@ -4,7 +4,7 @@ namespace Saturn.Bot.Service.Services.Abstractions;
 
 public interface ISparkShop
 {
-    /// <summary>Price of a single paid image edit, in coins ("искры").</summary>
+    /// <summary>Price of a single paid image edit, in coins ("трич койны").</summary>
     int ImageEditCost { get; }
 
     Task<long> GetBalanceAsync(long userId, CancellationToken cancellationToken);
