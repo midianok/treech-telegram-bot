@@ -25,25 +25,25 @@ public class WhoTodayOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.TextStartsWith("кто сегодня ");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
         var randomUser = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id && x.MessageDate > DateTime.Now.Date)
             .Select(x => new { x.User!.Username, x.User!.FirstName })
             .Distinct()
             .OrderBy(_ => Guid.NewGuid())
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(сancellationToken);
 
         if (randomUser == null)
         {
-            await _telegramBotClient.SendMessage(msg.Chat, "Ты!", ParseMode.None, new ReplyParameters { MessageId = msg.Id });
+            await _telegramBotClient.SendMessage(msg.Chat, "Ты!", ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
             return;
         }
 
         var displayName = randomUser.Username != null ? $"@{randomUser.Username}" : randomUser.FirstName;
         var todayMessage = msg.Text!.ToLower().Replace("кто сегодня ", string.Empty);
-        var message = await _telegramBotClient.SendMessage(msg.Chat, $"{displayName} сегодня {todayMessage}");
+        var message = await _telegramBotClient.SendMessage(msg.Chat, $"{displayName} сегодня {todayMessage}", cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(message);
     }
 }

@@ -37,7 +37,7 @@ public class CurrencyChatTool : IChatTool
 
     public CurrencyChatTool(CurrencyClient currencyClient) => _currencyClient = currencyClient;
 
-    public async Task<string> ExecuteAsync(string arguments, CancellationToken ct)
+    public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {
         using var doc = JsonDocument.Parse(arguments);
         if (!doc.RootElement.TryGetProperty("from", out var fromElement))
@@ -47,6 +47,6 @@ public class CurrencyChatTool : IChatTool
         var to = doc.RootElement.TryGetProperty("to", out var toElement)
             ? toElement.EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToArray()
             : [];
-        return await _currencyClient.GetRatesAsync(fromElement.GetString() ?? string.Empty, to, ct);
+        return await _currencyClient.GetRatesAsync(fromElement.GetString() ?? string.Empty, to, сancellationToken);
     }
 }

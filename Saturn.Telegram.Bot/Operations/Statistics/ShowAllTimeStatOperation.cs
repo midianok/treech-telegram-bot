@@ -23,9 +23,9 @@ public class ShowAllTimeStatOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("вся стата");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
 
         var topUsersByMessageCount = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id)
@@ -39,7 +39,7 @@ public class ShowAllTimeStatOperation : IOperation
                 MessageCount = x.Count()
             })
             .OrderByDescending(x => x.MessageCount)
-            .Take(10).ToListAsync();
+            .Take(10).ToListAsync(сancellationToken);
 
         var replyMessage = new StringBuilder("Топ по сообщениям за всё время:\n");
         var iterator = 1;
@@ -52,7 +52,7 @@ public class ShowAllTimeStatOperation : IOperation
         }
 
         await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
-            new ReplyParameters { MessageId = msg.Id });
+            new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
     }
 
     private string GetEmoji(int iterator) =>

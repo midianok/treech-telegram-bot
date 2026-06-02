@@ -34,7 +34,7 @@ public class ImageDescriptionOperation : IOperation
         (msg is { ReplyToMessage: { Type: MessageType.Photo, Photo: not null } } or { Type: MessageType.Photo, Photo: not null, Caption: not null }) &&
         (msg.Text?.ToLower() == "нука" || msg.Caption?.ToLower() == "нука");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var fileId = msg.Photo?.MaxBy(x => x.FileSize)?.FileId ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize)?.FileId;
 
@@ -62,11 +62,11 @@ public class ImageDescriptionOperation : IOperation
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
 
-        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
         var replyMessageId = msg.ReplyToMessage?.Id ?? msg.Id;
-        var result = await _aiService.CompleteChatAsync(messages);
+        var result = await _aiService.CompleteChatAsync(messages, сancellationToken);
 
-        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId });
+        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply);
     }
 }

@@ -40,7 +40,7 @@ internal sealed class TelegramHostedService : IHostedService
 
     private Task OnMessage(Message msg, UpdateType type)
     {
-        Track(() => _operationManager.MessageHandler(msg, type));
+        Track(() => _operationManager.MessageHandler(msg, type, _stoppingCts.Token));
         return Task.CompletedTask;
     }
 

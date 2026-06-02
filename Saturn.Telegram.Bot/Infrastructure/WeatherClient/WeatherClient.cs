@@ -6,12 +6,12 @@ public class WeatherClient
 
     public WeatherClient(HttpClient httpClient) => _httpClient = httpClient;
 
-    public async Task<string> GetWeatherAsync(string location, CancellationToken ct = default)
+    public async Task<string> GetWeatherAsync(string location, CancellationToken сancellationToken)
     {
         try
         {
             return await _httpClient.GetStringAsync(
-                $"{Uri.EscapeDataString(location)}?format=j1&lang=ru", ct);
+                $"{Uri.EscapeDataString(location)}?format=j1&lang=ru", сancellationToken);
         }
         catch (Exception ex)
         {

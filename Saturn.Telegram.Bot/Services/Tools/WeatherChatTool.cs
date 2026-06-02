@@ -31,13 +31,13 @@ public class WeatherChatTool : IChatTool
 
     public WeatherChatTool(WeatherClient weatherClient) => _weatherClient = weatherClient;
 
-    public async Task<string> ExecuteAsync(string arguments, CancellationToken ct)
+    public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {
         using var doc = JsonDocument.Parse(arguments);
         if (!doc.RootElement.TryGetProperty("location", out var locationElement))
         {
             return """{"error":"Не указана локация"}""";
         }
-        return await _weatherClient.GetWeatherAsync(locationElement.GetString() ?? string.Empty, ct);
+        return await _weatherClient.GetWeatherAsync(locationElement.GetString() ?? string.Empty, сancellationToken);
     }
 }

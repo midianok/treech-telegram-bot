@@ -32,7 +32,7 @@ public class ChangeKarmaOperation : IOperation
         return GetDelta(text) != null && msg.From != null && msg.ReplyToMessage?.From != null;
     }
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var delta = GetDelta(Normalize(msg.Text));
         if (delta == null || msg.From == null || msg.ReplyToMessage?.From == null)
@@ -40,26 +40,26 @@ public class ChangeKarmaOperation : IOperation
             return;
         }
 
-        await ChangeKarmaAsync(msg, msg.From, msg.ReplyToMessage.From, delta.Value);
+        await ChangeKarmaAsync(msg, msg.From, msg.ReplyToMessage.From, delta.Value, сancellationToken);
     }
 
-    private async Task ChangeKarmaAsync(Message msg, TelegramUser fromUser, TelegramUser toUser, int delta)
+    private async Task ChangeKarmaAsync(Message msg, TelegramUser fromUser, TelegramUser toUser, int delta, CancellationToken сancellationToken)
     {
         if (fromUser.Id == toUser.Id)
         {
             return;
         }
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
-        await EnsureUserAsync(db, fromUser);
-        await EnsureUserAsync(db, toUser);
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
+        await EnsureUserAsync(db, fromUser, сancellationToken);
+        await EnsureUserAsync(db, toUser, сancellationToken);
 
         var now = DateTime.UtcNow;
         var lastChangeAt = await db.KarmaChanges
             .Where(x => x.FromUserId == fromUser.Id && x.ChatId == msg.Chat.Id)
             .OrderByDescending(x => x.CreatedAt)
             .Select(x => (DateTime?)x.CreatedAt)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(сancellationToken);
 
         if (lastChangeAt != null)
         {
@@ -70,13 +70,13 @@ public class ChangeKarmaOperation : IOperation
                 await _telegramBotClient.SendMessage(
                     msg.Chat,
                     $"Карму можно менять раз в {FormatDuration(cooldown)}. Следующий раз через {FormatDuration(readyAt - now)}.",
-                    replyParameters: new ReplyParameters { MessageId = msg.Id });
+                    replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
                 return;
             }
         }
 
         var karma = await db.UserKarma.AsTracking()
-            .FirstOrDefaultAsync(x => x.UserId == toUser.Id && x.ChatId == msg.Chat.Id);
+            .FirstOrDefaultAsync(x => x.UserId == toUser.Id && x.ChatId == msg.Chat.Id, сancellationToken);
         if (karma == null)
         {
             karma = new UserKarmaEntity { UserId = toUser.Id, ChatId = msg.Chat.Id };
@@ -95,18 +95,18 @@ public class ChangeKarmaOperation : IOperation
             CreatedAt = now,
         });
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(сancellationToken);
 
         var sign = delta > 0 ? "+" : "";
         await _telegramBotClient.SendMessage(
             msg.Chat,
             $"{toUser.GetDisplayName()}: {sign}{delta} к карме. Сейчас: {karma.Value}",
-            replyParameters: new ReplyParameters { MessageId = msg.Id });
+            replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
     }
 
-    private static async Task EnsureUserAsync(SaturnContext db, TelegramUser user)
+    private static async Task EnsureUserAsync(SaturnContext db, TelegramUser user, CancellationToken сancellationToken)
     {
-        var existingUser = await db.Users.AsTracking().FirstOrDefaultAsync(x => x.Id == user.Id);
+        var existingUser = await db.Users.AsTracking().FirstOrDefaultAsync(x => x.Id == user.Id, сancellationToken);
         if (existingUser == null)
         {
             await db.Users.AddAsync(new UserEntity

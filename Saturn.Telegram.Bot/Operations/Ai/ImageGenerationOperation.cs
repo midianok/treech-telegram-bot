@@ -28,7 +28,7 @@ public class ImageGenerationOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.TextStartsWith("покажи");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var rawQuery = msg.Text!.ToLower().Replace("покажи", string.Empty).Trim();
         var prompt = await _imagePromptRepository.FindPromptAsync(rawQuery) ?? rawQuery;

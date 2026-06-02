@@ -73,7 +73,7 @@ public class AnimateOperation : IOperation
         return false;
     }
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var photo = msg.Photo?.MaxBy(x => x.FileSize)
             ?? msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize);
@@ -90,7 +90,8 @@ public class AnimateOperation : IOperation
         var aspectRatio = DetectAspectRatio(photo.Width, photo.Height);
         var imageBytes = await _telegramBotClient.DownloadFileAsync(photo.FileId);
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(сancellationToken, timeoutCts.Token);
 
         try
         {
@@ -99,7 +100,7 @@ public class AnimateOperation : IOperation
             while (!generateTask.IsCompleted)
             {
                 await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadVideo, cancellationToken: cts.Token);
-                await Task.Delay(TimeSpan.FromSeconds(4));
+                await Task.Delay(TimeSpan.FromSeconds(4), cts.Token);
             }
 
             var videoBytes = await generateTask;

@@ -47,7 +47,7 @@ public class ImageEditOperation : IOperation
         return false;
     }
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var text = msg.Text ?? msg.Caption;
         var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;

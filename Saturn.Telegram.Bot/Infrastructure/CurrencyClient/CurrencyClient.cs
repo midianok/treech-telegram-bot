@@ -8,12 +8,12 @@ public class CurrencyClient
 
     public CurrencyClient(HttpClient httpClient) => _httpClient = httpClient;
 
-    public async Task<string> GetRatesAsync(string from, string[] to, CancellationToken ct = default)
+    public async Task<string> GetRatesAsync(string from, string[] to, CancellationToken сancellationToken)
     {
         try
         {
             using var doc = JsonDocument.Parse(
-                await _httpClient.GetStringAsync($"v6/latest/{Uri.EscapeDataString(from.ToUpper())}", ct));
+                await _httpClient.GetStringAsync($"v6/latest/{Uri.EscapeDataString(from.ToUpper())}", сancellationToken));
 
             if (!doc.RootElement.TryGetProperty("rates", out var rates))
             {

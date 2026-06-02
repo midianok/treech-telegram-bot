@@ -14,9 +14,9 @@ public class BotOperation(ITelegramBotClient telegramBotClient, IOptions<BotOpti
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("бот");
 
-    public Task OnMessageAsync(Message msg, UpdateType type)
+    public Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Открыть", $"https://t.me/{botOptions.Value.BotUsername}/app?startapp={msg.Chat.Id}"));
-        return telegramBotClient.SendMessage(msg.Chat, "Treech App", replyMarkup: keyboard);
+        return telegramBotClient.SendMessage(msg.Chat, "Treech App", replyMarkup: keyboard, cancellationToken: сancellationToken);
     }
 }

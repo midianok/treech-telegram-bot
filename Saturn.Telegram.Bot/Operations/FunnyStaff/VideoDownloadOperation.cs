@@ -33,7 +33,7 @@ public partial class VideoDownloadOperation : IOperation
         return !string.IsNullOrEmpty(text) && VideoUrlRegex.IsMatch(text);
     }
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var text = msg.Text ?? msg.Caption ?? string.Empty;
         var match = VideoUrlRegex.Match(text);

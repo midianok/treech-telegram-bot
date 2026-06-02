@@ -27,14 +27,14 @@ public class ShowUserStatOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("стата");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
         var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
 
         var messageTypes = await db.Messages.Where(x => x.ChatId == msg.Chat.Id && x.UserId == userId)
             .Select(x => new { x.Type, x.User!.Username })
-            .ToListAsync();
+            .ToListAsync(сancellationToken);
 
         var userName = messageTypes.FirstOrDefault()?.Username;
 
@@ -52,6 +52,6 @@ public class ShowUserStatOperation : IOperation
             InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/{_botOptions.BotUsername}/app?startapp={msg.Chat.Id}"));
 
         await _telegramBotClient.SendMessage(msg.Chat, replyMessage, ParseMode.None,
-            new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);
+            new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard, cancellationToken: сancellationToken);
     }
 }

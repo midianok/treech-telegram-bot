@@ -80,12 +80,12 @@ public class DistortionService : IDistortionService
             var framesTask = Parallel.ForEachAsync(
                 framePaths.Select((path, i) => (path, i)),
                 new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-                async (item, ct) =>
+                async (item, сancellationToken) =>
                 {
                     using var image = new MagickImage(item.path);
                     image.LiquidRescale(new Percentage(40), new Percentage(40), 1, 0);
                     image.Resize(image.Width, image.Height);
-                    await image.WriteAsync(Path.Combine(distortedDir, $"frame_{item.i + 1}.png"), ct);
+                    await image.WriteAsync(Path.Combine(distortedDir, $"frame_{item.i + 1}.png"), сancellationToken);
 
                     if (onProgress != null)
                     {

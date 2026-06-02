@@ -235,7 +235,7 @@ var keyboard = ... $"https://t.me/{_botUsername}/namorevogore?startapp={request.
 ```
 При `BOT_USERNAME=null` — `https://t.me//namorevogore?...` (битый). Валидировать `BOT_USERNAME` на старте либо обернуть формирование клавиатуры условием.
 
-### 🟡 3.15 `AnimateOperation` — polling без CT + плохой паттерн
+### ✅ 3.15 `AnimateOperation` — polling без сancellationToken + плохой паттерн
 `Saturn.Telegram.Bot/Operations/Ai/AnimateOperation.cs:71-75`:
 ```csharp
 while (!generateTask.IsCompleted)
@@ -245,14 +245,14 @@ while (!generateTask.IsCompleted)
 }
 ```
 - При timeout `cts` отменяет `generateTask`, но `Task.Delay` тикает до 4 с.
-- Сам paтерн «while polling» хуже, чем `Task.WhenAny(generateTask, Task.Delay(..., ct))`.
+- Сам paтерн «while polling» хуже, чем `Task.WhenAny(generateTask, Task.Delay(..., сancellationToken))`.
 
-### 🟡 3.16 `IOperation` не получает `CancellationToken`
+### ✅ 3.16 `IOperation` не получает `CancellationToken`
 ```csharp
 public interface IOperation
 {
     bool Validate(Message msg, UpdateType type);
-    Task OnMessageAsync(Message msg, UpdateType type);   // нет CT
+    Task OnMessageAsync(Message msg, UpdateType type);   // нет сancellationToken
     Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }
 ```
@@ -265,12 +265,12 @@ public interface IOperation
 `Saturn.Telegram.Bot/Services/DistortionService.cs:56-65, 113-118, 124-133`:
 ```csharp
 process.Start();
-await process.WaitForExitAsync();   // без CT, без timeout
+await process.WaitForExitAsync();   // без сancellationToken, без timeout
 ```
 - Зависший ffmpeg блокирует семафор → весь сервис искажения встаёт.
 - stdout/stderr не redirected — при заполнении буфера процесс может зависнуть.
 
-Решение: timeout через CT, kill в catch, `RedirectStandardOutput/Error` + асинхронное чтение (как в `YtDlpSetupService.RunSelfUpdateAsync`).
+Решение: timeout через сancellationToken, kill в catch, `RedirectStandardOutput/Error` + асинхронное чтение (как в `YtDlpSetupService.RunSelfUpdateAsync`).
 
 ### 🔵 3.18 `EscapeMarkdownV2` неполный/чувствительный к порядку
 `Saturn.Telegram.Bot/Extensions/Extension.cs:34-50` — серия `Replace`. Если в тексте уже есть `\_`, второй проход не сломает, но в целом проще через один `Regex.Replace` или `Telegram.Bot.Helpers.Markdown.Escape`.
@@ -339,14 +339,14 @@ await process.WaitForExitAsync();   // без CT, без timeout
 17. 🟡 §4 — CI: `dotnet test`, `dotnet list package --vulnerable`, проверка форматирования.
 
 ### Технический долг (P2)
-18. 🟡 §3.16 — добавить `CancellationToken` в `IOperation.OnMessageAsync`, прокинуть из менеджера.
+18. ✅ §3.16 — добавить `CancellationToken` в `IOperation.OnMessageAsync`, прокинуть из менеджера.
 19. ✅ §3.8 — заменить инжекцию `TelegramBotClient` на `ITelegramBotClient`; ввести интерфейсы для `OperationManager`/`CooldownService` где это даёт пользу.
 20. 🟡 §3.13 — вынести `pg_notify` в `ICacheInvalidator`, имена каналов — в константы.
 21. ✅ §3.6 — убрать двойную регистрацию `TelegramBotClient` и пустой `Configure<BotOptions>`; удалить неиспользуемый `BotOptions.BotToken`.
 22. ✅ §3.9 — `ShowFavStickOperation` на SQL-агрегацию.
 23. ✅ §3.10 — дедуп ключевых слов в `ImagePromptRepository`.
 24. 🟡 §3.17 — timeouts + std-out drain для всех `Process` в `DistortionService`.
-25. 🟡 §3.15 — `AnimateOperation` через `Task.WhenAny`, `Task.Delay` с CT.
+25. 🟡 §3.15 — `AnimateOperation` через `Task.WhenAny`, `Task.Delay` с сancellationToken.
 26. 🟡 §3.12 — заменить `throw new Exception` на типизированные.
 27. 🟡 §3.21 — реализовать feature-флаги или удалить из конфигурации.
 28. ✅ §3.11 — единая утилита форматирования имени пользователя.

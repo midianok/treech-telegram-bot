@@ -26,12 +26,12 @@ public class ShowTopWordsOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("топ слов");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var targetUser = msg.ReplyToMessage?.From ?? msg.From;
         if (targetUser == null || targetUser.IsBot) return;
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
 
         var since = DateTime.UtcNow.Date.AddDays(-LookbackDays);
 
@@ -42,14 +42,14 @@ public class ShowTopWordsOperation : IOperation
                         x.MessageDate >= since &&
                         x.Text != null)
             .Select(x => x.Text!)
-            .ToListAsync();
+            .ToListAsync(сancellationToken);
 
         if (texts.Count == 0)
         {
             await _telegramBotClient.SendMessage(
                 msg.Chat,
                 "нет сообщений за последние 3 месяца",
-                replyParameters: new ReplyParameters { MessageId = msg.Id });
+                replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
             return;
         }
 
@@ -59,7 +59,7 @@ public class ShowTopWordsOperation : IOperation
             await _telegramBotClient.SendMessage(
                 msg.Chat,
                 "не удалось найти значимые слова",
-                replyParameters: new ReplyParameters { MessageId = msg.Id });
+                replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
             return;
         }
 
@@ -75,6 +75,6 @@ public class ShowTopWordsOperation : IOperation
             msg.Chat,
             sb.ToString().TrimEnd(),
             ParseMode.None,
-            replyParameters: new ReplyParameters { MessageId = msg.Id });
+            replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
     }
 }

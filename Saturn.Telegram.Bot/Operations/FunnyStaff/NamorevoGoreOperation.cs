@@ -22,16 +22,16 @@ public class NamorevoGoreOperation(
         !string.IsNullOrEmpty(msg.Text) &&
         msg.HasText("наморево горе") || msg.HasText("наморово горе");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await using var db = await contextFactory.CreateDbContextAsync();
+        await using var db = await contextFactory.CreateDbContextAsync(сancellationToken);
 
         var top = await db.NamorevoGoreScores
             .Include(x => x.User)
             .Where(x => x.ChatId == msg.Chat.Id)
             .OrderByDescending(x => x.Score)
             .Take(10)
-            .ToListAsync();
+            .ToListAsync(сancellationToken);
 
         var replyMessage = new StringBuilder("Наморево горе!\n\nТоп игроков:\n");
         var iterator = 1;

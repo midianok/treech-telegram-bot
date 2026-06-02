@@ -6,7 +6,7 @@ namespace Saturn.Telegram.Lib.Abstractions;
 
 public interface IOperationManager
 {
-    Task MessageHandler(Message msg, UpdateType type);
+    Task MessageHandler(Message msg, UpdateType type, CancellationToken сancellationToken);
     Task UpdateHandler(Update update);
     Task ErrorHandler(Exception exception, HandleErrorSource source);
 }

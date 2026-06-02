@@ -36,11 +36,11 @@ public class AiService : IAiService
     private ChatClient SelectClient(IList<ChatMessage> messages) =>
         HasImageContent(messages) ? _visionChatClient : _chatClient;
 
-    public async Task<string> CompleteChatAsync(IList<ChatMessage> messages, CancellationToken ct = default)
+    public async Task<string> CompleteChatAsync(IList<ChatMessage> messages, CancellationToken сancellationToken)
     {
         try
         {
-            var result = await SelectClient(messages).CompleteChatAsync(messages, cancellationToken: ct);
+            var result = await SelectClient(messages).CompleteChatAsync(messages, cancellationToken: сancellationToken);
             return result.Value.Content.FirstOrDefault()?.Text ?? throw new AiEmptyResponseException();
         }
         catch (ClientResultException ex) when (ex.Status == 400)
@@ -58,7 +58,7 @@ public class AiService : IAiService
     public async Task<string> CompleteChatAsync(
         IList<ChatMessage> messages,
         IReadOnlyList<IChatTool> tools,
-        CancellationToken ct = default)
+        CancellationToken сancellationToken)
     {
         try
         {
@@ -72,7 +72,7 @@ public class AiService : IAiService
 
             while (true)
             {
-                var result = await SelectClient(messagesList).CompleteChatAsync(messagesList, options, ct);
+                var result = await SelectClient(messagesList).CompleteChatAsync(messagesList, options, сancellationToken);
                 var completion = result.Value;
 
                 if (completion.FinishReason != ChatFinishReason.ToolCalls)
@@ -87,7 +87,7 @@ public class AiService : IAiService
                 {
                     var tool = tools.FirstOrDefault(t => t.FunctionName == toolCall.FunctionName);
                     var toolResult = tool != null
-                        ? await tool.ExecuteAsync(toolCall.FunctionArguments.ToString(), ct)
+                        ? await tool.ExecuteAsync(toolCall.FunctionArguments.ToString(), сancellationToken)
                         : """{"error":"Unknown tool"}""";
                     messagesList.Add(new ToolChatMessage(toolCall.Id, toolResult));
                 }
@@ -141,11 +141,11 @@ public class AiService : IAiService
         }
     }
 
-    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, string? prompt, string aspectRatio, bool generateAudio = false, CancellationToken ct = default)
+    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, string? prompt, string aspectRatio, bool generateAudio, CancellationToken сancellationToken)
     {
         try
         {
-            return await _atlasCloudImageClient.GenerateVideoFromImageAsync(image, prompt, aspectRatio, generateAudio, ct);
+            return await _atlasCloudImageClient.GenerateVideoFromImageAsync(image, prompt, aspectRatio, generateAudio, сancellationToken);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {

@@ -40,11 +40,11 @@ public class SummaryOperation : IOperation
         return DateOnly.TryParseExact(parts[1].Trim(), "yyyy-MM-dd", out _);
     }
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
 
         var parts = msg.Text!.Trim().Split(' ', 2);
         DateTime today;
@@ -62,13 +62,13 @@ public class SummaryOperation : IOperation
                         x.Text != null)
             .Include(x => x.User)
             .OrderBy(x => x.MessageDate)
-            .ToListAsync();
+            .ToListAsync(сancellationToken);
 
         if (messages.Count == 0)
         {
             var dateLabel = parts.Length == 2 ? parts[1].Trim() : "сегодня";
             await _telegramBotClient.SendMessage(msg.Chat, $"{dateLabel} тут тишина, говорить не о чем",
-                replyParameters: new ReplyParameters { MessageId = msg.Id });
+                replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
             return;
         }
 
@@ -99,9 +99,9 @@ public class SummaryOperation : IOperation
         [
             new SystemChatMessage(systemPrompt),
             new UserChatMessage(prompt)
-        ]);
+        ], сancellationToken);
 
         await _telegramBotClient.SendMessage(msg.Chat, result,
-            ParseMode.None, new ReplyParameters { MessageId = msg.Id });
+            ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
     }
 }

@@ -22,11 +22,11 @@ public class ShowFavStickOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("любимый стикер");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
         var favSticker = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id &&
                         x.UserId == userId &&
@@ -35,13 +35,13 @@ public class ShowFavStickOperation : IOperation
             .GroupBy(x => x.StickerId)
             .OrderByDescending(grp => grp.Count())
             .Select(grp => grp.Key)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(сancellationToken);
 
         if (favSticker == null)
         {
             return;
         }
 
-        await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker), new ReplyParameters { MessageId = msg.Id });
+        await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker), replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
     }
 }

@@ -25,7 +25,7 @@ public class ShowKarmaOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         Normalize(msg.Text) == ShowKarmaMessage;
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var targetUser = msg.ReplyToMessage?.From ?? msg.From;
         if (targetUser == null)
@@ -33,16 +33,16 @@ public class ShowKarmaOperation : IOperation
             return;
         }
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
         var karma = await db.UserKarma
             .Where(x => x.UserId == targetUser.Id && x.ChatId == msg.Chat.Id)
             .Select(x => x.Value)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(сancellationToken);
 
         await _telegramBotClient.SendMessage(
             msg.Chat,
             $"Карма {targetUser.GetDisplayName()}: {karma}",
-            replyParameters: new ReplyParameters { MessageId = msg.Id });
+            replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
     }
 
     private static string? Normalize(string? text) =>

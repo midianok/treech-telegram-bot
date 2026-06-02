@@ -27,7 +27,7 @@ public class ImageDistortionOperation : IOperation
          msg.ReplyToMessage?.VideoNote != null) &&
         msg.HasText("жмыхни");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var fileId = GetFileId(msg);
         if (string.IsNullOrEmpty(fileId))

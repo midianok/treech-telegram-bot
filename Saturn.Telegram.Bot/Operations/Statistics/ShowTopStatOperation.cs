@@ -29,9 +29,9 @@ public class ShowTopStatOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("топ стата");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
 
         var monday = GetMondayDate();
 
@@ -44,7 +44,7 @@ public class ShowTopStatOperation : IOperation
                 MessageCount = x.Count()
             })
             .OrderByDescending(x => x.MessageCount)
-            .Take(10).ToListAsync();
+            .Take(10).ToListAsync(сancellationToken);
 
         var replyMessage = new StringBuilder("Топ за неделю по сообщениям:\n");
         var iterator = 1;
@@ -60,7 +60,7 @@ public class ShowTopStatOperation : IOperation
             InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/{_botOptions.BotUsername}/app?startapp={msg.Chat.Id}"));
 
         await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
-            new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard);
+            new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard, cancellationToken: сancellationToken);
     }
 
     private DateTime GetMondayDate() =>

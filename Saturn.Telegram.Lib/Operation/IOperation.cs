@@ -7,7 +7,7 @@ public interface IOperation
 {
     bool Validate(Message msg, UpdateType type);
     
-    Task OnMessageAsync(Message msg, UpdateType type);
+    Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken);
     
     Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

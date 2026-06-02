@@ -15,9 +15,9 @@ public class HelpOperation(ITelegramBotClient telegramBotClient) : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("помощь");
 
-    public Task OnMessageAsync(Message msg, UpdateType type) =>
+    public Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken) =>
         telegramBotClient.SendMessage(msg.Chat, _helpText, ParseMode.MarkdownV2,
-            new ReplyParameters { MessageId = msg.Id });
+            new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
 
     public Task OnUpdateAsync(Update update) => Task.CompletedTask;
 }

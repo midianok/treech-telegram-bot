@@ -60,7 +60,7 @@ public class ChatGenerationOperation : IOperation
                IsReplyToBot(msg);
     }
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         var request = msg.Text!.ToLower()
             .Replace($"{_invokeCommand}, ", string.Empty)
@@ -121,10 +121,10 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new UserChatMessage(request));
         }
 
-        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
-        var result = await _aiService.CompleteChatAsync(messages, _tools);
+        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
+        var result = await _aiService.CompleteChatAsync(messages, _tools, сancellationToken);
 
-        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id });
+        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply);
     }
 

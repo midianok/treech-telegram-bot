@@ -44,9 +44,9 @@ public class SilenceOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.Chat.Type != ChatType.Private;
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync(сancellationToken);
         try
         {
             _nextFireAt[msg.Chat.Id] = DateTime.UtcNow.AddMinutes(
@@ -120,7 +120,7 @@ public class SilenceOperation : IOperation
         if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         messages.Add(new UserChatMessage("В чате долго молчат. Расскажи какую-нибудь историю про человека которого ты знаешь"));
-        return await _aiService.CompleteChatAsync(messages);
+        return await _aiService.CompleteChatAsync(messages, CancellationToken.None);
     }
 
     // Strategy 2: question based on a random week of chat history
@@ -154,7 +154,7 @@ public class SilenceOperation : IOperation
                 "В чате установилась тишина. На основе этих сообщений задай один интересный вопрос для обсуждения — " +
                 "связанный с темами, о которых говорили. Только вопрос, без вступления. Пиши по-русски.\n\n" +
                 transcript)
-        ]);
+        ], CancellationToken.None);
     }
 
     // Strategy 3: summary of a random past day with the date embedded naturally
@@ -205,7 +205,7 @@ public class SilenceOperation : IOperation
                 "день недели, время года, праздник или вставь фразу вроде «тем вечером», «в тот день». " +
                 "Без разметки. По-русски. 3–5 предложений.\n\n" +
                 transcript)
-        ]);
+        ], CancellationToken.None);
     }
 
     // Strategy 4: top words of a random active chat member

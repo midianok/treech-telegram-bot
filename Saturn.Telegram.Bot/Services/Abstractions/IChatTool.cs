@@ -6,5 +6,5 @@ public interface IChatTool
 {
     string FunctionName { get; }
     ChatTool Definition { get; }
-    Task<string> ExecuteAsync(string arguments, CancellationToken ct);
+    Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken);
 }

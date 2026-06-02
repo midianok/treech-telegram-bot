@@ -6,7 +6,7 @@ namespace Saturn.Telegram.Api.Services;
 
 public class ChatMembershipService(ITelegramBotClient botClient, IMemoryCache cache)
 {
-    public async Task<bool> IsMemberAsync(long chatId, long? userId, CancellationToken ct = default)
+    public async Task<bool> IsMemberAsync(long chatId, long? userId, CancellationToken сancellationToken)
     {
         if (!userId.HasValue)
             return true;
@@ -19,7 +19,7 @@ public class ChatMembershipService(ITelegramBotClient botClient, IMemoryCache ca
         TimeSpan cacheDuration;
         try
         {
-            var member = await botClient.GetChatMember(chatId, userId.Value, ct);
+            var member = await botClient.GetChatMember(chatId, userId.Value, сancellationToken);
             isMember = member.Status is not ChatMemberStatus.Left and not ChatMemberStatus.Kicked;
             cacheDuration = TimeSpan.FromMinutes(5);
         }

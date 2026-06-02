@@ -35,19 +35,19 @@ public class PortraitOperation : IOperation
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText("портрет");
 
-    public async Task OnMessageAsync(Message msg, UpdateType type)
+    public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing);
+        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
 
         var targetUser = msg.ReplyToMessage?.From ?? msg.From;
         if (targetUser == null)
         {
             await _telegramBotClient.SendMessage(msg.Chat, "не пойму на кого ты указываешь",
-                replyParameters: new ReplyParameters { MessageId = msg.Id });
+                replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
             return;
         }
 
-        await using var db = await _contextFactory.CreateDbContextAsync();
+        await using var db = await _contextFactory.CreateDbContextAsync(сancellationToken);
 
         var messages = await db.Messages
             .Where(x => x.ChatId == msg.Chat.Id &&
@@ -56,12 +56,12 @@ public class PortraitOperation : IOperation
             .Include(x => x.User)
             .OrderByDescending(x => x.MessageDate)
             .Take(MaxMessages)
-            .ToListAsync();
+            .ToListAsync(сancellationToken);
 
         if (messages.Count == 0)
         {
             await _telegramBotClient.SendMessage(msg.Chat, "у этого человека нет истории сообщений — загадочная личность или просто молчун",
-                replyParameters: new ReplyParameters { MessageId = msg.Id });
+                replyParameters: new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
             return;
         }
 
@@ -79,7 +79,7 @@ public class PortraitOperation : IOperation
         if (Cache.TryGetValue(cacheKey, out var cached))
         {
             await _telegramBotClient.SendMessage(msg.Chat, cached,
-                ParseMode.None, new ReplyParameters { MessageId = msg.Id });
+                ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
             return;
         }
 
@@ -103,11 +103,11 @@ public class PortraitOperation : IOperation
         [
             new SystemChatMessage(systemPrompt),
             new UserChatMessage(prompt)
-        ]);
+        ], сancellationToken);
 
         Cache[cacheKey] = result;
 
         await _telegramBotClient.SendMessage(msg.Chat, result,
-            ParseMode.None, new ReplyParameters { MessageId = msg.Id });
+            ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
     }
 }

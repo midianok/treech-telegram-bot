@@ -51,14 +51,14 @@ public class OperationManager : IOperationManager
         _adminUsername = configuration["ADMIN_USERNAME"];
     }
 
-    public async Task MessageHandler(Message msg, UpdateType type)
+    public async Task MessageHandler(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
         await _saveMessageService.SaveMessageAsync(msg);
 
         foreach (var operation in _operations)
         {
             if (operation.IsIgnored()) continue;
-            
+
             if (!operation.Validate(msg, type)) continue;
 
             if (!operation.IsAllowed(msg.From?.Username)) continue;
@@ -69,7 +69,7 @@ public class OperationManager : IOperationManager
 
             try
             {
-                await operation.OnMessageAsync(msg, type);
+                await operation.OnMessageAsync(msg, type, сancellationToken);
                 _cooldownService.SetCooldown(operation, msg);
                 await _operationCallRepository.RecordAsync(operation.GetType().Name, msg.Chat.Id, msg.From?.Id ?? 0);
             }
