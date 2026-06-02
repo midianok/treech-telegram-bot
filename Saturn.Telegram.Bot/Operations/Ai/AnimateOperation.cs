@@ -88,7 +88,7 @@ public class AnimateOperation : IOperation
             : null;
 
         var aspectRatio = DetectAspectRatio(photo.Width, photo.Height);
-        var imageBytes = await _telegramBotClient.DownloadFileAsync(photo.FileId);
+        var imageBytes = await _telegramBotClient.DownloadFileAsync(photo.FileId, сancellationToken);
 
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(сancellationToken, timeoutCts.Token);

@@ -111,7 +111,7 @@ public class ChatGenerationOperation : IOperation
         var replyPhoto = msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize);
         if (replyPhoto != null)
         {
-            var imageBytes = await _telegramBotClient.DownloadFileAsync(replyPhoto.FileId);
+            var imageBytes = await _telegramBotClient.DownloadFileAsync(replyPhoto.FileId, сancellationToken);
             messages.Add(new UserChatMessage(
                 ChatMessageContentPart.CreateImagePart(new BinaryData(imageBytes), "image/jpeg", ChatImageDetailLevel.Auto),
                 ChatMessageContentPart.CreateTextPart(request)));

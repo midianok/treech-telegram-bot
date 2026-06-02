@@ -43,7 +43,7 @@ public class ImageDescriptionOperation : IOperation
             return;
         }
 
-        var fileData = await _telegramBotClient.DownloadFileAsync(fileId);
+        var fileData = await _telegramBotClient.DownloadFileAsync(fileId, сancellationToken);
 
         var messages = new List<ChatMessage>
         {

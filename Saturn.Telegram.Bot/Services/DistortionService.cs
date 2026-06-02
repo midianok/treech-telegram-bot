@@ -32,35 +32,34 @@ public class DistortionService : IDistortionService
         return result;
     }
 
-    public async Task<byte[]> DistortVideoAsync(byte[] video, Func<int, Task>? onProgress = null)
+    public async Task<byte[]> DistortVideoAsync(byte[] video, Func<int, Task> onProgress, CancellationToken cancellationToken)
     {
-        await _semaphoreSlim.WaitAsync();
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        var ct = linkedCts.Token;
+
+        await _semaphoreSlim.WaitAsync(ct);
         var id = Guid.NewGuid();
         var fileTempDir = Path.Combine(TempDirectory, id.ToString());
         try
         {
             var totalStopwatch = Stopwatch.StartNew();
             _logger.LogInformation("Start distorting video");
-                
+
             Directory.CreateDirectory(fileTempDir);
             _logger.LogInformation("Frames directory created: {FileTempDir}", fileTempDir);
 
             var videoFilePath = Path.Combine(fileTempDir, $"{id}.mp4");
-            await File.WriteAllBytesAsync(videoFilePath, video);
+            await File.WriteAllBytesAsync(videoFilePath, video, ct);
             _logger.LogInformation("File saved: {Path} ({Size} KB)", videoFilePath, video.Length / 1000);
 
             var ffmpegExe = FFmpeg.ExecutablesPath != null
                 ? Path.Combine(FFmpeg.ExecutablesPath, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg")
                 : "ffmpeg";
 
-            using (var process = new Process())
-            {
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.FileName = ffmpegExe;
-                process.StartInfo.Arguments = $"-i \"{videoFilePath}\" -r 15 \"{Path.Combine(fileTempDir, id.ToString())}_%d.png\"";
-                process.Start();
-                await process.WaitForExitAsync();
-            }
+            await RunProcessAsync(ffmpegExe,
+                $"-i \"{videoFilePath}\" -r 15 \"{Path.Combine(fileTempDir, id.ToString())}_%d.png\"",
+                ct);
             _logger.LogInformation("Frames extracted");
 
             var framePaths = Directory.GetFiles(fileTempDir, $"{id}*.png")
@@ -79,13 +78,13 @@ public class DistortionService : IDistortionService
             var completed = 0;
             var framesTask = Parallel.ForEachAsync(
                 framePaths.Select((path, i) => (path, i)),
-                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount },
-                async (item, сancellationToken) =>
+                new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = ct },
+                async (item, token) =>
                 {
                     using var image = new MagickImage(item.path);
                     image.LiquidRescale(new Percentage(40), new Percentage(40), 1, 0);
                     image.Resize(image.Width, image.Height);
-                    await image.WriteAsync(Path.Combine(distortedDir, $"frame_{item.i + 1}.png"), сancellationToken);
+                    await image.WriteAsync(Path.Combine(distortedDir, $"frame_{item.i + 1}.png"), token);
 
                     if (onProgress != null)
                     {
@@ -96,44 +95,31 @@ public class DistortionService : IDistortionService
 
             var audioTask = Task.Run(async () =>
             {
-                using var extractProcess = new Process();
-                extractProcess.StartInfo.CreateNoWindow = true;
-                extractProcess.StartInfo.FileName = ffmpegExe;
-                extractProcess.StartInfo.Arguments = $"-i \"{videoFilePath}\" -vn -y \"{audioPath}\"";
-                extractProcess.Start();
-                await extractProcess.WaitForExitAsync();
-                return extractProcess.ExitCode == 0 && new FileInfo(audioPath).Length > 0;
-            });
+                var exitCode = await RunProcessAsync(ffmpegExe, $"-i \"{videoFilePath}\" -vn -y \"{audioPath}\"", ct);
+                return exitCode == 0 && new FileInfo(audioPath).Length > 0;
+            }, ct);
 
             await Task.WhenAll(framesTask, audioTask);
 
             var hasAudio = await audioTask;
             if (hasAudio)
             {
-                using var process = new Process();
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.FileName = ffmpegExe;
-                process.StartInfo.Arguments = $"-i \"{audioPath}\" -af \"vibrato=f=10:d=0.8,tremolo=f=8:d=0.9\" -y \"{distortedAudioPath}\"";
-                process.Start();
-                await process.WaitForExitAsync();
-                hasAudio = process.ExitCode == 0 && new FileInfo(distortedAudioPath).Length > 0;
+                var exitCode = await RunProcessAsync(ffmpegExe,
+                    $"-i \"{audioPath}\" -af \"vibrato=f=10:d=0.8,tremolo=f=8:d=0.9\" -y \"{distortedAudioPath}\"",
+                    ct);
+                hasAudio = exitCode == 0 && new FileInfo(distortedAudioPath).Length > 0;
             }
             _logger.LogInformation("Audio extracted and distorted: {HasAudio}", hasAudio);
 
             var outputVideoPath = Path.Combine(fileTempDir, $"{id}_output.mp4");
-            using (var process = new Process())
-            {
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.FileName = ffmpegExe;
-                var audioArgs = hasAudio ? $"-i \"{distortedAudioPath}\" " : "";
-                var audioCodec = hasAudio ? "-c:a aac -shortest " : "";
-                process.StartInfo.Arguments = $"-y -framerate 15 -i \"{Path.Combine(distortedDir, "frame_%d.png")}\" {audioArgs}-vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" -c:v libx264 -pix_fmt yuv420p {audioCodec}\"{outputVideoPath}\"";
-                process.Start();
-                await process.WaitForExitAsync();
-            }
+            var audioArgs = hasAudio ? $"-i \"{distortedAudioPath}\" " : "";
+            var audioCodec = hasAudio ? "-c:a aac -shortest " : "";
+            await RunProcessAsync(ffmpegExe,
+                $"-y -framerate 15 -i \"{Path.Combine(distortedDir, "frame_%d.png")}\" {audioArgs}-vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" -c:v libx264 -pix_fmt yuv420p {audioCodec}\"{outputVideoPath}\"",
+                ct);
             _logger.LogInformation("Frames reassembled");
 
-            var result = await File.ReadAllBytesAsync(outputVideoPath);
+            var result = await File.ReadAllBytesAsync(outputVideoPath, ct);
             totalStopwatch.Stop();
             _logger.LogInformation("Video distortion finished. Elapsed time: {Elapsed} sec", totalStopwatch.ElapsedMilliseconds / 1000.0);
             return result;
@@ -143,5 +129,35 @@ public class DistortionService : IDistortionService
             Directory.Delete(fileTempDir, true);
             _semaphoreSlim.Release();
         }
+    }
+
+    private static async Task<int> RunProcessAsync(string fileName, string arguments, CancellationToken cancellationToken)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            }
+        };
+        process.Start();
+        var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
+        var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+            await Task.WhenAll(outputTask, errorTask);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            throw;
+        }
+        return process.ExitCode;
     }
 }

@@ -58,13 +58,13 @@ public class ImageEditOperation : IOperation
         if (msg.ReplyToMessage?.Photo != null)
         {
             var fileId = msg.ReplyToMessage.Photo.MaxBy(x => x.FileSize)!.FileId;
-            images.Add(await _telegramBotClient.DownloadFileAsync(fileId));
+            images.Add(await _telegramBotClient.DownloadFileAsync(fileId, сancellationToken));
         }
 
         if (msg.Photo != null)
         {
             var fileId = msg.Photo.MaxBy(x => x.FileSize)!.FileId;
-            images.Add(await _telegramBotClient.DownloadFileAsync(fileId));
+            images.Add(await _telegramBotClient.DownloadFileAsync(fileId, сancellationToken));
         }
 
         await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt);
