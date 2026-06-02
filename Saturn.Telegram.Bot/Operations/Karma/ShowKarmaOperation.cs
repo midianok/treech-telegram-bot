@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Saturn.Bot.Service.Extensions;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -40,23 +41,10 @@ public class ShowKarmaOperation : IOperation
 
         await _telegramBotClient.SendMessage(
             msg.Chat,
-            $"Карма {FormatUser(targetUser)}: {karma}",
+            $"Карма {targetUser.GetDisplayName()}: {karma}",
             replyParameters: new ReplyParameters { MessageId = msg.Id });
     }
 
     private static string? Normalize(string? text) =>
         string.IsNullOrWhiteSpace(text) ? null : text.Trim().ToLowerInvariant();
-
-    private static string FormatUser(TelegramUser user)
-    {
-        if (!string.IsNullOrWhiteSpace(user.Username))
-        {
-            return $"@{user.Username}";
-        }
-
-        var fullName = string.Join(' ', new[] { user.FirstName, user.LastName }
-            .Where(x => !string.IsNullOrWhiteSpace(x)));
-
-        return string.IsNullOrWhiteSpace(fullName) ? user.Id.ToString() : fullName;
-    }
 }

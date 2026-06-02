@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Saturn.Bot.Service.Extensions;
 using Saturn.Bot.Service.Options;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -37,7 +38,7 @@ public class NamorevoGoreOperation(
 
         foreach (var entry in top)
         {
-            var userName = FormatUser(entry.UserId, entry.User?.Username, entry.User?.FirstName, entry.User?.LastName);
+            var userName = entry.User?.GetDisplayName() ?? entry.UserId.ToString();
             var emoji = GetEmoji(iterator++);
             replyMessage.Append($"{emoji} {userName}: {entry.Score}\n");
         }
@@ -55,19 +56,6 @@ public class NamorevoGoreOperation(
             caption: replyMessage.ToString(),
             replyParameters: new ReplyParameters { MessageId = msg.Id },
             replyMarkup: keyboard);
-    }
-
-    private static string FormatUser(long userId, string? username, string? firstName, string? lastName)
-    {
-        if (!string.IsNullOrWhiteSpace(username))
-        {
-            return $"{username}";
-        }
-
-        var fullName = string.Join(' ', new[] { firstName, lastName }
-            .Where(x => !string.IsNullOrWhiteSpace(x)));
-
-        return string.IsNullOrWhiteSpace(fullName) ? userId.ToString() : fullName;
     }
 
     private static string GetEmoji(int position) =>

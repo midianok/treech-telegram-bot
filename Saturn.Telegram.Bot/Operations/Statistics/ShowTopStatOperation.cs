@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Saturn.Bot.Service.Options;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -39,10 +40,7 @@ public class ShowTopStatOperation : IOperation
             .GroupBy(x => x.UserId)
             .Select(x => new
             {
-                UserId = x.Key,
-                x.First().User!.Username,
-                x.First().User!.FirstName,
-                x.First().User!.LastName,
+                User = x.First().User!,
                 MessageCount = x.Count()
             })
             .OrderByDescending(x => x.MessageCount)
@@ -53,7 +51,7 @@ public class ShowTopStatOperation : IOperation
 
         foreach (var user in topUsersByMessageCount)
         {
-            var userName = FormatUser(user.UserId, user.Username, user.FirstName, user.LastName);
+            var userName = user.User.GetDisplayName();
             var emoji = GetEmoji(iterator++);
             replyMessage.Append($"{emoji} {userName}: {user.MessageCount}\n");
         }
@@ -77,19 +75,6 @@ public class ShowTopStatOperation : IOperation
             DayOfWeek.Sunday => DateTime.Now.AddDays(-6).Date,
             _ => throw new ArgumentOutOfRangeException()
         };
-
-    private static string FormatUser(long userId, string? username, string? firstName, string? lastName)
-    {
-        if (!string.IsNullOrWhiteSpace(username))
-        {
-            return $"@{username}";
-        }
-
-        var fullName = string.Join(' ', new[] { firstName, lastName }
-            .Where(x => !string.IsNullOrWhiteSpace(x)));
-
-        return string.IsNullOrWhiteSpace(fullName) ? userId.ToString() : fullName;
-    }
 
     private string GetEmoji(int iterator) =>
         iterator switch

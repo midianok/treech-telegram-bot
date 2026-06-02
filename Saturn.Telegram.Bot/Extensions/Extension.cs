@@ -31,6 +31,19 @@ public static class Extension
     public static bool TextStartsWith(this Message msg, string prefix) =>
         !string.IsNullOrEmpty(msg.Text) && msg.Text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
 
+    public static string GetDisplayName(this User user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.Username))
+        {
+            return $"@{user.Username}";
+        }
+
+        var fullName = string.Join(' ', new[] { user.FirstName, user.LastName }
+            .Where(x => !string.IsNullOrWhiteSpace(x)));
+
+        return string.IsNullOrWhiteSpace(fullName) ? user.Id.ToString() : fullName;
+    }
+
     public static string EscapeMarkdownV2(this string text) => text
         .Replace("_", "\\_")
         .Replace("[", "\\[")

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Saturn.Bot.Service.Extensions;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Operation;
@@ -99,7 +100,7 @@ public class ChangeKarmaOperation : IOperation
         var sign = delta > 0 ? "+" : "";
         await _telegramBotClient.SendMessage(
             msg.Chat,
-            $"{FormatUser(toUser)}: {sign}{delta} к карме. Сейчас: {karma.Value}",
+            $"{toUser.GetDisplayName()}: {sign}{delta} к карме. Сейчас: {karma.Value}",
             replyParameters: new ReplyParameters { MessageId = msg.Id });
     }
 
@@ -152,19 +153,6 @@ public class ChangeKarmaOperation : IOperation
 
     private static string? Normalize(string? text) =>
         string.IsNullOrWhiteSpace(text) ? null : text.Trim().ToLowerInvariant();
-
-    private static string FormatUser(TelegramUser user)
-    {
-        if (!string.IsNullOrWhiteSpace(user.Username))
-        {
-            return $"@{user.Username}";
-        }
-
-        var fullName = string.Join(' ', new[] { user.FirstName, user.LastName }
-            .Where(x => !string.IsNullOrWhiteSpace(x)));
-
-        return string.IsNullOrWhiteSpace(fullName) ? user.Id.ToString() : fullName;
-    }
 
     private static string FormatDuration(TimeSpan duration)
     {

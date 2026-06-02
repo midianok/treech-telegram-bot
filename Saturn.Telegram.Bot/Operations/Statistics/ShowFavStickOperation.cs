@@ -27,22 +27,21 @@ public class ShowFavStickOperation : IOperation
         var userId = msg.ReplyToMessage?.From?.Id ?? msg.From!.Id;
 
         await using var db = await _contextFactory.CreateDbContextAsync();
-        var userStickers = await db.Messages
-            .Where(x => x.ChatId == msg.Chat.Id && 
-                        x.UserId == userId && 
+        var favSticker = await db.Messages
+            .Where(x => x.ChatId == msg.Chat.Id &&
+                        x.UserId == userId &&
                         x.StickerId != null &&
                         x.Type == (int) MessageType.Sticker)
-            .ToListAsync();
-
-        var favSticker = userStickers.GroupBy(x => x.StickerId)
+            .GroupBy(x => x.StickerId)
             .OrderByDescending(grp => grp.Count())
-            .FirstOrDefault();
+            .Select(grp => grp.Key)
+            .FirstOrDefaultAsync();
 
-        if (favSticker?.Key == null)
+        if (favSticker == null)
         {
             return;
         }
 
-        await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker.Key), new ReplyParameters { MessageId = msg.Id });
+        await _telegramBotClient.SendSticker(msg.Chat, new InputFileId(favSticker), new ReplyParameters { MessageId = msg.Id });
     }
 }

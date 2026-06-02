@@ -27,7 +27,8 @@ public class ImagePromptRepository : IImagePromptRepository
                 .SelectMany(x => x.Keywords
                     .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(kw => (kw, x.Prompt)))
-                .ToDictionary(x => x.kw, x => x.Prompt);
+                .GroupBy(x => x.kw)
+                .ToDictionary(g => g.Key, g => g.First().Prompt);
         });
 
         if (prompts is null || prompts.Count == 0)

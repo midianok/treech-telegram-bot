@@ -206,17 +206,17 @@ conn.Notification += async (_, args) => { ... };   // async void
 ### ✅ 3.8 Внедрение конкретных типов вместо интерфейсов
 `TelegramBotClient` (вместо `ITelegramBotClient`), `OperationManager`, `CooldownService` инжектятся как concrete-классы в операциях и контроллерах. Это блокирует unit-тесты, моки, замену реализации.
 
-### 🟡 3.9 `ShowFavStickOperation` — выборка всех стикеров в память
+### ✅ 3.9 `ShowFavStickOperation` — выборка всех стикеров в память
 `Saturn.Telegram.Bot/Operations/Statistics/ShowFavStickOperation.cs:30-39` — `.ToListAsync()` затем `.GroupBy().OrderByDescending().FirstOrDefault()` в памяти. На активных пользователях — десятки тысяч строк. Переписать на SQL-агрегацию (`GroupBy` в `IQueryable`).
 
-### 🟡 3.10 `ImagePromptRepository.ToDictionary` без дедупликации
+### ✅ 3.10 `ImagePromptRepository.ToDictionary` без дедупликации
 `Saturn.Telegram.Db/Repositories/ImagePromptRepository.cs:30`:
 ```csharp
 .SelectMany(...).ToDictionary(x => x.kw, x => x.Prompt);
 ```
 Дублирующийся keyword (в двух промптах или в одном дважды) → `ArgumentException`. Использовать `.GroupBy(x => x.kw).ToDictionary(g => g.Key, g => g.First().Prompt)`, либо валидировать на insert в `ImagePromptsController`.
 
-### 🟡 3.11 Дублирующая логика форматирования имени пользователя
+### ✅ 3.11 Дублирующая логика форматирования имени пользователя
 Четыре варианта: `ChatGenerationOperation.GetSenderName` (две перегрузки), `NamorevoGoreController.FormatUserName`, `ChangeKarmaOperation.FormatUser`. Вынести в общий extension на `UserEntity`/`User`.
 
 ### 🟡 3.12 `Extension.GetSectionOrThrow` бросает `System.Exception`
@@ -343,13 +343,13 @@ await process.WaitForExitAsync();   // без CT, без timeout
 19. ✅ §3.8 — заменить инжекцию `TelegramBotClient` на `ITelegramBotClient`; ввести интерфейсы для `OperationManager`/`CooldownService` где это даёт пользу.
 20. 🟡 §3.13 — вынести `pg_notify` в `ICacheInvalidator`, имена каналов — в константы.
 21. ✅ §3.6 — убрать двойную регистрацию `TelegramBotClient` и пустой `Configure<BotOptions>`; удалить неиспользуемый `BotOptions.BotToken`.
-22. 🟡 §3.9 — `ShowFavStickOperation` на SQL-агрегацию.
-23. 🟡 §3.10 — дедуп ключевых слов в `ImagePromptRepository`.
+22. ✅ §3.9 — `ShowFavStickOperation` на SQL-агрегацию.
+23. ✅ §3.10 — дедуп ключевых слов в `ImagePromptRepository`.
 24. 🟡 §3.17 — timeouts + std-out drain для всех `Process` в `DistortionService`.
 25. 🟡 §3.15 — `AnimateOperation` через `Task.WhenAny`, `Task.Delay` с CT.
 26. 🟡 §3.12 — заменить `throw new Exception` на типизированные.
 27. 🟡 §3.21 — реализовать feature-флаги или удалить из конфигурации.
-28. 🟡 §3.11 — единая утилита форматирования имени пользователя.
+28. ✅ §3.11 — единая утилита форматирования имени пользователя.
 
 ### Косметика (P3)
 29. 🔵 §3.18 — `EscapeMarkdownV2` через helper.

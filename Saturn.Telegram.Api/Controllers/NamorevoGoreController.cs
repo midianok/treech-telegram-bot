@@ -68,7 +68,7 @@ public class NamorevoGoreController : ApiControllerBase
         if (!string.IsNullOrEmpty(_botUsername))
         {
             var keyboard = new InlineKeyboardMarkup(InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/{_botUsername}/namorevogore?startapp={request.ChatId}"));
-            var userName = FormatUserName(user);
+            var userName = user.GetDisplayName();
             await _botClient.SendMessage(
                 request.ChatId,
                 $"{userName} набрал {request.Score} очков в Наморево Горе!",
@@ -100,7 +100,7 @@ public class NamorevoGoreController : ApiControllerBase
             return NotFound();
         }
 
-        return new NamorevoGoreLeaderboardEntryDto(entity.UserId, FormatUserName(entity.User!), entity.Score);
+        return new NamorevoGoreLeaderboardEntryDto(entity.UserId, entity.User!.GetDisplayName(), entity.Score);
     }
 
     [HttpGet("leaderboard")]
@@ -121,22 +121,7 @@ public class NamorevoGoreController : ApiControllerBase
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        return Ok(entities.Select(x => new NamorevoGoreLeaderboardEntryDto(x.UserId, FormatUserName(x.User!), x.Score)));
+        return Ok(entities.Select(x => new NamorevoGoreLeaderboardEntryDto(x.UserId, x.User!.GetDisplayName(), x.Score)));
     }
 
-    private static string FormatUserName(UserEntity user)
-    {
-        var fullName = (user.FirstName + " " + user.LastName).Trim();
-        if (!string.IsNullOrEmpty(fullName))
-        {
-            return fullName;
-        }
-
-        if (!string.IsNullOrWhiteSpace(user.Username))
-        {
-            return $"@{user.Username}";
-        }
-
-        return user.Id.ToString();
-    }
 }
