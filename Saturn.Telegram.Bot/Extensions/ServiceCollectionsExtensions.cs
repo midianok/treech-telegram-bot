@@ -80,6 +80,8 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IMessageRepository, MessageRepository>()
             .AddSingleton<IOperationCallRepository, OperationCallRepository>()
             .AddSingleton<IImagePromptRepository, ImagePromptRepository>()
+            .AddSingleton<ICoinRepository, CoinRepository>()
+            .AddSingleton<ISparkShop, SparkShop>()
             .AddSingleton<IDistortionService, DistortionService>()
             .AddSingleton<ISaveMessageService, SaveMessageService>()
             .AddSingleton<IOperationManager, OperationManager>()

@@ -28,6 +28,8 @@ public sealed class SaturnContext : DbContext
 
     public DbSet<GamePointsEntity> GamePoints { get; set; } = null!;
 
+    public DbSet<CoinTransactionEntity> CoinTransactions { get; set; } = null!;
+
     public SaturnContext(DbContextOptions<SaturnContext> options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -43,5 +45,6 @@ public sealed class SaturnContext : DbContext
         modelBuilder.ApplyConfiguration(new NamorevoGoreScoreEntityConfiguration());
         modelBuilder.ApplyConfiguration(new LogEntityConfiguration());
         modelBuilder.ApplyConfiguration(new GamePointsEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new CoinTransactionEntityConfiguration());
     }
 }

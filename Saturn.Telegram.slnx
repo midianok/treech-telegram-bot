@@ -4,6 +4,7 @@
     <File Path=".gitignore" />
     <File Path="CLAUDE.md" />
     <File Path="docker-compose.yaml" />
+    <File Path="docs\monetisation-plan.md" />
     <File Path="docs\pre-release-audit.md" />
     <File Path="README.md" />
   </Folder>

@@ -9,6 +9,9 @@ public class UserEntity
     public string? FirstName { get; set; }
     
     public string? LastName { get; set; }
-    
+
+    /// <summary>Internal currency balance ("искры"). Topped up via payments, spent on paid operations.</summary>
+    public long CoinBalance { get; set; }
+
     public virtual List<MessageEntity>? Messages { get; set; }
 }
