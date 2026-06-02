@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.CacheInvalidation;
 using Saturn.Telegram.Db.Entities;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/ai-agents")]
-public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
+public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory, ICacheInvalidator cacheInvalidator) : ControllerBase
 {
     [HttpGet]
     public async Task<IEnumerable<AiAgentDto>> GetAll(CancellationToken cancellationToken)
@@ -53,7 +54,7 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory)
         agent.Prompt = request.Prompt;
         db.AiAgents.Update(agent);
         await db.SaveChangesAsync(cancellationToken);
-        await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('agent_invalidation', {0})", id.ToString());
+        await cacheInvalidator.InvalidateAgentAsync(id, cancellationToken);
 
         return new AiAgentDto(agent.Id, agent.Name, agent.Prompt);
     }
@@ -76,7 +77,7 @@ public class AiAgentsController(IDbContextFactory<SaturnContext> contextFactory)
         db.AiAgents.Remove(agent);
         await db.SaveChangesAsync(cancellationToken);
 
-        await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('agent_invalidation', {0})", id.ToString());
+        await cacheInvalidator.InvalidateAgentAsync(id, cancellationToken);
 
         return NoContent();
     }

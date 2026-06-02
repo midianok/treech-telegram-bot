@@ -3,12 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.CacheInvalidation;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/chats")]
-public class ChatsController(IDbContextFactory<SaturnContext> contextFactory, ChatMembershipService membershipService) : ApiControllerBase
+public class ChatsController(IDbContextFactory<SaturnContext> contextFactory, ChatMembershipService membershipService, ICacheInvalidator cacheInvalidator) : ApiControllerBase
 {
     [HttpGet("{chatId:long}/ai-agent")]
     public async Task<ActionResult<AiAgentDto?>> GetAiAgent(long chatId, CancellationToken cancellationToken)
@@ -58,7 +59,7 @@ public class ChatsController(IDbContextFactory<SaturnContext> contextFactory, Ch
         chat.AiAgentId = request.AgentId;
         db.Chats.Update(chat);
         await db.SaveChangesAsync(cancellationToken);
-        await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('chat_invalidation', {0})", chatId.ToString());
+        await cacheInvalidator.InvalidateChatAsync(chatId, cancellationToken);
 
         return NoContent();
     }

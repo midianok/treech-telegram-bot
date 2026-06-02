@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Saturn.Bot.Service.Extensions;
+using Saturn.Telegram.Db.CacheInvalidation;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 
 namespace Saturn.Bot.Service.Services;
@@ -13,14 +14,10 @@ public class CacheInvalidationService(
     IImagePromptRepository imagePromptRepository,
     ILogger<CacheInvalidationService> logger) : BackgroundService
 {
-    private const string AgentInvalidationChannel = "agent_invalidation";
-    private const string ChatInvalidationChannel = "chat_invalidation";
-    private const string ImagePromptInvalidationChannel = "image_prompt_invalidation";
-
     private const string ListenCommand =
-        $"LISTEN {AgentInvalidationChannel};" +
-        $"LISTEN {ChatInvalidationChannel};" +
-        $"LISTEN {ImagePromptInvalidationChannel};";
+        $"LISTEN {CacheInvalidationChannels.Agent};" +
+        $"LISTEN {CacheInvalidationChannels.Chat};" +
+        $"LISTEN {CacheInvalidationChannels.ImagePrompt};";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -64,9 +61,9 @@ public class CacheInvalidationService(
         {
             var notificationHandler = args.Channel switch
             {
-                AgentInvalidationChannel => HandleAgentInvalidationAsync(args.Payload, cancellationToken),
-                ChatInvalidationChannel => HandleChatInvalidationAsync(args.Payload, cancellationToken),
-                ImagePromptInvalidationChannel => HandleImagePromptInvalidationAsync(),
+                CacheInvalidationChannels.Agent => HandleAgentInvalidationAsync(args.Payload, cancellationToken),
+                CacheInvalidationChannels.Chat => HandleChatInvalidationAsync(args.Payload, cancellationToken),
+                CacheInvalidationChannels.ImagePrompt => HandleImagePromptInvalidationAsync(),
                 _ => Task.CompletedTask
             };
             await notificationHandler;
@@ -81,7 +78,7 @@ public class CacheInvalidationService(
     {
         if (!Guid.TryParse(payload, out var agentId))
         {
-            logger.LogWarning("Received invalid agent_invalidation payload: {Payload}", payload);
+            logger.LogWarning("Received invalid {Channel} payload: {Payload}", CacheInvalidationChannels.Agent, payload);
             return;
         }
 
@@ -93,7 +90,7 @@ public class CacheInvalidationService(
     {
         if (!long.TryParse(payload, out var chatId))
         {
-            logger.LogWarning("Received invalid chat_invalidation payload: {Payload}", payload);
+            logger.LogWarning("Received invalid {Channel} payload: {Payload}", CacheInvalidationChannels.Chat, payload);
             return;
         }
 

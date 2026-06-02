@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Api.Dto;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.CacheInvalidation;
 using Saturn.Telegram.Db.Entities;
 
 namespace Saturn.Telegram.Api.Controllers;
 
 [ApiController]
 [Route("api/image-prompts")]
-public class ImagePromptsController(IDbContextFactory<SaturnContext> contextFactory) : ControllerBase
+public class ImagePromptsController(IDbContextFactory<SaturnContext> contextFactory, ICacheInvalidator cacheInvalidator) : ControllerBase
 {
     [HttpGet]
     public async Task<IEnumerable<ImagePromptDto>> GetAll(CancellationToken cancellationToken)
@@ -35,7 +36,7 @@ public class ImagePromptsController(IDbContextFactory<SaturnContext> contextFact
 
         db.ImagePrompts.Add(entity);
         await db.SaveChangesAsync(cancellationToken);
-        await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('image_prompt_invalidation', '')", cancellationToken: cancellationToken);
+        await cacheInvalidator.InvalidateImagePromptsAsync(cancellationToken);
 
         return new ImagePromptDto(entity.Id, entity.Name, entity.Keywords, entity.Prompt);
     }
@@ -54,7 +55,7 @@ public class ImagePromptsController(IDbContextFactory<SaturnContext> contextFact
         entity.Prompt = request.Prompt;
         db.ImagePrompts.Update(entity);
         await db.SaveChangesAsync(cancellationToken);
-        await db.Database.ExecuteSqlRawAsync("SELECT pg_notify('image_prompt_invalidation', '')", cancellationToken: cancellationToken);
+        await cacheInvalidator.InvalidateImagePromptsAsync(cancellationToken);
 
         return new ImagePromptDto(entity.Id, entity.Name, entity.Keywords, entity.Prompt);
     }
