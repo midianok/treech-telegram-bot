@@ -219,7 +219,7 @@ conn.Notification += async (_, args) => { ... };   // async void
 ### ✅ 3.11 Дублирующая логика форматирования имени пользователя
 Четыре варианта: `ChatGenerationOperation.GetSenderName` (две перегрузки), `NamorevoGoreController.FormatUserName`, `ChangeKarmaOperation.FormatUser`. Вынести в общий extension на `UserEntity`/`User`.
 
-### 🟡 3.12 `Extension.GetSectionOrThrow` бросает `System.Exception`
+### ✅ 3.12 `Extension.GetSectionOrThrow` бросает `System.Exception`
 `Saturn.Telegram.Bot/Extensions/Extension.cs:13,25` — `throw new Exception(...)` антипаттерн (ловится только catch-all). Заменить на `InvalidOperationException` / `OptionsValidationException`. Аналогично в `AddSaturnContext`.
 
 ### 🟡 3.13 `pg_notify` вызывается напрямую из контроллеров

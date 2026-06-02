@@ -10,7 +10,7 @@ public static class Extension
         var item = configuration.GetSection(key).Value;
         if (string.IsNullOrWhiteSpace(item))
         {
-            throw new Exception($"Configuration item {key} not presented");
+            throw new InvalidOperationException($"Configuration item {key} not presented");
         }
 
         return item;
@@ -22,7 +22,7 @@ public static class Extension
         {
             return result;
         }
-        throw new Exception($"Unable to parse long string {longString}");
+        throw new InvalidOperationException($"Unable to parse long string {longString}");
     }
 
     public static bool HasText(this Message msg, string text) =>

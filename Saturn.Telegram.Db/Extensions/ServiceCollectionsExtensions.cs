@@ -14,7 +14,7 @@ public static class ServiceCollectionsExtensions
         var connectionString = configuration.GetSection("CONNECTION_STRING").Value;
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            throw new Exception($"Configuration item \"CONNECTION_STRING\" not presented");
+            throw new InvalidOperationException($"Configuration item \"CONNECTION_STRING\" not presented");
         }
         
         return serviceCollection.AddDbContextFactory<SaturnContext>(options =>
