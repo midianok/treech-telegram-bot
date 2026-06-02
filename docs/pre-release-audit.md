@@ -185,7 +185,7 @@ conn.Notification += async (_, args) => { ... };   // async void
 
 Решение: try/catch внутри handler + внешний retry-цикл с переоткрытием соединения и backoff.
 
-### 🟠 3.5 Race condition в `SaveMessageService.ProcessUser/ProcessChat`
+### ✅ 3.5 Race condition в `SaveMessageService.ProcessUser/ProcessChat`
 `Saturn.Telegram.Lib/Infrastructure/SaveMessageService.cs:74-86`. Два параллельных сообщения от одного нового user'а:
 1. оба пройдут `GetCachedEntityById` → null,
 2. оба вызовут `db.Users.AddAsync`,

@@ -58,11 +58,20 @@ public class SaveMessageService : ISaveMessageService
     
     private async Task ProcessChat(Message msg, SaturnContext db)
     {
-        var chat = await GetCachedEntityById<ChatEntity>(msg.Chat.Id, db, TimeSpan.FromHours(30));;
+        var chat = await GetCachedEntityById<ChatEntity>(msg.Chat.Id, db, TimeSpan.FromHours(30));
 
         if (chat == null)
         {
-            await db.Chats.AddAsync(CreateChat(msg));
+            var entity = CreateChat(msg);
+            db.Chats.Add(entity);
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                db.Entry(entity).State = EntityState.Detached;
+            }
         }
         else if (chat.Type != (int)msg.Chat.Type || chat.Name != msg.Chat.Username)
         {
@@ -76,7 +85,16 @@ public class SaveMessageService : ISaveMessageService
         var user = await GetCachedEntityById<UserEntity>(msg.From!.Id, db, TimeSpan.FromMinutes(30));
         if (user == null)
         {
-            await db.Users.AddAsync(CreateUser(msg));
+            var entity = CreateUser(msg);
+            db.Users.Add(entity);
+            try
+            {
+                await db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                db.Entry(entity).State = EntityState.Detached;
+            }
         }
         else if (user.FirstName != msg.From.FirstName || user.LastName != msg.From.LastName || user.Username != msg.From.Username)
         {
