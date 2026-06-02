@@ -149,7 +149,7 @@ var bot = _memoryCache.GetOrCreate($"...", async _ => await _telegramBotClient.G
 
 Решение: вынести `Me` в singleton, инициализируемый один раз на старте, либо переписать на `async Validate`. Текущий `IOperation` `Validate` синхронный — потребует изменения интерфейса.
 
-### 🔴 3.2 `OperationManager` не ставит cooldown при исключении операции
+### 🚫 3.2 `OperationManager` не ставит cooldown при исключении операции [игнорируется]
 `Saturn.Telegram.Lib/OperationManager.cs:65-87` — последовательность:
 ```csharp
 try {
@@ -161,7 +161,7 @@ catch (...) { ... }
 ```
 Если операция упала (timeout xAI, ImageMagick OOM, network), кулдаун не выставляется → пользователь может спамить дорогой запрос. `SetCooldown` нужно делать **до** `OnMessageAsync` (либо в `finally`).
 
-### 🟠 3.3 `TelegramHostedService` — fire-and-forget без отслеживания
+### ✅ 3.3 `TelegramHostedService` — fire-and-forget без отслеживания
 `Saturn.Telegram.Lib/TelegramHostedService.cs:27-37`:
 ```csharp
 _telegramBotClient.OnMessage += (msg, type) =>
@@ -322,7 +322,7 @@ await process.WaitForExitAsync();   // без CT, без timeout
 2. ✅ §1.3 — зафиксировать `ASPNETCORE_ENVIRONMENT=Production` в compose.
 3. ✅ §1.1 — `git rm --cached .env`, добавить secret-scanning hook.
 4. ✅ §3.1 — починить sync-over-async в `ChatGenerationOperation.IsReplyToBot`.
-5. 🔴 §3.2 — `SetCooldown` ставить даже при исключении операции (в `finally`).
+5. 🚫 §3.2 — `SetCooldown` ставить даже при исключении операции (в `finally`). [игнорируется]
 6. 🟡 §1.6 — убрать `<NoWarn>NU1901-NU1904</NoWarn>`, прогнать `dotnet list package --vulnerable`.
 7. 🔴 §2.3 — добавить `INVOKE_COMMAND` в `.env.example`.
 
@@ -365,7 +365,7 @@ await process.WaitForExitAsync();   // без CT, без timeout
 - §1.2 (auth_date) — токен-replay в API;
 - §1.3 (auth только в Production) — риск открытой API при ошибке окружения;
 - §3.1 (sync-over-async) — потенциальный starvation thread pool;
-- §3.2 (cooldown не ставится при ошибке) — открывает дешёвый DoS-вектор на дорогие AI-вызовы;
+- ~~§3.2 (cooldown не ставится при ошибке)~~ — игнорируется;
 - §2.3 (`.env.example` без `INVOKE_COMMAND`) — чистая среда не запустится.
 
 Без перечисленных P0 катить нельзя. P1 — закрыть в течение первого спринта после релиза; P2/P3 — плановый рефакторинг.
