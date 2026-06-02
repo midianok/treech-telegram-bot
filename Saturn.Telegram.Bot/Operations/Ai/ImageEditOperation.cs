@@ -114,7 +114,7 @@ public class ImageEditOperation : IOperation
         }
 
         // No free quota and not enough coins: offer to top up.
-        await _sparkShop.SendOfferAsync(msg, "Бесплатное редактирование на этот час использовано, а искр не хватает.", сancellationToken);
+        await _sparkShop.SendOfferAsync(msg, "Бесплатное редактирование на этот час использовано, а трич койнов не хватает.", сancellationToken);
     }
 
     private async Task RunEditAsync(Message msg, string prompt, CancellationToken сancellationToken)
