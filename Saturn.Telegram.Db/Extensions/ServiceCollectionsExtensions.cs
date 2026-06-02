@@ -22,6 +22,6 @@ public static class ServiceCollectionsExtensions
             options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
             options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-        }, ServiceLifetime.Transient);
+        });
     }
 }

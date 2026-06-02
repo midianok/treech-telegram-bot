@@ -2,13 +2,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Saturn.Telegram.Lib.Infrastructure;
 using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Saturn.Telegram.Lib.Operation;
-using Telegram.Bot;
 
 namespace Saturn.Telegram.Lib.Extensions;
 
 public static class ServiceCollectionsExtensions
 {
-    public static IServiceCollection AddTelegramBotClient<T>(this IServiceCollection serviceCollection, string botToken)
+    public static IServiceCollection AddTelegramBotClient<T>(this IServiceCollection serviceCollection)
     {
         var operations = typeof(T).Assembly.GetTypes()
             .Where(x =>
@@ -24,7 +23,6 @@ public static class ServiceCollectionsExtensions
         serviceCollection.AddSingleton<IEnumerable<IOperation>>(serviceProvider =>
             operations.Select(serviceProvider.GetRequiredService).Cast<IOperation>());
 
-        serviceCollection.AddSingleton<TelegramBotClient>(_ => new TelegramBotClient(botToken));
         serviceCollection.AddSingleton<ICooldownService, CooldownService>();
 
         serviceCollection.AddHostedService<TelegramHostedService>();

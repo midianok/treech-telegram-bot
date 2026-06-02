@@ -2,8 +2,6 @@ namespace Saturn.Bot.Service.Options;
 
 public class BotOptions
 {
-    public string BotToken { get; set; } = string.Empty;
-    
     public string BotUsername { get; set; } = string.Empty;
     
     public string InvokeCommand { get; set; } = string.Empty;

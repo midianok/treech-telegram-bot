@@ -9,10 +9,8 @@ var builder = Host.CreateApplicationBuilder();
 
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
 builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
-var botToken = builder.Configuration.GetSectionOrThrow("BOT_TOKEN");
-
 builder.Services
-    .AddTelegramBotClient<Program>(botToken)
+    .AddTelegramBotClient<Program>()
     .AddServices(builder.Configuration);
 
 builder.Logging.AddTelegramLogger(opts =>

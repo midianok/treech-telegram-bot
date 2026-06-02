@@ -64,17 +64,11 @@ public static class ServiceCollectionsExtensions
         
         serviceCollection.Configure<BotOptions>(options =>
         {
-            options.BotToken = configuration["BOT_TOKEN"] ?? string.Empty;
             options.BotUsername = configuration["BOT_USERNAME"] ?? string.Empty;
             options.InvokeCommand = configuration.GetSectionOrThrow("INVOKE_COMMAND");
             options.LogChatId = long.TryParse(configuration["LOG_CHAT_ID"], out var chatId) ? chatId : 0;
             options.AdminUsername = configuration["ADMIN_USERNAME"];
             options.EasterEggUsername = configuration["EASTER_EGG_USERNAME"];
-        });
-
-        serviceCollection.Configure<BotOptions>(options =>
-        {
-            
         });
 
         serviceCollection

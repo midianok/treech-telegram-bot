@@ -193,12 +193,12 @@ conn.Notification += async (_, args) => { ... };   // async void
 
 Решение: `INSERT ... ON CONFLICT DO NOTHING` через `ExecuteSqlInterpolatedAsync`, либо `try/catch DbUpdateException` с ретраем.
 
-### 🟠 3.6 Двойная регистрация в DI
+### ✅ 3.6 Двойная регистрация в DI
 - `TelegramBotClient` регистрируется дважды: `Saturn.Telegram.Lib/Extensions/ServiceCollectionsExtensions.cs:27` и `Saturn.Telegram.Bot/Extensions/ServiceCollectionsExtensions.cs:28-32`. Побеждает последний, поведение совпадает, но это лишний путь конфигурации.
 - `serviceCollection.Configure<BotOptions>(options => { })` — второй пустой блок (`ServiceCollectionsExtensions.cs:85-88`).
 - `BotOptions.BotToken` заполняется, но **нигде не читается** — везде берут `configuration["BOT_TOKEN"]`. Лишний поверхностный путь для утечки токена в логи Options.
 
-### 🟠 3.7 `IOperation` зарегистрирован как Singleton с зависимостями от scoped-логики
+### ✅ 3.7 `IOperation` зарегистрирован как Singleton с зависимостями от scoped-логики
 `Saturn.Telegram.Lib/Extensions/ServiceCollectionsExtensions.cs:21` — все операции Singleton. Сам по себе паттерн рабочий, но:
 - зависимость от `IDbContextFactory` — корректна;
 - `AddDbContextFactory<SaturnContext>(..., ServiceLifetime.Transient)` — параметр `lifetime` управляет лайфтаймом DbContext'а, выдаваемого фабрикой; сама фабрика всегда Singleton. Имя параметра путает; для ясности оставить дефолт (`Scoped`) и явно создавать через `CreateDbContextAsync()`.
@@ -342,7 +342,7 @@ await process.WaitForExitAsync();   // без CT, без timeout
 18. 🟡 §3.16 — добавить `CancellationToken` в `IOperation.OnMessageAsync`, прокинуть из менеджера.
 19. 🟡 §3.8 — заменить инжекцию `TelegramBotClient` на `ITelegramBotClient`; ввести интерфейсы для `OperationManager`/`CooldownService` где это даёт пользу.
 20. 🟡 §3.13 — вынести `pg_notify` в `ICacheInvalidator`, имена каналов — в константы.
-21. 🟠 §3.6 — убрать двойную регистрацию `TelegramBotClient` и пустой `Configure<BotOptions>`; удалить неиспользуемый `BotOptions.BotToken`.
+21. ✅ §3.6 — убрать двойную регистрацию `TelegramBotClient` и пустой `Configure<BotOptions>`; удалить неиспользуемый `BotOptions.BotToken`.
 22. 🟡 §3.9 — `ShowFavStickOperation` на SQL-агрегацию.
 23. 🟡 §3.10 — дедуп ключевых слов в `ImagePromptRepository`.
 24. 🟡 §3.17 — timeouts + std-out drain для всех `Process` в `DistortionService`.
