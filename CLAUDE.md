@@ -58,7 +58,6 @@ Configured via `.env` (picked up by Docker Compose):
 | `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
 | `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
 | `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |
-| `TELEGRAM_WIDGET_API_URL` | Optional Bot API base URL for widget methods (`sendWidget`), default `https://api.telegram.org`; set to `https://api.telegram.org/beta` while Bot API 10.4 is in beta |
 
 ## Key Dependencies
 

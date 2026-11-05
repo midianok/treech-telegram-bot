@@ -63,17 +63,12 @@ public static class ServiceCollectionsExtensions
             x.Timeout = TimeSpan.FromSeconds(10);
         });
 
-        // Bot API 10.4 widget methods aren't in Telegram.Bot yet, so they go through a plain HttpClient.
+        // Bot API 10.4 widget methods aren't in Telegram.Bot yet, so they go through a plain HttpClient
+        // to the Bot API beta, where widgets are available.
         serviceCollection.AddHttpClient<TelegramWidgetClient>(x =>
         {
             var botToken = configuration.GetSectionOrThrow("BOT_TOKEN");
-            var apiUrl = configuration["TELEGRAM_WIDGET_API_URL"];
-            if (string.IsNullOrWhiteSpace(apiUrl))
-            {
-                apiUrl = "https://api.telegram.org";
-            }
-
-            x.BaseAddress = new Uri($"{apiUrl.TrimEnd('/')}/bot{botToken}/");
+            x.BaseAddress = new Uri($"https://api.telegram.org/beta/bot{botToken}/");
             x.Timeout = TimeSpan.FromSeconds(30);
         });
         
