@@ -5,6 +5,7 @@ using OpenAI;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 using Saturn.Bot.Service.Infrastructure.CurrencyClient;
+using Saturn.Bot.Service.Infrastructure.TelegramWidgetClient;
 using Saturn.Bot.Service.Infrastructure.WeatherClient;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services;
@@ -60,6 +61,20 @@ public static class ServiceCollectionsExtensions
         {
             x.BaseAddress = new Uri("https://open.er-api.com/");
             x.Timeout = TimeSpan.FromSeconds(10);
+        });
+
+        // Bot API 10.4 widget methods aren't in Telegram.Bot yet, so they go through a plain HttpClient.
+        serviceCollection.AddHttpClient<TelegramWidgetClient>(x =>
+        {
+            var botToken = configuration.GetSectionOrThrow("BOT_TOKEN");
+            var apiUrl = configuration["TELEGRAM_WIDGET_API_URL"];
+            if (string.IsNullOrWhiteSpace(apiUrl))
+            {
+                apiUrl = "https://api.telegram.org";
+            }
+
+            x.BaseAddress = new Uri($"{apiUrl.TrimEnd('/')}/bot{botToken}/");
+            x.Timeout = TimeSpan.FromSeconds(30);
         });
         
         
