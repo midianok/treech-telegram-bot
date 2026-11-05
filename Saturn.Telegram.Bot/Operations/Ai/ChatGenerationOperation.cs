@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
-using Saturn.Bot.Service.Operations.FunnyStaff;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Entities;
@@ -52,11 +51,6 @@ public class ChatGenerationOperation : IOperation
     public bool Validate(Message msg, UpdateType type)
     {
         if (string.IsNullOrEmpty(msg.Text))
-        {
-            return false;
-        }
-
-        if (msg.Text.Equals($"{_invokeCommand} {WidgetOperation.Command}", StringComparison.CurrentCultureIgnoreCase))
         {
             return false;
         }

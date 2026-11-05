@@ -11,7 +11,7 @@ using Telegram.Bot.Types.Enums;
 namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
 /// <summary>
-/// "трич виджет" — sends the runner mini-game as a Telegram widget (Bot API 10.4 <c>sendWidget</c>).
+/// "/widget" — sends the runner mini-game as a Telegram widget (Bot API 10.4 <c>sendWidget</c>).
 /// </summary>
 [Cooldown(10)]
 public class WidgetOperation(
@@ -19,13 +19,15 @@ public class WidgetOperation(
     TelegramWidgetClient widgetClient,
     IOptions<BotOptions> botOptions) : IOperation
 {
-    public const string Command = "виджет";
+    private const string Command = "/widget";
 
     private static readonly Lazy<string> RunnerHtml = new(() =>
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Media", "Widgets", "runner.html")));
 
+    // "/widget", or "/widget@BotUsername" in groups
     public bool Validate(Message msg, UpdateType type) =>
-        msg.HasText($"{botOptions.Value.InvokeCommand} {Command}");
+        msg.HasText(Command) ||
+        (!string.IsNullOrEmpty(botOptions.Value.BotUsername) && msg.HasText($"{Command}@{botOptions.Value.BotUsername}"));
 
     public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
