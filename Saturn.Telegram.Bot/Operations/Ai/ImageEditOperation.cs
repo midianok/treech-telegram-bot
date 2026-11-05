@@ -29,7 +29,15 @@ public class ImageEditOperation : IOperation
     private readonly ICoinRepository _coinRepository;
     private readonly ISparkShop _sparkShop;
     private readonly IMemoryCache _memoryCache;
+    private readonly IGenerationProgressService _generationProgressService;
     private readonly string? _adminUsername;
+
+    private static readonly GenerationProgressOptions ProgressOptions = new(
+        Title: "🖌 Редактирую картинку",
+        ProcessingStage: "редактирую",
+        ChatAction: ChatAction.UploadPhoto,
+        ExpectedDuration: TimeSpan.FromSeconds(30),
+        FailureText: "не смог отредактировать, попробуй ещё раз");
 
     public ImageEditOperation(
         ITelegramBotClient telegramBotClient,
@@ -38,6 +46,7 @@ public class ImageEditOperation : IOperation
         ICoinRepository coinRepository,
         ISparkShop sparkShop,
         IMemoryCache memoryCache,
+        IGenerationProgressService generationProgressService,
         IOptions<BotOptions> botOptions)
     {
         _telegramBotClient = telegramBotClient;
@@ -46,6 +55,7 @@ public class ImageEditOperation : IOperation
         _coinRepository = coinRepository;
         _sparkShop = sparkShop;
         _memoryCache = memoryCache;
+        _generationProgressService = generationProgressService;
         _adminUsername = botOptions.Value.AdminUsername;
     }
 
@@ -133,29 +143,25 @@ public class ImageEditOperation : IOperation
             images.Add(await _telegramBotClient.DownloadFileAsync(fileId, сancellationToken));
         }
 
-        await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt);
+        await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt, сancellationToken);
     }
 
-    private async Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt)
-    {
-        var editTask = _aiService.EditImageAsync(images, prompt);
+    private Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt, CancellationToken сancellationToken) =>
+        _generationProgressService.RunAsync(
+            msg,
+            ProgressOptions,
+            onStatusChanged => _aiService.EditImageAsync(images, prompt, onStatusChanged),
+            async resultBytes =>
+            {
+                using var resultStream = new MemoryStream(resultBytes);
+                var reply = await _telegramBotClient.SendPhoto(
+                    msg.Chat.Id,
+                    new InputFileStream(resultStream),
+                    replyParameters: new ReplyParameters { MessageId = msg.MessageId });
 
-        while (!editTask.IsCompleted)
-        {
-            await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-
-        var resultBytes = await editTask;
-
-        using var resultStream = new MemoryStream(resultBytes);
-        var reply = await _telegramBotClient.SendPhoto(
-            msg.Chat.Id,
-            new InputFileStream(resultStream),
-            replyParameters: new ReplyParameters { MessageId = msg.MessageId });
-
-        await _saveMessageService.SaveMessageAsync(reply);
-    }
+                await _saveMessageService.SaveMessageAsync(reply);
+            },
+            сancellationToken);
 
     private bool IsAdmin(Message msg) =>
         !string.IsNullOrEmpty(_adminUsername) &&

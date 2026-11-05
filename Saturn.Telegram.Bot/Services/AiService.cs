@@ -105,11 +105,11 @@ public class AiService : IAiService
         }
     }
 
-    public async Task<byte[]> GenerateImageAsync(string prompt)
+    public async Task<byte[]> GenerateImageAsync(string prompt, Action<string>? onStatusChanged)
     {
         try
         {
-            return await _atlasCloudImageClient.GenerateImageAsync(prompt);
+            return await _atlasCloudImageClient.GenerateImageAsync(prompt, onStatusChanged);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
@@ -123,11 +123,11 @@ public class AiService : IAiService
         }
     }
 
-    public async Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> images, string prompt)
+    public async Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> images, string prompt, Action<string>? onStatusChanged)
     {
         try
         {
-            return await _atlasCloudImageClient.EditImageAsync(images, prompt);
+            return await _atlasCloudImageClient.EditImageAsync(images, prompt, onStatusChanged);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
@@ -141,11 +141,11 @@ public class AiService : IAiService
         }
     }
 
-    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, string? prompt, string aspectRatio, bool generateAudio, CancellationToken сancellationToken)
+    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] image, string? prompt, string aspectRatio, bool generateAudio, Action<string>? onStatusChanged, CancellationToken сancellationToken)
     {
         try
         {
-            return await _atlasCloudImageClient.GenerateVideoFromImageAsync(image, prompt, aspectRatio, generateAudio, сancellationToken);
+            return await _atlasCloudImageClient.GenerateVideoFromImageAsync(image, prompt, aspectRatio, generateAudio, onStatusChanged, сancellationToken);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {

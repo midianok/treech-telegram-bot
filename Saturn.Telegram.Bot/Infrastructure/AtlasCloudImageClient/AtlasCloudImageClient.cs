@@ -5,29 +5,31 @@ namespace Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 
 public class AtlasCloudImageClient
 {
+    private static readonly TimeSpan ImageTimeout = TimeSpan.FromMinutes(3);
+
     private readonly HttpClient _httpClient;
 
     public AtlasCloudImageClient(HttpClient httpClient) =>
         _httpClient = httpClient;
 
-    public Task<byte[]> GenerateImageAsync(string prompt) =>
+    public Task<byte[]> GenerateImageAsync(string prompt, Action<string>? onStatusChanged = null) =>
         ExecuteImageAsync(new
         {
             model = "bytedance/seedream-v5.0-flash/text-to-image",
             prompt,
             enable_base64_output = true
-        });
+        }, onStatusChanged);
 
-    public Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> imageBytesList, string prompt) =>
+    public Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> imageBytesList, string prompt, Action<string>? onStatusChanged = null) =>
         ExecuteImageAsync(new
         {
             model = "bytedance/seedream-v5.0-flash/edit",
             prompt,
             images = imageBytesList.Select(b => $"data:image/jpeg;base64,{Convert.ToBase64String(b)}").ToArray(),
             enable_base64_output = true
-        });
+        }, onStatusChanged);
 
-    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] imageBytes, string? prompt, string aspectRatio, bool generateAudio = false, CancellationToken cancellationToken = default)
+    public async Task<byte[]> GenerateVideoFromImageAsync(byte[] imageBytes, string? prompt, string aspectRatio, bool generateAudio = false, Action<string>? onStatusChanged = null, CancellationToken cancellationToken = default)
     {
         var effectivePrompt = string.IsNullOrWhiteSpace(prompt)
             ? "Animate this image naturally. If any person speaks or mouths words, they must speak Russian."
@@ -55,10 +57,10 @@ public class AtlasCloudImageClient
             .GetString()
             ?? throw new InvalidOperationException("Не получен prediction ID от AtlasCloud video API");
 
-        return await PollVideoResultAsync(predictionId, cancellationToken);
+        return await PollVideoResultAsync(predictionId, onStatusChanged, cancellationToken);
     }
 
-    private async Task<byte[]> ExecuteImageAsync(object request)
+    private async Task<byte[]> ExecuteImageAsync(object request, Action<string>? onStatusChanged)
     {
         var response = await _httpClient.PostAsJsonAsync("api/v1/model/generateImage", request);
         response.EnsureSuccessStatusCode();
@@ -70,12 +72,14 @@ public class AtlasCloudImageClient
             .GetString()
             ?? throw new InvalidOperationException("Не получен prediction ID от AtlasCloud");
 
-        return await PollImageResultAsync(predictionId);
+        return await PollImageResultAsync(predictionId, onStatusChanged);
     }
 
-    private async Task<byte[]> PollImageResultAsync(string predictionId)
+    private async Task<byte[]> PollImageResultAsync(string predictionId, Action<string>? onStatusChanged)
     {
-        while (true)
+        var deadline = DateTime.UtcNow + ImageTimeout;
+
+        while (DateTime.UtcNow < deadline)
         {
             await Task.Delay(TimeSpan.FromSeconds(2));
 
@@ -86,6 +90,11 @@ public class AtlasCloudImageClient
             var data = resultJson!.RootElement.GetProperty("data");
             var status = data.GetProperty("status").GetString();
 
+            if (status != null)
+            {
+                onStatusChanged?.Invoke(status);
+            }
+
             if (status is "completed" or "succeeded")
             {
                 var b64 = data.GetProperty("outputs")[0].GetString()
@@ -93,12 +102,13 @@ public class AtlasCloudImageClient
                 return Convert.FromBase64String(b64);
             }
 
-            if (status == "failed")
-                throw new InvalidOperationException("AtlasCloud вернул статус failed");
+            ThrowIfTerminalFailure(data, status, "изображения");
         }
+
+        throw new TimeoutException($"AtlasCloud не вернул изображение за {ImageTimeout.TotalMinutes} мин (prediction {predictionId})");
     }
 
-    private async Task<byte[]> PollVideoResultAsync(string predictionId, CancellationToken cancellationToken)
+    private async Task<byte[]> PollVideoResultAsync(string predictionId, Action<string>? onStatusChanged, CancellationToken cancellationToken)
     {
         while (true)
         {
@@ -111,6 +121,11 @@ public class AtlasCloudImageClient
             var data = resultJson!.RootElement.GetProperty("data");
             var status = data.GetProperty("status").GetString();
 
+            if (status != null)
+            {
+                onStatusChanged?.Invoke(status);
+            }
+
             if (status is "completed" or "succeeded")
             {
                 var videoUrl = data.GetProperty("outputs")[0].GetString()
@@ -121,8 +136,21 @@ public class AtlasCloudImageClient
                 return await videoResponse.Content.ReadAsByteArrayAsync(cancellationToken);
             }
 
-            if (status == "failed")
-                throw new InvalidOperationException("AtlasCloud вернул статус failed для видео");
+            ThrowIfTerminalFailure(data, status, "видео");
         }
+    }
+
+    private static void ThrowIfTerminalFailure(JsonElement data, string? status, string subject)
+    {
+        if (status is not ("failed" or "timeout" or "canceled"))
+        {
+            return;
+        }
+
+        var error = data.TryGetProperty("error", out var errorElement) && errorElement.ValueKind == JsonValueKind.String
+            ? errorElement.GetString()
+            : null;
+
+        throw new InvalidOperationException($"AtlasCloud вернул статус {status} для {subject}: {error}");
     }
 }

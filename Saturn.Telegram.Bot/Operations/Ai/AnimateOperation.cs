@@ -18,24 +18,30 @@ public class AnimateOperation : IOperation
     private const string Command = "оживи";
     private const string CommandWithAudio = "оживи со звуком";
 
+    private static readonly TimeSpan GenerationTimeout = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan ExpectedDuration = TimeSpan.FromMinutes(2);
+
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
     private readonly ILogger<AnimateOperation> _logger;
     private readonly BotOptions _botOptions;
+    private readonly IGenerationProgressService _generationProgressService;
 
     public AnimateOperation(
         ITelegramBotClient telegramBotClient,
         IAiService aiService,
         ISaveMessageService saveMessageService,
         ILogger<AnimateOperation> logger,
-        IOptions<BotOptions> botOptions)
+        IOptions<BotOptions> botOptions,
+        IGenerationProgressService generationProgressService)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
         _saveMessageService = saveMessageService;
         _logger = logger;
         _botOptions = botOptions.Value;
+        _generationProgressService = generationProgressService;
     }
 
     private static readonly (string ratio, double value)[] AspectRatios =
@@ -90,38 +96,42 @@ public class AnimateOperation : IOperation
         var aspectRatio = DetectAspectRatio(photo.Width, photo.Height);
         var imageBytes = await _telegramBotClient.DownloadFileAsync(photo.FileId, сancellationToken);
 
-        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        using var timeoutCts = new CancellationTokenSource(GenerationTimeout);
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(сancellationToken, timeoutCts.Token);
+
+        var progressOptions = new GenerationProgressOptions(
+            Title: "🎬 Оживляю картинку",
+            ProcessingStage: "генерирую видео",
+            ChatAction: ChatAction.UploadVideo,
+            ExpectedDuration: ExpectedDuration,
+            FailureText: "не смог оживить, попробуй ещё раз");
 
         try
         {
-            var generateTask = _aiService.GenerateVideoFromImageAsync(imageBytes, customPrompt, aspectRatio, withAudio, cts.Token);
+            await _generationProgressService.RunAsync(
+                msg,
+                progressOptions,
+                onStatusChanged => _aiService.GenerateVideoFromImageAsync(imageBytes, customPrompt, aspectRatio, withAudio, onStatusChanged, cts.Token),
+                async videoBytes =>
+                {
+                    using var videoStream = new MemoryStream(videoBytes);
+                    var reply = await _telegramBotClient.SendVideo(
+                        msg.Chat.Id,
+                        new InputFileStream(videoStream, "animate.mp4"),
+                        replyParameters: new ReplyParameters { MessageId = msg.MessageId });
 
-            while (!generateTask.IsCompleted)
-            {
-                await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadVideo, cancellationToken: cts.Token);
-                await Task.Delay(TimeSpan.FromSeconds(4), cts.Token);
-            }
-
-            var videoBytes = await generateTask;
-
-            using var videoStream = new MemoryStream(videoBytes);
-            var reply = await _telegramBotClient.SendVideo(
-                msg.Chat.Id,
-                new InputFileStream(videoStream, "animate.mp4"),
-                replyParameters: new ReplyParameters { MessageId = msg.MessageId });
-
-            await _saveMessageService.SaveMessageAsync(reply);
+                    await _saveMessageService.SaveMessageAsync(reply);
+                },
+                cts.Token);
         }
         catch (InvalidOperationException ex)
         {
+            // Статусное сообщение уже заменено текстом ошибки.
             _logger.LogError(ex, "Video generation failed");
-            await _telegramBotClient.SendMessage(msg.Chat.Id, "не смог оживить, попробуй ещё раз", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
         }
         catch (OperationCanceledException)
         {
             _logger.LogError("Video generation timed out");
-            await _telegramBotClient.SendMessage(msg.Chat.Id, "слишком долго генерировал, сдался", replyParameters: new ReplyParameters { MessageId = msg.MessageId });
         }
     }
 }

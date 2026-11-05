@@ -17,12 +17,25 @@ public class ImageGenerationOperation : IOperation
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly IImagePromptRepository _imagePromptRepository;
+    private readonly IGenerationProgressService _generationProgressService;
 
-    public ImageGenerationOperation(ITelegramBotClient telegramBotClient, IAiService aiService, IImagePromptRepository imagePromptRepository)
+    private static readonly GenerationProgressOptions ProgressOptions = new(
+        Title: "🎨 Рисую картинку",
+        ProcessingStage: "рисую",
+        ChatAction: ChatAction.UploadPhoto,
+        ExpectedDuration: TimeSpan.FromSeconds(20),
+        FailureText: "не смог нарисовать, попробуй ещё раз");
+
+    public ImageGenerationOperation(
+        ITelegramBotClient telegramBotClient,
+        IAiService aiService,
+        IImagePromptRepository imagePromptRepository,
+        IGenerationProgressService generationProgressService)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
         _imagePromptRepository = imagePromptRepository;
+        _generationProgressService = generationProgressService;
     }
 
     public bool Validate(Message msg, UpdateType type) =>
@@ -33,17 +46,15 @@ public class ImageGenerationOperation : IOperation
         var rawQuery = msg.Text!.ToLower().Replace("покажи", string.Empty).Trim();
         var prompt = await _imagePromptRepository.FindPromptAsync(rawQuery) ?? rawQuery;
 
-        var generationTask = _aiService.GenerateImageAsync(prompt);
-
-        while (!generationTask.IsCompleted)
-        {
-            await _telegramBotClient.SendChatAction(msg.Chat.Id, ChatAction.UploadPhoto);
-            await Task.Delay(TimeSpan.FromSeconds(1));
-        }
-
-        var result = await generationTask;
-
-        using var generatedStream = new MemoryStream(result);
-        await _telegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedStream), replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+        await _generationProgressService.RunAsync(
+            msg,
+            ProgressOptions,
+            onStatusChanged => _aiService.GenerateImageAsync(prompt, onStatusChanged),
+            async result =>
+            {
+                using var generatedStream = new MemoryStream(result);
+                await _telegramBotClient.SendPhoto(msg.Chat.Id, new InputFileStream(generatedStream), replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+            },
+            сancellationToken);
     }
 }
