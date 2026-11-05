@@ -13,7 +13,7 @@ public class AtlasCloudImageClient
     public Task<byte[]> GenerateImageAsync(string prompt) =>
         ExecuteImageAsync(new
         {
-            model = "bytedance/seedream-v4.5",
+            model = "bytedance/seedream-v5.0-flash/text-to-image",
             prompt,
             enable_base64_output = true
         });
@@ -21,7 +21,7 @@ public class AtlasCloudImageClient
     public Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> imageBytesList, string prompt) =>
         ExecuteImageAsync(new
         {
-            model = "bytedance/seedream-v4.5/edit",
+            model = "bytedance/seedream-v5.0-flash/edit",
             prompt,
             images = imageBytesList.Select(b => $"data:image/jpeg;base64,{Convert.ToBase64String(b)}").ToArray(),
             enable_base64_output = true
