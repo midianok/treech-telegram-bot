@@ -42,11 +42,11 @@ public class WidgetOperation(
                 ReplyParameters = new ReplyParametersDto { MessageId = msg.Id, AllowSendingWithoutReply = true }
             }, сancellationToken);
         }
-        catch (TelegramWidgetException)
+        catch (TelegramWidgetException e)
         {
             await telegramBotClient.SendMessage(
                 msg.Chat,
-                "не получилось отправить виджет",
+                $"не получилось отправить виджет: {e.Description}",
                 replyParameters: new ReplyParameters { MessageId = msg.Id },
                 cancellationToken: сancellationToken);
             throw;
