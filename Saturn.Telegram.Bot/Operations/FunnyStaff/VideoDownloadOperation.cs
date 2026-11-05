@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Saturn.Bot.Service.Services;
+using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -10,6 +11,7 @@ using YoutubeDLSharp.Options;
 
 namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
+[Ignored]
 public partial class VideoDownloadOperation : IOperation
 {
     private static readonly Regex VideoUrlRegex = BuildVideoUrlRegex();
