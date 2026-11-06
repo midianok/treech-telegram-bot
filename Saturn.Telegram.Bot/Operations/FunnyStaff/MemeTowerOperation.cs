@@ -22,6 +22,7 @@ public class MemeTowerOperation(
     IOptions<BotOptions> botOptions) : IOperation
 {
     private const string MiniAppShortName = "memnytrich";
+    private const string ImageFileName = "memnytreech.png";
 
     public bool Validate(Message msg, UpdateType type) => msg.HasText("мемный трич");
 
@@ -56,11 +57,15 @@ public class MemeTowerOperation(
         var keyboard = new InlineKeyboardMarkup(
             InlineKeyboardButton.WithUrl("Мемный трич", $"https://t.me/{botOptions.Value.BotUsername}/{MiniAppShortName}?startapp={msg.Chat.Id}"));
 
-        await telegramBotClient.SendMessage(
+        var imagePath = Path.Combine(AppContext.BaseDirectory, "Media", ImageFileName);
+        await using var stream = File.OpenRead(imagePath);
+        var inputFile = new InputFileStream(stream, ImageFileName);
+
+        await telegramBotClient.SendPhoto(
             msg.Chat,
-            replyMessage.ToString(),
+            inputFile,
+            caption: replyMessage.ToString(),
             parseMode: ParseMode.Html,
-            linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
             replyParameters: new ReplyParameters { MessageId = msg.Id },
             replyMarkup: keyboard,
             cancellationToken: сancellationToken);
