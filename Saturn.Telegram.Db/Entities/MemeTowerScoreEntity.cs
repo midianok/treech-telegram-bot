@@ -3,7 +3,7 @@ namespace Saturn.Telegram.Db.Entities;
 /// <summary>
 /// Лучший счёт пользователя в игре «Мемный трич» в рамках чата.
 /// </summary>
-public class MemeTowerScoreEntity
+public class MemeTowerScoreEntity : IGameScoreEntity
 {
     public long UserId { get; set; }
 

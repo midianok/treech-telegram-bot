@@ -34,38 +34,40 @@ public class NamorevoGoreController : ApiControllerBase
     [HttpPost("score")]
     public async Task<ActionResult> AddScore([FromBody] AddNamorevoGoreScoreRequest request, CancellationToken cancellationToken)
     {
-        if (!await _membershipService.IsMemberAsync(request.ChatId, GetCurrentUserId(), cancellationToken))
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId.HasValue && currentUserId.Value != request.UserId)
+        {
             return Forbid();
+        }
+
+        if (!await _membershipService.IsMemberAsync(request.ChatId, currentUserId, cancellationToken))
+        {
+            return Forbid();
+        }
 
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var user = await db.Users.FindAsync([request.UserId], cancellationToken);
+        var user =await db.Users.FindAsync([request.UserId], cancellationToken);
         if (user is null)
         {
             return NotFound($"User {request.UserId} not found");
         }
 
-        var existing = await db.NamorevoGoreScores.FindAsync([request.UserId, request.ChatId], cancellationToken);
-        if (existing is null)
+        var record = await GameScoreRecorder.SaveAsync(
+            db, db.NamorevoGoreScores, request.UserId, request.ChatId, request.Score,
+            () => new NamorevoGoreScoreEntity(), cancellationToken);
+
+        if (record is null)
         {
-            db.NamorevoGoreScores.Add(new NamorevoGoreScoreEntity
-            {
-                UserId = request.UserId,
-                ChatId = request.ChatId,
-                Score = request.Score
-            });
-        }
-        else if (request.Score > existing.Score)
-        {
-            db.NamorevoGoreScores.Update(new NamorevoGoreScoreEntity
-            {
-                UserId = existing.UserId,
-                ChatId = existing.ChatId,
-                Score = request.Score
-            });
+            return Ok();
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        var userLink = user.GetSilentHtmlLink();
+        var text = record.Overtaken.Count == 0
+            ? $"{userLink} установил новый рекорд в Наморево Горе — {request.Score} очков!"
+            : $"{userLink} набрал {request.Score} очков в Наморево Горе и обогнал "
+              + $"{string.Join(", ", record.Overtaken.Select(x => x.User?.GetSilentHtmlLink() ?? x.UserId.ToString()))}!\n\n"
+              + $"Топ игроков:\n{GameLeaderboardFormatter.Format(record.Top)}";
 
         var keyboard = string.IsNullOrEmpty(_botUsername)
             ? null
@@ -75,7 +77,7 @@ public class NamorevoGoreController : ApiControllerBase
 
         await _botClient.SendMessage(
             request.ChatId,
-            $"{user.GetSilentHtmlLink()} набрал {request.Score} очков в Наморево Горе!",
+            text,
             parseMode: ParseMode.Html,
             linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
             replyMarkup: keyboard,

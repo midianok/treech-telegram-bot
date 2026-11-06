@@ -58,22 +58,21 @@ public class MemeTowerController : ApiControllerBase
             return NotFound($"User {request.UserId} not found");
         }
 
-        var existing = await db.MemeTowerScores.FindAsync([request.UserId, request.ChatId], cancellationToken);
-        if (existing is null)
+        var record = await GameScoreRecorder.SaveAsync(
+            db, db.MemeTowerScores, request.UserId, request.ChatId, request.Score,
+            () => new MemeTowerScoreEntity(), cancellationToken);
+
+        if (record is null)
         {
-            db.MemeTowerScores.Add(new MemeTowerScoreEntity
-            {
-                UserId = request.UserId,
-                ChatId = request.ChatId,
-                Score = request.Score
-            });
-        }
-        else if (request.Score > existing.Score)
-        {
-            existing.Score = request.Score;
+            return Ok();
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        var userLink = user.GetSilentHtmlLink();
+        var text = record.Overtaken.Count == 0
+            ? $"{userLink} установил новый рекорд в Мемном триче — башня из {request.Score} мемов!"
+            : $"{userLink} построил башню из {request.Score} мемов и обогнал "
+              + $"{string.Join(", ", record.Overtaken.Select(x => x.User?.GetSilentHtmlLink() ?? x.UserId.ToString()))}!\n\n"
+              + $"Топ строителей:\n{GameLeaderboardFormatter.Format(record.Top)}";
 
         var keyboard = string.IsNullOrEmpty(_botUsername)
             ? null
@@ -83,7 +82,7 @@ public class MemeTowerController : ApiControllerBase
 
         await _botClient.SendMessage(
             request.ChatId,
-            $"{user.GetSilentHtmlLink()} построил башню из {request.Score} мемов в Мемном триче!",
+            text,
             parseMode: ParseMode.Html,
             linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
             replyMarkup: keyboard,

@@ -34,14 +34,7 @@ public class NamorevoGoreOperation(
             .ToListAsync(сancellationToken);
 
         var replyMessage = new StringBuilder("Наморево горе!\n\nТоп игроков:\n");
-        var iterator = 1;
-
-        foreach (var entry in top)
-        {
-            var userName = entry.User?.GetSilentHtmlLink() ?? entry.UserId.ToString();
-            var emoji = GetEmoji(iterator++);
-            replyMessage.Append($"{emoji} {userName}: {entry.Score}\n");
-        }
+        replyMessage.Append(GameLeaderboardFormatter.Format(top));
 
         var keyboard = new InlineKeyboardMarkup(
             InlineKeyboardButton.WithUrl("Наморево горе", $"https://t.me/{botOptions.Value.BotUsername}/namorevogore?startapp={msg.Chat.Id}"));
@@ -58,13 +51,4 @@ public class NamorevoGoreOperation(
             replyParameters: new ReplyParameters { MessageId = msg.Id },
             replyMarkup: keyboard);
     }
-
-    private static string GetEmoji(int position) =>
-        position switch
-        {
-            1 => "🥇",
-            2 => "🥈",
-            3 => "🥉",
-            _ => string.Empty
-        };
 }

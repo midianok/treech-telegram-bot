@@ -45,13 +45,7 @@ public class MemeTowerOperation(
         else
         {
             replyMessage.Append("Топ строителей:\n");
-            var iterator = 1;
-            foreach (var entry in top)
-            {
-                var userName = entry.User?.GetSilentHtmlLink() ?? entry.UserId.ToString();
-                var emoji = GetEmoji(iterator++);
-                replyMessage.Append($"{emoji} {userName}: {entry.Score}\n");
-            }
+            replyMessage.Append(GameLeaderboardFormatter.Format(top));
         }
 
         var keyboard = new InlineKeyboardMarkup(
@@ -70,13 +64,4 @@ public class MemeTowerOperation(
             replyMarkup: keyboard,
             cancellationToken: сancellationToken);
     }
-
-    private static string GetEmoji(int position) =>
-        position switch
-        {
-            1 => "🥇",
-            2 => "🥈",
-            3 => "🥉",
-            _ => string.Empty
-        };
 }

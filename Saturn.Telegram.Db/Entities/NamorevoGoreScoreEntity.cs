@@ -1,6 +1,6 @@
 namespace Saturn.Telegram.Db.Entities;
 
-public class NamorevoGoreScoreEntity
+public class NamorevoGoreScoreEntity : IGameScoreEntity
 {
     public long UserId { get; set; }
 
