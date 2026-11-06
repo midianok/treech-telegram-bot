@@ -50,13 +50,16 @@ public static class GameScoreRecorder
             entity.ChatId = chatId;
             entity.Score = score;
             scores.Add(entity);
+            await db.SaveChangesAsync(cancellationToken);
         }
         else
         {
-            existing.Score = score;
+            // Контекст настроен на NoTracking, поэтому изменение свойства не попадёт в SaveChanges —
+            // обновляем напрямую в БД. Условие по Score не даёт параллельному запросу понизить рекорд.
+            await scores
+                .Where(x => x.UserId == userId && x.ChatId == chatId && x.Score < score)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.Score, score), cancellationToken);
         }
-
-        await db.SaveChangesAsync(cancellationToken);
 
         if (existing is null && score <= 0)
         {
