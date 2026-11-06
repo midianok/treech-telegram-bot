@@ -47,7 +47,7 @@ public class MemeTowerOperation(
             var iterator = 1;
             foreach (var entry in top)
             {
-                var userName = entry.User?.GetDisplayName() ?? entry.UserId.ToString();
+                var userName = entry.User?.GetSilentHtmlLink() ?? entry.UserId.ToString();
                 var emoji = GetEmoji(iterator++);
                 replyMessage.Append($"{emoji} {userName}: {entry.Score}\n");
             }
@@ -59,6 +59,8 @@ public class MemeTowerOperation(
         await telegramBotClient.SendMessage(
             msg.Chat,
             replyMessage.ToString(),
+            parseMode: ParseMode.Html,
+            linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
             replyParameters: new ReplyParameters { MessageId = msg.Id },
             replyMarkup: keyboard,
             cancellationToken: сancellationToken);

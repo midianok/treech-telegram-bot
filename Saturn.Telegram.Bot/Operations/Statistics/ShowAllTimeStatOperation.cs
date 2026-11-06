@@ -2,6 +2,7 @@ using Saturn.Bot.Service.Extensions;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -46,13 +47,14 @@ public class ShowAllTimeStatOperation : IOperation
 
         foreach (var user in topUsersByMessageCount)
         {
-            var userName = !string.IsNullOrEmpty(user.Username) ? $"@{user.Username}" : user.UserId.ToString();
+            var userName = UserEntityExtensions.GetSilentHtmlLink(user.UserId, user.Username, user.FirstName, user.LastName);
             var emoji = GetEmoji(iterator++);
-            replyMessage.Append($"{emoji} {user.FirstName} {user.LastName} ({userName}): {user.MessageCount}\n");
+            replyMessage.Append($"{emoji} {userName}: {user.MessageCount}\n");
         }
 
-        await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
-            new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
+        await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.Html,
+            new ReplyParameters { MessageId = msg.Id },
+            linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true }, cancellationToken: сancellationToken);
     }
 
     private string GetEmoji(int iterator) =>

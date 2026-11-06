@@ -5,6 +5,8 @@ using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Saturn.Telegram.Api.Controllers;
@@ -81,7 +83,9 @@ public class MemeTowerController : ApiControllerBase
 
         await _botClient.SendMessage(
             request.ChatId,
-            $"{user.GetDisplayName()} построил башню из {request.Score} мемов в Мемном триче!",
+            $"{user.GetSilentHtmlLink()} построил башню из {request.Score} мемов в Мемном триче!",
+            parseMode: ParseMode.Html,
+            linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
             replyMarkup: keyboard,
             cancellationToken: cancellationToken);
 

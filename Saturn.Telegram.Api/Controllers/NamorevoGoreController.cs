@@ -5,6 +5,8 @@ using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db;
 using Saturn.Telegram.Db.Entities;
 using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Saturn.Telegram.Api.Controllers;
@@ -73,7 +75,9 @@ public class NamorevoGoreController : ApiControllerBase
 
         await _botClient.SendMessage(
             request.ChatId,
-            $"{user.GetDisplayName()} набрал {request.Score} очков в Наморево Горе!",
+            $"{user.GetSilentHtmlLink()} набрал {request.Score} очков в Наморево Горе!",
+            parseMode: ParseMode.Html,
+            linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
             replyMarkup: keyboard,
             cancellationToken: cancellationToken);
 

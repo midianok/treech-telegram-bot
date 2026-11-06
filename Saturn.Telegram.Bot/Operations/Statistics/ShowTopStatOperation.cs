@@ -51,7 +51,7 @@ public class ShowTopStatOperation : IOperation
 
         foreach (var user in topUsersByMessageCount)
         {
-            var userName = user.User.GetDisplayName();
+            var userName = user.User.GetSilentHtmlLink();
             var emoji = GetEmoji(iterator++);
             replyMessage.Append($"{emoji} {userName}: {user.MessageCount}\n");
         }
@@ -59,8 +59,9 @@ public class ShowTopStatOperation : IOperation
         var keyboard = new InlineKeyboardMarkup(
             InlineKeyboardButton.WithUrl("Открыть приложение", $"https://t.me/{_botOptions.BotUsername}/app?startapp={msg.Chat.Id}"));
 
-        await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.None,
-            new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard, cancellationToken: сancellationToken);
+        await _telegramBotClient.SendMessage(msg.Chat, replyMessage.ToString(), ParseMode.Html,
+            new ReplyParameters { MessageId = msg.Id }, replyMarkup: keyboard,
+            linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true }, cancellationToken: сancellationToken);
     }
 
     private DateTime GetMondayDate() =>

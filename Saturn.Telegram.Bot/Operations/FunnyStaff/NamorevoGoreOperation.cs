@@ -38,7 +38,7 @@ public class NamorevoGoreOperation(
 
         foreach (var entry in top)
         {
-            var userName = entry.User?.GetDisplayName() ?? entry.UserId.ToString();
+            var userName = entry.User?.GetSilentHtmlLink() ?? entry.UserId.ToString();
             var emoji = GetEmoji(iterator++);
             replyMessage.Append($"{emoji} {userName}: {entry.Score}\n");
         }
@@ -54,6 +54,7 @@ public class NamorevoGoreOperation(
             msg.Chat,
             inputFile,
             caption: replyMessage.ToString(),
+            parseMode: ParseMode.Html,
             replyParameters: new ReplyParameters { MessageId = msg.Id },
             replyMarkup: keyboard);
     }
