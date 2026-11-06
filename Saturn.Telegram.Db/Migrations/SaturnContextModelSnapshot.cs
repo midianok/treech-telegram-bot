@@ -268,6 +268,26 @@ namespace Saturn.Telegram.Db.Migrations
                     b.ToTable("logs", (string)null);
                 });
 
+            modelBuilder.Entity("Saturn.Telegram.Db.Entities.MemeTowerScoreEntity", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<long>("ChatId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("chat_id");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("integer")
+                        .HasColumnName("score");
+
+                    b.HasKey("UserId", "ChatId")
+                        .HasName("pk_meme_tower_scores");
+
+                    b.ToTable("meme_tower_scores", (string)null);
+                });
+
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.MessageEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -481,6 +501,18 @@ namespace Saturn.Telegram.Db.Migrations
                     b.Navigation("FromUser");
 
                     b.Navigation("ToUser");
+                });
+
+            modelBuilder.Entity("Saturn.Telegram.Db.Entities.MemeTowerScoreEntity", b =>
+                {
+                    b.HasOne("Saturn.Telegram.Db.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_meme_tower_scores_users_user_id");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.MessageEntity", b =>
