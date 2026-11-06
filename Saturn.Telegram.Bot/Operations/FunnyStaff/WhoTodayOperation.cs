@@ -1,6 +1,7 @@
 using Saturn.Bot.Service.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using Telegram.Bot;
@@ -9,6 +10,7 @@ using Telegram.Bot.Types.Enums;
 
 namespace Saturn.Bot.Service.Operations.FunnyStaff;
 
+[Ignored]
 public class WhoTodayOperation : IOperation
 {
     private readonly ITelegramBotClient _telegramBotClient;
