@@ -7,6 +7,7 @@ namespace Saturn.Telegram.Api.Middleware;
 public class TelegramInitDataMiddleware(RequestDelegate next, IConfiguration config)
 {
     public const string UserIdItemKey = "TelegramUserId";
+    public const string UserItemKey = "TelegramUser";
 
     public async Task InvokeAsync(HttpContext ctx)
     {
@@ -18,7 +19,7 @@ public class TelegramInitDataMiddleware(RequestDelegate next, IConfiguration con
             return;
         }
 
-        if (!TryValidate(initData, botToken, out var userId))
+        if (!TryValidate(initData, botToken, out var userId, out var user))
         {
             ctx.Response.StatusCode = 401;
             return;
@@ -29,12 +30,18 @@ public class TelegramInitDataMiddleware(RequestDelegate next, IConfiguration con
             ctx.Items[UserIdItemKey] = userId.Value;
         }
 
+        if (user is not null)
+        {
+            ctx.Items[UserItemKey] = user;
+        }
+
         await next(ctx);
     }
 
-    private static bool TryValidate(string initData, string botToken, out long? userId)
+    private static bool TryValidate(string initData, string botToken, out long? userId, out TelegramInitDataUser? user)
     {
         userId = null;
+        user = null;
 
         var pairs = initData.Split('&')
             .Select(p => p.Split('=', 2))
@@ -67,12 +74,27 @@ public class TelegramInitDataMiddleware(RequestDelegate next, IConfiguration con
             try
             {
                 using var doc = JsonDocument.Parse(userJson);
-                if (doc.RootElement.TryGetProperty("id", out var idProp) && idProp.TryGetInt64(out var id))
+                var root = doc.RootElement;
+                if (root.TryGetProperty("id", out var idProp) && idProp.TryGetInt64(out var id))
+                {
                     userId = id;
+                    user = new TelegramInitDataUser(id,
+                        GetString(root, "username"),
+                        GetString(root, "first_name"),
+                        GetString(root, "last_name"));
+                }
             }
             catch (JsonException) { }
         }
 
         return true;
     }
+
+    private static string? GetString(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
 }
+
+/// <summary>Пользователь из проверенного initData Mini App.</summary>
+public record TelegramInitDataUser(long Id, string? Username, string? FirstName, string? LastName);

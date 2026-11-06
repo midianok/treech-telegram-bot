@@ -19,21 +19,33 @@ public class NamorevoGoreController : ApiControllerBase
     private readonly ITelegramBotClient _botClient;
     private readonly ChatMembershipService _membershipService;
     private readonly string? _botUsername;
+    private readonly ILogger<NamorevoGoreController> _logger;
 
     public NamorevoGoreController(IDbContextFactory<SaturnContext> contextFactory,
         ITelegramBotClient botClient,
         ChatMembershipService membershipService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<NamorevoGoreController> logger)
     {
         _contextFactory = contextFactory;
         _botClient = botClient;
         _membershipService = membershipService;
         _botUsername = configuration["BOT_USERNAME"];
+        _logger = logger;
     }
 
     [HttpPost("score")]
-    public async Task<ActionResult> AddScore([FromBody] AddNamorevoGoreScoreRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<GameScoreResultDto>> AddScore([FromBody] AddNamorevoGoreScoreRequest request)
     {
+        // Не привязываемся к RequestAborted: игрок мог закрыть Mini App сразу после проигрыша,
+        // и обрыв соединения не должен отменять сохранение результата.
+        var cancellationToken = CancellationToken.None;
+
+        if (request.Score < 0)
+        {
+            return BadRequest("Score must not be negative");
+        }
+
         var currentUserId = GetCurrentUserId();
         if (currentUserId.HasValue && currentUserId.Value != request.UserId)
         {
@@ -47,19 +59,28 @@ public class NamorevoGoreController : ApiControllerBase
 
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var user =await db.Users.FindAsync([request.UserId], cancellationToken);
+        var user = await GetOrCreateUserAsync(db, request.UserId, cancellationToken);
         if (user is null)
         {
             return NotFound($"User {request.UserId} not found");
         }
 
+        var previousScore = await db.NamorevoGoreScores
+            .Where(x => x.UserId == request.UserId && x.ChatId == request.ChatId)
+            .Select(x => (int?)x.Score)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var record = await GameScoreRecorder.SaveAsync(
             db, db.NamorevoGoreScores, request.UserId, request.ChatId, request.Score,
             () => new NamorevoGoreScoreEntity(), cancellationToken);
 
+        var result = new GameScoreResultDto(
+            Math.Max(previousScore ?? 0, request.Score),
+            previousScore is null ? request.Score > 0 : request.Score > previousScore);
+
         if (record is null)
         {
-            return Ok();
+            return result;
         }
 
         var userLink = user.GetSilentHtmlLink();
@@ -75,15 +96,24 @@ public class NamorevoGoreController : ApiControllerBase
                 "Наморево горе",
                 $"https://t.me/{_botUsername}/namorevogore?startapp={request.ChatId}"));
 
-        await _botClient.SendMessage(
-            request.ChatId,
-            text,
-            parseMode: ParseMode.Html,
-            linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
-            replyMarkup: keyboard,
-            cancellationToken: cancellationToken);
+        // Рекорд уже сохранён: сбой объявления в чате не должен превращаться в ошибку отправки результата.
+        try
+        {
+            await _botClient.SendMessage(
+                request.ChatId,
+                text,
+                parseMode: ParseMode.Html,
+                linkPreviewOptions: new LinkPreviewOptions { IsDisabled = true },
+                replyMarkup: keyboard,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to announce namorevo gore record {Score} of user {UserId} in chat {ChatId}",
+                request.Score, request.UserId, request.ChatId);
+        }
 
-        return Ok();
+        return result;
     }
 
     [HttpGet("score/{userId:long}")]
