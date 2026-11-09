@@ -80,6 +80,7 @@ public static class ServiceCollectionsExtensions
             options.LogChatId = long.TryParse(configuration["LOG_CHAT_ID"], out var chatId) ? chatId : 0;
             options.AdminUsername = configuration["ADMIN_USERNAME"];
             options.EasterEggUsername = configuration["EASTER_EGG_USERNAME"];
+            options.YookassaProviderToken = configuration["YOOKASSA_TELEGRAM_TOKEN"];
         });
 
         serviceCollection

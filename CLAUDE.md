@@ -55,6 +55,7 @@ Configured via `.env` (picked up by Docker Compose):
 | `CONNECTION_STRING` | PostgreSQL connection string |
 | `POSTGRES_PASSWORD` | DB password |
 | `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for text generation (`qwen/qwen3-vl-8b-instruct`), image generation (`seedream-v5.0-lite`), image editing (`seedream-v5.0-lite/edit`), and video generation |
+| `YOOKASSA_TELEGRAM_TOKEN` | YooKassa provider token from @BotFather (Payments → YooKassa) for buying coins by card (RUB); card buttons are hidden if not set |
 | `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |
 
 ## Key Dependencies

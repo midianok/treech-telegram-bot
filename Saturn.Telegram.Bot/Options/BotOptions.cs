@@ -11,4 +11,6 @@ public class BotOptions
     public string? AdminUsername { get; set; }
     
     public string? EasterEggUsername { get; set; }
+    
+    public string? YookassaProviderToken { get; set; }
 }
