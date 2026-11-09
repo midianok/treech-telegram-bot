@@ -97,8 +97,6 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<ISaveMessageService, SaveMessageService>()
             .AddSingleton<IOperationManager, OperationManager>()
             .AddHostedService<FfmpegSetupService>()
-            .AddHostedService<YtDlpSetupService>()
-            .AddHostedService<YtDlpUpdateService>()
             .AddHostedService<CacheInvalidationService>()
             .AddMemoryCache();
         

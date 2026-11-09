@@ -44,13 +44,12 @@ Telegram-бот для групповых чатов с поддержкой И�
 - `бот` — открыть веб-приложение
 - `помощь` — список команд
 - `оживи` — восстановить медиа (команда для администратора)
-- Ссылки TikTok и Instagram Reels скачиваются **автоматически** (YouTube не поддерживается)
 
 ## Архитектура
 
 ```
 Saturn.Telegram.Lib   — ядро: IOperation, OperationManager, ICooldownService, TelegramHostedService
-Saturn.Telegram.Bot   — реализации команд, FFmpeg/yt-dlp, сохранение сообщений
+Saturn.Telegram.Bot   — реализации команд, FFmpeg, сохранение сообщений
 Saturn.Telegram.Api   — REST API для веб-фронтенда (ASP.NET Core), авторизация через Telegram InitData
 Saturn.Telegram.Db    — EF Core 10 + PostgreSQL (Npgsql), snake_case, IDbContextFactory
 ```
@@ -104,5 +103,5 @@ CI/CD настроен через GitHub Actions: при пуше в `master` с
 - [OpenAI .NET SDK 2.10.0](https://github.com/openai/openai-dotnet) — используется с xAI endpoint (`https://api.x.ai/v1`, модель `grok-4-1-fast-non-reasoning`)
 - [EF Core 10](https://learn.microsoft.com/en-us/ef/core/) + [Npgsql 10](https://www.npgsql.org/)
 - [Magick.NET 14.13.1](https://github.com/dlemstra/Magick.NET) — обработка изображений
-- [Xabe.FFmpeg](https://github.com/tomaszzmuda/Xabe.FFmpeg) + [YoutubeDLSharp](https://github.com/Bluegrams/YoutubeDLSharp) — медиа
+- [Xabe.FFmpeg](https://github.com/tomaszzmuda/Xabe.FFmpeg) — медиа
 - PostgreSQL 17

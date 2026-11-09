@@ -23,7 +23,7 @@ Database migrations are applied automatically at startup — no manual migration
 Four projects:
 
 - **Saturn.Telegram.Lib** — core abstractions: `IOperation`, `OperationManager`, `ICooldownService`, `TelegramHostedService`. This is where the operation dispatch loop lives.
-- **Saturn.Telegram.Bot** — concrete `IOperation` implementations (message handlers) and bot-specific services (FFmpeg setup, yt-dlp setup, message saving).
+- **Saturn.Telegram.Bot** — concrete `IOperation` implementations (message handlers) and bot-specific services (FFmpeg setup, message saving).
 - **Saturn.Telegram.Api** — ASP.NET Core REST API exposing stats, AI agents, and chat data for a web frontend. Validates callers via `TelegramInitDataMiddleware`.
 - **Saturn.Telegram.Db** — EF Core 10 + PostgreSQL (Npgsql). Entities: `MessageEntity`, `UserEntity`, `ChatEntity`, `AiAgentEntity`, `OperationCallEntity`. Uses snake_case naming convention and `IDbContextFactory<SaturnContext>` throughout.
 
@@ -57,8 +57,6 @@ Configured via `.env` (picked up by Docker Compose):
 | `CHAT_GENERATION_API_KEY` | xAI API key for text generation (Grok) |
 | `IMAGE_GENERATION_API_KEY` | xAI API key for image generation |
 | `IMAGE_EDIT_API_KEY` | xAI API key for image editing |
-| `YOUTUBE_COOKIES_PATH` | Path to YouTube cookies.txt for yt-dlp (e.g. `/app/youtube_cookies.txt`), mounted via docker-compose |
-| `INSTAGRAM_COOKIES_PATH` | Path to Instagram cookies.txt for yt-dlp (e.g. `/app/instagram_cookies.txt`), mounted via docker-compose |
 | `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |
 
 ## Key Dependencies
@@ -66,7 +64,7 @@ Configured via `.env` (picked up by Docker Compose):
 - `Telegram.Bot` 22.10.0.1 — bot API client
 - `OpenAI` 2.10.0 — used with xAI endpoint (`https://api.x.ai/v1`, model `grok-4-1-fast-non-reasoning`)
 - `Magick.NET-Q16-AnyCPU` 14.13.1 — image manipulation
-- `Xabe.FFmpeg` + `YoutubeDLSharp` — media download/processing
+- `Xabe.FFmpeg` — media processing
 - EF Core 10 + Npgsql 10 — data access
 
 ## Deployment
