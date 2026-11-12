@@ -1,28 +1,43 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 
 public class AtlasCloudImageClient
 {
+    private const string TextToImageModel = "openai/gpt-image-2.5-flare/text-to-image";
+    private const string TextToImageFallbackModel = "bytedance/seedream-v5.0-flash/text-to-image";
+    private const string EditModel = "google/nano-banana/edit-developer";
+    private const string EditFallbackModel = "bytedance/seedream-v5.0-flash/edit";
+    private const string ImageToVideoModel = "bytedance/seedance-2.0-fast/image-to-video";
+
     private static readonly TimeSpan ImageTimeout = TimeSpan.FromMinutes(3);
 
     private readonly HttpClient _httpClient;
+    private readonly ILogger<AtlasCloudImageClient> _logger;
 
-    public AtlasCloudImageClient(HttpClient httpClient) =>
+    public AtlasCloudImageClient(HttpClient httpClient, ILogger<AtlasCloudImageClient> logger)
+    {
         _httpClient = httpClient;
+        _logger = logger;
+    }
 
     public Task<byte[]> GenerateImageAsync(string prompt, Action<string>? onStatusChanged = null) =>
         ExecuteImageWithFallbackAsync(
+            prompt,
+            0,
+            TextToImageModel,
             new
             {
-                model = "openai/gpt-image-2.5-flare/text-to-image",
+                model = TextToImageModel,
                 prompt
             },
+            TextToImageFallbackModel,
             new
             {
-                model = "bytedance/seedream-v5.0-flash/text-to-image",
+                model = TextToImageFallbackModel,
                 prompt,
                 enable_base64_output = true
             },
@@ -33,42 +48,26 @@ public class AtlasCloudImageClient
         var images = imageBytesList.Select(b => $"data:image/jpeg;base64,{Convert.ToBase64String(b)}").ToArray();
 
         return ExecuteImageWithFallbackAsync(
+            prompt,
+            images.Length,
+            EditModel,
             new
             {
-                model = "google/nano-banana/edit-developer",
+                model = EditModel,
                 prompt,
                 images,
                 enable_base64_output = true
             },
+            EditFallbackModel,
             new
             {
-                model = "bytedance/seedream-v5.0-flash/edit",
+                model = EditFallbackModel,
                 prompt,
                 images,
                 enable_base64_output = true
             },
             onStatusChanged);
     }
-
-    private async Task<byte[]> ExecuteImageWithFallbackAsync(object primaryRequest, object fallbackRequest, Action<string>? onStatusChanged)
-    {
-        try
-        {
-            return await ExecuteImageAsync(primaryRequest, onStatusChanged);
-        }
-        catch (Exception ex) when (IsModerationRejection(ex))
-        {
-            return await ExecuteImageAsync(fallbackRequest, onStatusChanged);
-        }
-    }
-
-    private static bool IsModerationRejection(Exception ex) =>
-        ex switch
-        {
-            HttpRequestException { StatusCode: HttpStatusCode.BadRequest } => true,
-            AtlasCloudPredictionFailedException { Status: "failed" } => true,
-            _ => false
-        };
 
     public async Task<byte[]> GenerateVideoFromImageAsync(byte[] imageBytes, string? prompt, string aspectRatio, bool generateAudio = false, Action<string>? onStatusChanged = null, CancellationToken cancellationToken = default)
     {
@@ -78,7 +77,7 @@ public class AtlasCloudImageClient
 
         var request = new
         {
-            model = "bytedance/seedance-2.0-fast/image-to-video",
+            model = ImageToVideoModel,
             prompt = effectivePrompt,
             image = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}",
             resolution = "720p",
@@ -87,6 +86,10 @@ public class AtlasCloudImageClient
             generate_audio = generateAudio,
             watermark = false
         };
+
+        _logger.LogInformation(
+            "AtlasCloud video request: model {Model}, ratio {AspectRatio}, audio {GenerateAudio}, prompt: {Prompt}",
+            ImageToVideoModel, aspectRatio, generateAudio, effectivePrompt);
 
         var response = await _httpClient.PostAsJsonAsync("api/v1/model/generateVideo", request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -98,11 +101,48 @@ public class AtlasCloudImageClient
             .GetString()
             ?? throw new InvalidOperationException("Не получен prediction ID от AtlasCloud video API");
 
+        _logger.LogInformation("AtlasCloud video prediction {PredictionId} started (model {Model})", predictionId, ImageToVideoModel);
+
         return await PollVideoResultAsync(predictionId, onStatusChanged, cancellationToken);
     }
 
-    private async Task<byte[]> ExecuteImageAsync(object request, Action<string>? onStatusChanged)
+    private async Task<byte[]> ExecuteImageWithFallbackAsync(
+        string prompt,
+        int imageCount,
+        string primaryModel,
+        object primaryRequest,
+        string fallbackModel,
+        object fallbackRequest,
+        Action<string>? onStatusChanged)
     {
+        try
+        {
+            return await ExecuteImageAsync(primaryModel, prompt, imageCount, primaryRequest, onStatusChanged);
+        }
+        catch (Exception ex) when (IsModerationRejection(ex))
+        {
+            _logger.LogWarning(
+                "AtlasCloud model {Model} rejected request ({Reason}), falling back to {FallbackModel}",
+                primaryModel, ex.Message, fallbackModel);
+
+            return await ExecuteImageAsync(fallbackModel, prompt, imageCount, fallbackRequest, onStatusChanged);
+        }
+    }
+
+    private static bool IsModerationRejection(Exception ex) =>
+        ex switch
+        {
+            HttpRequestException { StatusCode: HttpStatusCode.BadRequest } => true,
+            AtlasCloudPredictionFailedException { Status: "failed" } => true,
+            _ => false
+        };
+
+    private async Task<byte[]> ExecuteImageAsync(string model, string prompt, int imageCount, object request, Action<string>? onStatusChanged)
+    {
+        _logger.LogInformation(
+            "AtlasCloud image request: model {Model}, input images {ImageCount}, prompt: {Prompt}",
+            model, imageCount, prompt);
+
         var response = await _httpClient.PostAsJsonAsync("api/v1/model/generateImage", request);
         response.EnsureSuccessStatusCode();
 
@@ -112,6 +152,8 @@ public class AtlasCloudImageClient
             .GetProperty("id")
             .GetString()
             ?? throw new InvalidOperationException("Не получен prediction ID от AtlasCloud");
+
+        _logger.LogInformation("AtlasCloud image prediction {PredictionId} started (model {Model})", predictionId, model);
 
         return await PollImageResultAsync(predictionId, onStatusChanged);
     }

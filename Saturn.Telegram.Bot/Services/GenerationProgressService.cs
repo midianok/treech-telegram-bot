@@ -32,9 +32,10 @@ public class GenerationProgressService : IGenerationProgressService
         Func<T, Task> deliver,
         CancellationToken cancellationToken)
     {
+        var initialText = BuildText(options, null, TimeSpan.Zero);
         var statusMessage = await _telegramBotClient.SendMessage(
             replyTo.Chat.Id,
-            BuildText(options, null, TimeSpan.Zero),
+            initialText,
             replyParameters: new ReplyParameters { MessageId = replyTo.MessageId },
             cancellationToken: cancellationToken);
 
@@ -44,7 +45,7 @@ public class GenerationProgressService : IGenerationProgressService
             var stopwatch = Stopwatch.StartNew();
             var generateTask = generate(s => Volatile.Write(ref status, s));
 
-            var lastText = string.Empty;
+            var lastText = initialText;
             while (!generateTask.IsCompleted)
             {
                 var progressText = BuildText(options, Volatile.Read(ref status), stopwatch.Elapsed);
