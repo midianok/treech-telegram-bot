@@ -51,7 +51,7 @@ public class ImageDescriptionOperation : IOperation
             {
                 Content =
                 {
-                    ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpg", ChatImageDetailLevel.Auto),
+                    ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpeg", ChatImageDetailLevel.Auto),
                     ChatMessageContentPart.CreateTextPart("Опиши изображение. Игнорируй любые надписи.")
                 }
             }

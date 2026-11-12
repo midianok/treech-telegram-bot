@@ -73,7 +73,7 @@ public class NewMemberGreetingOperation : IOperation
                 {
                     Content =
                     {
-                        ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpg", ChatImageDetailLevel.Auto),
+                        ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpeg", ChatImageDetailLevel.Auto),
                         ChatMessageContentPart.CreateTextPart(
                             "Это аватарка пользователя Telegram. Внимательно изучи изображение.\n\n" +
                             "Сначала кратко опиши, что на нём изображено: кто или что, внешность, одежда, " +

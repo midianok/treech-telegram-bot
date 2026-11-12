@@ -36,16 +36,31 @@ public class AiService : IAiService
     private ChatClient SelectClient(IList<ChatMessage> messages) =>
         HasImageContent(messages) ? _visionChatClient : _chatClient;
 
+    private static ChatCompletionOptions CreateOptions(IList<ChatMessage> messages)
+    {
+        var options = new ChatCompletionOptions();
+        if (HasImageContent(messages))
+        {
+            // The vision model (qwen3.5-flash) reasons by default: slower, pricier, and may spend the whole
+            // output budget on reasoning, leaving content empty.
+#pragma warning disable SCME0001
+            options.Patch.Set("$.enable_thinking"u8, false);
+#pragma warning restore SCME0001
+        }
+
+        return options;
+    }
+
     public async Task<string> CompleteChatAsync(IList<ChatMessage> messages, CancellationToken сancellationToken)
     {
         try
         {
-            var result = await SelectClient(messages).CompleteChatAsync(messages, cancellationToken: сancellationToken);
+            var result = await SelectClient(messages).CompleteChatAsync(messages, CreateOptions(messages), сancellationToken);
             return result.Value.Content.FirstOrDefault()?.Text ?? throw new AiEmptyResponseException();
         }
         catch (ClientResultException ex) when (ex.Status == 400)
         {
-            _logger.LogError("AtlasCloud content moderation rejection (400 Bad Request)");
+            _logger.LogError(ex, "AtlasCloud rejected the chat request (400 Bad Request)");
             throw new AiContentModerationException();
         }
         catch (ClientResultException ex) when (ex.Status == 429)
@@ -62,7 +77,8 @@ public class AiService : IAiService
     {
         try
         {
-            var options = new ChatCompletionOptions { MaxOutputTokenCount = 500 };
+            var options = CreateOptions(messages);
+            options.MaxOutputTokenCount = 500;
             foreach (var tool in tools)
             {
                 options.Tools.Add(tool.Definition);
@@ -95,7 +111,7 @@ public class AiService : IAiService
         }
         catch (ClientResultException ex) when (ex.Status == 400)
         {
-            _logger.LogError("AtlasCloud content moderation rejection (400 Bad Request)");
+            _logger.LogError(ex, "AtlasCloud rejected the chat request (400 Bad Request)");
             throw new AiContentModerationException();
         }
         catch (ClientResultException ex) when (ex.Status == 429)

@@ -54,14 +54,14 @@ Configured via `.env` (picked up by Docker Compose):
 | `EASTER_EGG_USERNAME` | Username without @ that triggers easter egg media responses; operation disabled if not set |
 | `CONNECTION_STRING` | PostgreSQL connection string |
 | `POSTGRES_PASSWORD` | DB password |
-| `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for text generation (`qwen/qwen3-vl-8b-instruct`), image generation (`seedream-v5.0-lite`), image editing (`seedream-v5.0-lite/edit`), and video generation |
+| `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for text generation (`deepseek-ai/deepseek-v4-flash`), vision (`qwen/qwen3.5-flash`, thinking disabled), image generation (`seedream-v5.0-lite`), image editing (`seedream-v5.0-lite/edit`), and video generation |
 | `YOOKASSA_TELEGRAM_TOKEN` | YooKassa provider token from @BotFather (Payments → YooKassa) for buying coins by card (RUB); card buttons are hidden if not set |
 | `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |
 
 ## Key Dependencies
 
 - `Telegram.Bot` 22.10.0.1 — bot API client
-- `OpenAI` 2.10.0 — used with AtlasCloud endpoint (`https://api.atlascloud.ai/v1`, model `qwen/qwen3-vl-8b-instruct`)
+- `OpenAI` 2.10.0 — used with AtlasCloud endpoint (`https://api.atlascloud.ai/v1`, models `deepseek-ai/deepseek-v4-flash` and `qwen/qwen3.5-flash` for images)
 - `Magick.NET-Q16-AnyCPU` 14.13.1 — image manipulation
 - `Xabe.FFmpeg` — media processing
 - EF Core 10 + Npgsql 10 — data access
