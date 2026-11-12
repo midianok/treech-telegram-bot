@@ -12,3 +12,6 @@ Saturn.Telegram.Bot/Properties/launchSettings.json
 Saturn.Telegram.sln.DotSettings.user
 Saturn.Telegram.Db/bin
 .gitleaks.toml
+
+# Dozzle users (bcrypt hashes) — хранится только на сервере
+dozzle/users.yml

@@ -9,6 +9,8 @@
       ASPNETCORE_ENVIRONMENT: Production
     env_file:
       - ./.env
+    labels:
+      dozzle.enable: "true"
     depends_on:
       db:
         condition: service_healthy
@@ -26,10 +28,24 @@
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      dozzle.enable: "true"
     networks:
       - default
       - proxy_net
-  
+
+  dozzle:
+    image: amir20/dozzle:latest
+    restart: always
+    environment:
+      DOZZLE_AUTH_PROVIDER: simple
+      DOZZLE_FILTER: label=dozzle.enable=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dozzle:/data
+    ports:
+      - "9090:8080"
+
   db:
     image: postgres:17
     restart: always
