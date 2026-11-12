@@ -41,7 +41,7 @@ public class AiService : IAiService
         var options = new ChatCompletionOptions();
         if (HasImageContent(messages))
         {
-            // The vision model (qwen3.5-flash) reasons by default: slower, pricier, and may spend the whole
+            // The vision model (deepseek-v4.1-flash) reasons by default: slower, pricier, and may spend the whole
             // output budget on reasoning, leaving content empty.
 #pragma warning disable SCME0001
             options.Patch.Set("$.enable_thinking"u8, false);

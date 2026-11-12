@@ -40,7 +40,7 @@ public static class ServiceCollectionsExtensions
         serviceCollection.AddKeyedSingleton<ChatClient>("vision", (_, _) =>
         {
             var apiKey = configuration.GetSectionOrThrow("ATLAS_CLOUD_API_KEY");
-            return new ChatClient("qwen/qwen3.5-flash", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.atlascloud.ai/v1") });
+            return new ChatClient("deepseek-ai/deepseek-v4.1-flash", new ApiKeyCredential(apiKey), new OpenAIClientOptions { Endpoint = new Uri("https://api.atlascloud.ai/v1") });
         });
         
         serviceCollection.AddHttpClient<AtlasCloudImageClient>(x =>
