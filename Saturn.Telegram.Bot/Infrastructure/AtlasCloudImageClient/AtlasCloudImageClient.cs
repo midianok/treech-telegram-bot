@@ -11,7 +11,8 @@ public class AtlasCloudImageClient
     private const string TextToImageFallbackModel = "bytedance/seedream-v5.0-flash/text-to-image";
     private const string EditModel = "google/nano-banana/edit-developer";
     private const string EditFallbackModel = "bytedance/seedream-v5.0-flash/edit";
-    private const string ImageToVideoModel = "bytedance/seedance-2.0-fast/image-to-video";
+    private const string ImageToVideoModel = "xai/grok-imagine-video-v1.5-lite-developer/image-to-video";
+    private const string ImageToVideoFallbackModel = "bytedance/seedance-2.0-fast/image-to-video";
 
     private static readonly TimeSpan ImageTimeout = TimeSpan.FromMinutes(3);
 
@@ -75,11 +76,24 @@ public class AtlasCloudImageClient
             ? "Animate this image naturally. If any person speaks or mouths words, they must speak Russian."
             : prompt;
 
-        var request = new
+        var image = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
+
+        // Grok не умеет отключать звук — генерирует его всегда, поэтому generateAudio учитывается только в fallback.
+        var primaryRequest = new
         {
             model = ImageToVideoModel,
             prompt = effectivePrompt,
-            image = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}",
+            image,
+            resolution = "720p",
+            duration = 5,
+            aspect_ratio = "auto"
+        };
+
+        var fallbackRequest = new
+        {
+            model = ImageToVideoFallbackModel,
+            prompt = effectivePrompt,
+            image,
             resolution = "720p",
             duration = 5,
             ratio = aspectRatio,
@@ -87,9 +101,32 @@ public class AtlasCloudImageClient
             watermark = false
         };
 
+        try
+        {
+            return await ExecuteVideoAsync(ImageToVideoModel, effectivePrompt, aspectRatio, generateAudio, primaryRequest, onStatusChanged, cancellationToken);
+        }
+        catch (Exception ex) when (IsModerationRejection(ex))
+        {
+            _logger.LogWarning(
+                "AtlasCloud model {Model} rejected request ({Reason}), falling back to {FallbackModel}",
+                ImageToVideoModel, ex.Message, ImageToVideoFallbackModel);
+
+            return await ExecuteVideoAsync(ImageToVideoFallbackModel, effectivePrompt, aspectRatio, generateAudio, fallbackRequest, onStatusChanged, cancellationToken);
+        }
+    }
+
+    private async Task<byte[]> ExecuteVideoAsync(
+        string model,
+        string prompt,
+        string aspectRatio,
+        bool generateAudio,
+        object request,
+        Action<string>? onStatusChanged,
+        CancellationToken cancellationToken)
+    {
         _logger.LogInformation(
             "AtlasCloud video request: model {Model}, ratio {AspectRatio}, audio {GenerateAudio}, prompt: {Prompt}",
-            ImageToVideoModel, aspectRatio, generateAudio, effectivePrompt);
+            model, aspectRatio, generateAudio, prompt);
 
         var response = await _httpClient.PostAsJsonAsync("api/v1/model/generateVideo", request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -101,7 +138,7 @@ public class AtlasCloudImageClient
             .GetString()
             ?? throw new InvalidOperationException("Не получен prediction ID от AtlasCloud video API");
 
-        _logger.LogInformation("AtlasCloud video prediction {PredictionId} started (model {Model})", predictionId, ImageToVideoModel);
+        _logger.LogInformation("AtlasCloud video prediction {PredictionId} started (model {Model})", predictionId, model);
 
         return await PollVideoResultAsync(predictionId, onStatusChanged, cancellationToken);
     }
@@ -180,19 +217,7 @@ public class AtlasCloudImageClient
 
             if (status is "completed" or "succeeded")
             {
-                var outputs = data.TryGetProperty("outputs", out var outputsElement) && outputsElement.ValueKind == JsonValueKind.Array
-                    ? outputsElement
-                    : default;
-
-                var output = outputs.ValueKind == JsonValueKind.Array && outputs.GetArrayLength() > 0
-                    ? outputs[0].GetString()
-                    : null;
-
-                if (string.IsNullOrEmpty(output))
-                {
-                    throw new AtlasCloudPredictionFailedException("failed", "empty outputs", $"AtlasCloud вернул пустой результат для изображения (prediction {predictionId})");
-                }
-
+                var output = GetFirstOutput(data, predictionId, "изображения");
                 return await ReadImageOutputAsync(output);
             }
 
@@ -200,6 +225,22 @@ public class AtlasCloudImageClient
         }
 
         throw new TimeoutException($"AtlasCloud не вернул изображение за {ImageTimeout.TotalMinutes} мин (prediction {predictionId})");
+    }
+
+    private static string GetFirstOutput(JsonElement data, string predictionId, string subject)
+    {
+        var output = data.TryGetProperty("outputs", out var outputs)
+                     && outputs.ValueKind == JsonValueKind.Array
+                     && outputs.GetArrayLength() > 0
+            ? outputs[0].GetString()
+            : null;
+
+        if (string.IsNullOrEmpty(output))
+        {
+            throw new AtlasCloudPredictionFailedException("failed", "empty outputs", $"AtlasCloud вернул пустой результат для {subject} (prediction {predictionId})");
+        }
+
+        return output;
     }
 
     private async Task<byte[]> ReadImageOutputAsync(string output)
@@ -239,8 +280,7 @@ public class AtlasCloudImageClient
 
             if (status is "completed" or "succeeded")
             {
-                var videoUrl = data.GetProperty("outputs")[0].GetString()
-                    ?? throw new InvalidOperationException("Пустой URL видео от AtlasCloud");
+                var videoUrl = GetFirstOutput(data, predictionId, "видео");
 
                 var videoResponse = await _httpClient.GetAsync(videoUrl, cancellationToken);
                 videoResponse.EnsureSuccessStatusCode();
