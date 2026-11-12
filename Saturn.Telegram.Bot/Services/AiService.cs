@@ -11,6 +11,8 @@ namespace Saturn.Bot.Service.Services;
 
 public class AiService : IAiService
 {
+    private const int MaxToolIterations = 3;
+
     private readonly ChatClient _chatClient;
     private readonly ChatClient _visionChatClient;
     private readonly AtlasCloudImageClient _atlasCloudImageClient;
@@ -86,12 +88,20 @@ public class AiService : IAiService
 
             var messagesList = messages.ToList();
 
-            while (true)
+            for (var iteration = 0; ; iteration++)
             {
+                // After the limit, forbid further tool calls so the model answers from what it has gathered
+                var toolLimitReached = iteration >= MaxToolIterations;
+                if (toolLimitReached)
+                {
+                    _logger.LogWarning("Tool call limit of {Limit} iterations reached, forcing final answer", MaxToolIterations);
+                    options.ToolChoice = ChatToolChoice.CreateNoneChoice();
+                }
+
                 var result = await SelectClient(messagesList).CompleteChatAsync(messagesList, options, сancellationToken);
                 var completion = result.Value;
 
-                if (completion.FinishReason != ChatFinishReason.ToolCalls)
+                if (completion.FinishReason != ChatFinishReason.ToolCalls || toolLimitReached)
                 {
                     return completion.Content.FirstOrDefault()?.Text ?? 
                            throw new AiEmptyResponseException();

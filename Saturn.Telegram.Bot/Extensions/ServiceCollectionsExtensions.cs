@@ -7,6 +7,7 @@ using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 using Saturn.Bot.Service.Infrastructure.CurrencyClient;
 using Saturn.Bot.Service.Infrastructure.TelegramWidgetClient;
 using Saturn.Bot.Service.Infrastructure.WeatherClient;
+using Saturn.Bot.Service.Infrastructure.WikipediaClient;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
@@ -63,6 +64,13 @@ public static class ServiceCollectionsExtensions
             x.Timeout = TimeSpan.FromSeconds(10);
         });
 
+        // Wikimedia requires a descriptive User-Agent, otherwise requests may be throttled
+        serviceCollection.AddHttpClient<WikipediaClient>(x =>
+        {
+            x.DefaultRequestHeaders.UserAgent.ParseAdd("SaturnBot/1.0 (Telegram bot)");
+            x.Timeout = TimeSpan.FromSeconds(10);
+        });
+
         // Bot API 10.4 widget methods aren't in Telegram.Bot yet, so they go through a plain HttpClient
         // to the Bot API beta, where widgets are available.
         serviceCollection.AddHttpClient<TelegramWidgetClient>(x =>
@@ -86,6 +94,7 @@ public static class ServiceCollectionsExtensions
         serviceCollection
             .AddSingleton<IChatTool, WeatherChatTool>()
             .AddSingleton<IChatTool, CurrencyChatTool>()
+            .AddSingleton<IChatTool, WikipediaChatTool>()
             .AddSingleton<IAiService, AiService>()
             .AddSingleton<IGenerationProgressService, GenerationProgressService>()
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()
