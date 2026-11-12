@@ -111,6 +111,9 @@ public class AiService : IAiService
 
                 foreach (var toolCall in completion.ToolCalls)
                 {
+                    _logger.LogInformation("Tool call {ToolName} (iteration {Iteration}) with arguments {Arguments}",
+                        toolCall.FunctionName, iteration + 1, toolCall.FunctionArguments.ToString());
+
                     var tool = tools.FirstOrDefault(t => t.FunctionName == toolCall.FunctionName);
                     var toolResult = tool != null
                         ? await tool.ExecuteAsync(toolCall.FunctionArguments.ToString(), сancellationToken)
