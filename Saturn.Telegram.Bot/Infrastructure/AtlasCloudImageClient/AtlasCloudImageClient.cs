@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -13,21 +14,61 @@ public class AtlasCloudImageClient
         _httpClient = httpClient;
 
     public Task<byte[]> GenerateImageAsync(string prompt, Action<string>? onStatusChanged = null) =>
-        ExecuteImageAsync(new
-        {
-            model = "bytedance/seedream-v5.0-flash/text-to-image",
-            prompt,
-            enable_base64_output = true
-        }, onStatusChanged);
+        ExecuteImageWithFallbackAsync(
+            new
+            {
+                model = "openai/gpt-image-2.5-flare/text-to-image",
+                prompt
+            },
+            new
+            {
+                model = "bytedance/seedream-v5.0-flash/text-to-image",
+                prompt,
+                enable_base64_output = true
+            },
+            onStatusChanged);
 
-    public Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> imageBytesList, string prompt, Action<string>? onStatusChanged = null) =>
-        ExecuteImageAsync(new
+    public Task<byte[]> EditImageAsync(IReadOnlyList<byte[]> imageBytesList, string prompt, Action<string>? onStatusChanged = null)
+    {
+        var images = imageBytesList.Select(b => $"data:image/jpeg;base64,{Convert.ToBase64String(b)}").ToArray();
+
+        return ExecuteImageWithFallbackAsync(
+            new
+            {
+                model = "google/nano-banana/edit-developer",
+                prompt,
+                images,
+                enable_base64_output = true
+            },
+            new
+            {
+                model = "bytedance/seedream-v5.0-flash/edit",
+                prompt,
+                images,
+                enable_base64_output = true
+            },
+            onStatusChanged);
+    }
+
+    private async Task<byte[]> ExecuteImageWithFallbackAsync(object primaryRequest, object fallbackRequest, Action<string>? onStatusChanged)
+    {
+        try
         {
-            model = "bytedance/seedream-v5.0-flash/edit",
-            prompt,
-            images = imageBytesList.Select(b => $"data:image/jpeg;base64,{Convert.ToBase64String(b)}").ToArray(),
-            enable_base64_output = true
-        }, onStatusChanged);
+            return await ExecuteImageAsync(primaryRequest, onStatusChanged);
+        }
+        catch (Exception ex) when (IsModerationRejection(ex))
+        {
+            return await ExecuteImageAsync(fallbackRequest, onStatusChanged);
+        }
+    }
+
+    private static bool IsModerationRejection(Exception ex) =>
+        ex switch
+        {
+            HttpRequestException { StatusCode: HttpStatusCode.BadRequest } => true,
+            AtlasCloudPredictionFailedException { Status: "failed" } => true,
+            _ => false
+        };
 
     public async Task<byte[]> GenerateVideoFromImageAsync(byte[] imageBytes, string? prompt, string aspectRatio, bool generateAudio = false, Action<string>? onStatusChanged = null, CancellationToken cancellationToken = default)
     {
@@ -97,15 +138,43 @@ public class AtlasCloudImageClient
 
             if (status is "completed" or "succeeded")
             {
-                var b64 = data.GetProperty("outputs")[0].GetString()
-                    ?? throw new InvalidOperationException("Пустой ответ от AtlasCloud");
-                return Convert.FromBase64String(b64);
+                var outputs = data.TryGetProperty("outputs", out var outputsElement) && outputsElement.ValueKind == JsonValueKind.Array
+                    ? outputsElement
+                    : default;
+
+                var output = outputs.ValueKind == JsonValueKind.Array && outputs.GetArrayLength() > 0
+                    ? outputs[0].GetString()
+                    : null;
+
+                if (string.IsNullOrEmpty(output))
+                {
+                    throw new AtlasCloudPredictionFailedException("failed", "empty outputs", $"AtlasCloud вернул пустой результат для изображения (prediction {predictionId})");
+                }
+
+                return await ReadImageOutputAsync(output);
             }
 
             ThrowIfTerminalFailure(data, status, "изображения");
         }
 
         throw new TimeoutException($"AtlasCloud не вернул изображение за {ImageTimeout.TotalMinutes} мин (prediction {predictionId})");
+    }
+
+    private async Task<byte[]> ReadImageOutputAsync(string output)
+    {
+        if (output.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || output.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            var imageResponse = await _httpClient.GetAsync(output);
+            imageResponse.EnsureSuccessStatusCode();
+            return await imageResponse.Content.ReadAsByteArrayAsync();
+        }
+
+        var commaIndex = output.IndexOf(',');
+        var b64 = output.StartsWith("data:", StringComparison.OrdinalIgnoreCase) && commaIndex >= 0
+            ? output[(commaIndex + 1)..]
+            : output;
+
+        return Convert.FromBase64String(b64);
     }
 
     private async Task<byte[]> PollVideoResultAsync(string predictionId, Action<string>? onStatusChanged, CancellationToken cancellationToken)
@@ -151,6 +220,6 @@ public class AtlasCloudImageClient
             ? errorElement.GetString()
             : null;
 
-        throw new InvalidOperationException($"AtlasCloud вернул статус {status} для {subject}: {error}");
+        throw new AtlasCloudPredictionFailedException(status, error, $"AtlasCloud вернул статус {status} для {subject}: {error}");
     }
 }

@@ -54,7 +54,7 @@ Configured via `.env` (picked up by Docker Compose):
 | `EASTER_EGG_USERNAME` | Username without @ that triggers easter egg media responses; operation disabled if not set |
 | `CONNECTION_STRING` | PostgreSQL connection string |
 | `POSTGRES_PASSWORD` | DB password |
-| `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for text generation (`deepseek-ai/deepseek-v4-flash`), vision (`qwen/qwen3.5-flash`, thinking disabled), image generation (`seedream-v5.0-lite`), image editing (`seedream-v5.0-lite/edit`), and video generation |
+| `ATLAS_CLOUD_API_KEY` | AtlasCloud API key for text generation (`deepseek-ai/deepseek-v4-flash`), vision (`qwen/qwen3.5-flash`, thinking disabled), image generation (`openai/gpt-image-2.5-flare/text-to-image`, fallback to `bytedance/seedream-v5.0-flash/text-to-image` on moderation rejection), image editing (`google/nano-banana/edit-developer`, fallback to `bytedance/seedream-v5.0-flash/edit` on moderation rejection), and video generation |
 | `YOOKASSA_TELEGRAM_TOKEN` | YooKassa provider token from @BotFather (Payments → YooKassa) for buying coins by card (RUB); card buttons are hidden if not set |
 | `PATH_BASE` | Optional URL path base for the API (e.g. `/api`) |
 
