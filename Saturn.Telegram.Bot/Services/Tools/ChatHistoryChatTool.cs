@@ -218,7 +218,7 @@ public class ChatHistoryChatTool : IChatTool
         }, JsonOptions);
     }
 
-    private static List<ChatAuthor> FindAuthors(List<ChatAuthor> chatAuthors, string author)
+    internal static List<ChatAuthor> FindAuthors(List<ChatAuthor> chatAuthors, string author)
     {
         var key = ToSearchKey(author);
         if (key.Length == 0)

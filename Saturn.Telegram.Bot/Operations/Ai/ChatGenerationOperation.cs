@@ -24,10 +24,13 @@ public class ChatGenerationOperation : IOperation
 {
     private const string BehaviorPrompt =
         "Отвечай обычным текстом без markdown: без звёздочек, решёток, обратных кавычек и заголовков. " +
-        "Всё, что узнал через инструменты (история чата, погода, Википедия и т.д.), подавай так, будто знал это и так: " +
+        "Всё, что узнал через инструменты (история чата, профили участников, погода, Википедия и т.д.), подавай так, будто знал это и так: " +
         "не упоминай инструменты, поиск, историю чата, логи и переписку как источник: никаких «смотрю по истории», " +
         "«судя по истории чата», «я поискал», «я погрузился в твой чат-лог», «почитал твою переписку», " +
         "не спрашивай, видел ли кто-то историю. " +
+        "Когда подкалываешь, прожариваешь, описываешь или оцениваешь человека, загляни и в его профиль (описание и аватарку), " +
+        "но не пересказывай и не упоминай их: никаких «на аватарке ты…», «у тебя на фото…», «в био написано…». " +
+        "Сделай из них выводы о человеке (чем увлекается, как себя подаёт, что ценит) и вплетай в шутки как то, что ты и так о нём знаешь. " +
         "Сообщения помечены автором в квадратных скобках. Твой собеседник — автор последнего сообщения; " +
         "люди, о которых он спрашивает или чьи сообщения ты нашёл, — другие участники чата, не путай их с ним. " +
         "Отвечай собеседнику, а о других говори в третьем лице, если тебя не просят обратиться к ним напрямую. " +
@@ -49,6 +52,7 @@ public class ChatGenerationOperation : IOperation
     private readonly IReadOnlyList<IChatTool> _tools;
     private readonly ILogger<ChatGenerationOperation> _logger;
     private readonly ILogger<ChatHistoryChatTool> _chatHistoryToolLogger;
+    private readonly ILogger<UserProfileChatTool> _userProfileToolLogger;
     private readonly string _invokeCommand;
     private readonly string _botUsername;
 
@@ -61,7 +65,8 @@ public class ChatGenerationOperation : IOperation
         IEnumerable<IChatTool> tools,
         IOptions<BotOptions> botOptions,
         ILogger<ChatGenerationOperation> logger,
-        ILogger<ChatHistoryChatTool> chatHistoryToolLogger)
+        ILogger<ChatHistoryChatTool> chatHistoryToolLogger,
+        ILogger<UserProfileChatTool> userProfileToolLogger)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
@@ -71,6 +76,7 @@ public class ChatGenerationOperation : IOperation
         _tools = tools.ToList();
         _logger = logger;
         _chatHistoryToolLogger = chatHistoryToolLogger;
+        _userProfileToolLogger = userProfileToolLogger;
         _invokeCommand = botOptions.Value.InvokeCommand;
         _botUsername = botOptions.Value.BotUsername;
     }
@@ -152,7 +158,10 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new UserChatMessage(requestText));
         }
 
-        var tools = _tools.Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id, _chatHistoryToolLogger)).ToList();
+        var tools = _tools
+            .Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id, _chatHistoryToolLogger))
+            .Append(new UserProfileChatTool(_telegramBotClient, _aiService, _messageRepository, msg.Chat.Id, _userProfileToolLogger))
+            .ToList();
         _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, reply photo {HasPhoto}",
             chatEntity.AiAgent?.Name ?? "none", senderName, replyPhoto != null);
         // Tool calls make the answer take well over the 5 seconds a single "typing" action lasts
