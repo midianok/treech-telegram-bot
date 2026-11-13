@@ -21,7 +21,11 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ChatGenerationOperation : IOperation
 {
-    private const string ClarificationPrompt =
+    private const string BehaviorPrompt =
+        "Отвечай обычным текстом без markdown: без звёздочек, решёток, обратных кавычек и заголовков. " +
+        "Всё, что узнал через инструменты (история чата, погода, Википедия и т.д.), подавай так, будто знал это и так: " +
+        "не упоминай инструменты, поиск и историю чата, не пиши «смотрю по истории», «судя по истории чата», " +
+        "«я поискал», не спрашивай, видел ли кто-то историю. " +
         "Уточняющий вопрос задавай только когда без него ответить нельзя: не хватает важной информации " +
         "и её не выяснить из переписки выше или через инструменты (например, по истории чата). " +
         "Тогда вместо ответа задай один короткий вопрос, а если есть варианты — перечисли их. " +
@@ -82,7 +86,7 @@ public class ChatGenerationOperation : IOperation
         {
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
-        messages.Add(new SystemChatMessage(ClarificationPrompt));
+        messages.Add(new SystemChatMessage(BehaviorPrompt));
 
         var isReplyToBot = IsReplyToBot(msg);
         if (isReplyToBot)
@@ -132,7 +136,7 @@ public class ChatGenerationOperation : IOperation
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
         var tools = _tools.Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id)).ToList();
-        var result = await _aiService.CompleteChatAsync(messages, tools, сancellationToken);
+        var result = (await _aiService.CompleteChatAsync(messages, tools, сancellationToken)).StripMarkdown();
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply);
