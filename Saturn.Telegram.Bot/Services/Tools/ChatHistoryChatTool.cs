@@ -157,7 +157,16 @@ public class ChatHistoryChatTool : IChatTool
             }
             else if (authors.Count == 0)
             {
-                return JsonSerializer.Serialize(new { messages = Array.Empty<object>(), note = $"В чате нет участника «{author}»" }, JsonOptions);
+                // Show who is in the chat, so the model asks the user instead of roasting someone else's messages
+                return JsonSerializer.Serialize(new
+                {
+                    messages = Array.Empty<object>(),
+                    note = $"В чате нет участника «{author}». Не подставляй сообщения других людей (и собеседника) вместо него: " +
+                           "если кто-то из списка ниже явно тот, кого имели в виду, повтори поиск с его user_id, иначе спроси у собеседника",
+                    chat_members = (await _messageRepository.GetChatAuthorsAsync(_chatId, сancellationToken))
+                        .Take(MaxAuthorCandidates * 3)
+                        .Select(a => new { user_id = a.UserId, username = a.Username, name = $"{a.FirstName} {a.LastName}".Trim() })
+                }, JsonOptions);
             }
             else if (authors.Count > 1)
             {
@@ -215,11 +224,47 @@ public class ChatHistoryChatTool : IChatTool
         if (key.Length == 0)
             return [];
 
-        return chatAuthors
+        var matches = chatAuthors
             .Where(a => new[] { a.Username, a.FirstName, a.LastName, $"{a.FirstName} {a.LastName}" }
                 .Any(name => ToSearchKey(name).Contains(key)))
             .Take(MaxAuthorCandidates)
             .ToList();
+        if (matches.Count > 0)
+            return matches;
+
+        // Nicknames and typos ("некита" for "Никита", "вова" vs "вава"): allow a couple of letters to differ
+        var maxDistance = key.Length <= 3 ? 0 : key.Length <= 6 ? 1 : 2;
+        if (maxDistance == 0)
+            return [];
+
+        return chatAuthors
+            .Where(a => new[] { a.Username, a.FirstName, a.LastName }
+                .Any(name => ContainsApproximately(ToSearchKey(name), key, maxDistance)))
+            .Take(MaxAuthorCandidates)
+            .ToList();
+    }
+
+    /// <summary>Whether some substring of <paramref name="value"/> is within <paramref name="maxDistance"/> edits of <paramref name="key"/>.</summary>
+    private static bool ContainsApproximately(string value, string key, int maxDistance)
+    {
+        if (value.Length == 0)
+            return false;
+
+        // Sellers' approximate substring matching: the match may start anywhere in value, so row 0 costs nothing
+        var previous = new int[value.Length + 1];
+        var current = new int[value.Length + 1];
+        for (var i = 1; i <= key.Length; i++)
+        {
+            current[0] = i;
+            for (var j = 1; j <= value.Length; j++)
+            {
+                var cost = key[i - 1] == value[j - 1] ? 0 : 1;
+                current[j] = Math.Min(Math.Min(current[j - 1] + 1, previous[j] + 1), previous[j - 1] + cost);
+            }
+            (previous, current) = (current, previous);
+        }
+
+        return previous.Min() <= maxDistance;
     }
 
     /// <summary>

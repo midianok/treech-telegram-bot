@@ -13,6 +13,8 @@ namespace Saturn.Bot.Service.Services;
 public class AiService : IAiService
 {
     private const int MaxToolIterations = 3;
+    // Long answers (roasts, summaries of a person) need well over 500 tokens, or they get cut mid-sentence
+    private const int MaxOutputTokens = 2000;
     private const int MaxLoggedMessageLength = 300;
     private const int MaxLoggedToolResultLength = 1500;
 
@@ -86,7 +88,7 @@ public class AiService : IAiService
         try
         {
             var options = CreateOptions(messages);
-            options.MaxOutputTokenCount = 500;
+            options.MaxOutputTokenCount = MaxOutputTokens;
             foreach (var tool in tools)
             {
                 options.Tools.Add(tool.Definition);
@@ -112,6 +114,11 @@ public class AiService : IAiService
 
                 if (completion.FinishReason != ChatFinishReason.ToolCalls || toolLimitReached)
                 {
+                    if (completion.FinishReason == ChatFinishReason.Length)
+                    {
+                        _logger.LogWarning("AI answer cut off by the output limit of {Limit} tokens", MaxOutputTokens);
+                    }
+
                     return completion.Content.FirstOrDefault()?.Text ?? 
                            throw new AiEmptyResponseException();
                 }
