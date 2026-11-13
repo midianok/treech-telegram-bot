@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using NpgsqlTypes;
 using Saturn.Telegram.Db;
 
 #nullable disable
@@ -314,6 +315,13 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("reply_to_message_id");
 
+                    b.Property<NpgsqlTsVector>("SearchVector")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("tsvector")
+                        .HasColumnName("search_vector")
+                        .HasAnnotation("Npgsql:TsVectorConfig", "russian")
+                        .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Text" });
+
                     b.Property<string>("StickerId")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -337,6 +345,14 @@ namespace Saturn.Telegram.Db.Migrations
 
                     b.HasIndex("ChatId")
                         .HasDatabaseName("ix_messages_chat_id");
+
+                    b.HasIndex("SearchVector")
+                        .HasDatabaseName("ix_messages_search_vector");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchVector"), "GIN");
+
+                    b.HasIndex("ChatId", "MessageDate")
+                        .HasDatabaseName("ix_messages_chat_id_message_date");
 
                     b.HasIndex("UserId", "ChatId")
                         .HasDatabaseName("ix_messages_user_id_chat_id");

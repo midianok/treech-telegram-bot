@@ -3,6 +3,7 @@ using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
@@ -20,6 +21,14 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ChatGenerationOperation : IOperation
 {
+    private const string ClarificationPrompt =
+        "Уточняющий вопрос задавай только когда без него ответить нельзя: не хватает важной информации " +
+        "и её не выяснить из переписки выше или через инструменты (например, по истории чата). " +
+        "Тогда вместо ответа задай один короткий вопрос, а если есть варианты — перечисли их. " +
+        "Примеры: спрашивают погоду, а город неизвестен и в истории его не найти — спроси город; " +
+        "поиск по истории нашёл несколько подходящих участников — перечисли их (имя и username) и спроси, кого имели в виду. " +
+        "Если можно разумно предположить или вопрос и так понятен — отвечай сразу, не переспрашивай.";
+
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
@@ -73,6 +82,7 @@ public class ChatGenerationOperation : IOperation
         {
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
+        messages.Add(new SystemChatMessage(ClarificationPrompt));
 
         var isReplyToBot = IsReplyToBot(msg);
         if (isReplyToBot)
@@ -107,7 +117,6 @@ public class ChatGenerationOperation : IOperation
         {
             messages.Add(new SystemChatMessage($"Тебе сейчас пишет: {senderName}"));
         }
-
         var replyPhoto = msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize);
         if (replyPhoto != null)
         {
@@ -122,7 +131,8 @@ public class ChatGenerationOperation : IOperation
         }
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
-        var result = await _aiService.CompleteChatAsync(messages, _tools, сancellationToken);
+        var tools = _tools.Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id)).ToList();
+        var result = await _aiService.CompleteChatAsync(messages, tools, сancellationToken);
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply);

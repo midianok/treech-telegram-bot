@@ -95,6 +95,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IChatTool, WeatherChatTool>()
             .AddSingleton<IChatTool, CurrencyChatTool>()
             .AddSingleton<IChatTool, WikipediaChatTool>()
+            .AddSingleton<IChatTool, DateTimeChatTool>()
             .AddSingleton<IAiService, AiService>()
             .AddSingleton<IGenerationProgressService, GenerationProgressService>()
             .AddSingleton<IChatCachedRepository, ChatCachedRepository>()

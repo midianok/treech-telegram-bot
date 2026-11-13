@@ -12,6 +12,11 @@ public class MessageEntityConfiguration : IEntityTypeConfiguration<MessageEntity
 
         builder.HasIndex(x => x.ChatId);
         builder.HasIndex(x => new { x.UserId, x.ChatId });
+        builder.HasIndex(x => new { x.ChatId, x.MessageDate });
+
+        builder.HasGeneratedTsVectorColumn(x => x.SearchVector!, "russian", x => new { x.Text })
+            .HasIndex(x => x.SearchVector)
+            .HasMethod("GIN");
 
         builder.Property(x => x.Text)
             .HasMaxLength(4096);
