@@ -108,6 +108,28 @@ public class MessageRepository : IMessageRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<PopularSticker>> GetPopularStickersAsync(long chatId, int limit, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        return await dbContext.Messages
+            .Where(m => m.ChatId == chatId && m.StickerId != null && !m.IsBot)
+            .GroupBy(m => m.StickerId!)
+            .OrderByDescending(g => g.Count())
+            .Take(limit)
+            .Select(g => new PopularSticker(g.Key, g.Max(m => m.StickerEmoji), g.Count()))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task SetStickerEmojiAsync(string stickerId, string emoji, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        await dbContext.Messages
+            .Where(m => m.StickerId == stickerId && m.StickerEmoji == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(m => m.StickerEmoji, emoji), cancellationToken);
+    }
+
     /// <summary>Takes the most recent messages and returns them in chronological order.</summary>
     private static async Task<List<MessageEntity>> TakeLatestAsync(
         IQueryable<MessageEntity> query,

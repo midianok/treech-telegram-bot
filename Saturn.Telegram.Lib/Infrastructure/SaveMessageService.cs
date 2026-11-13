@@ -134,6 +134,7 @@ public class SaveMessageService : ISaveMessageService
             Text = msg.Text,
             MessageDate = msg.Date,
             StickerId = msg.Sticker?.FileId,
+            StickerEmoji = msg.Sticker?.Emoji,
             UserId = msg.From!.Id,
             IsBot = msg.From.IsBot,
             ReplyToMessageId = msg.ReplyToMessage?.Id,

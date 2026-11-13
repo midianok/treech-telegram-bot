@@ -98,12 +98,16 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IOperationCallRepository, OperationCallRepository>()
             .AddSingleton<IImagePromptRepository, ImagePromptRepository>()
             .AddSingleton<ICoinRepository, CoinRepository>()
+            .AddSingleton<IReminderRepository, ReminderRepository>()
+            .AddSingleton<ChatImageQuota>()
+            .AddSingleton<ChatToolFactory>()
             .AddSingleton<ISparkShop, SparkShop>()
             .AddSingleton<IDistortionService, DistortionService>()
             .AddSingleton<ISaveMessageService, SaveMessageService>()
             .AddSingleton<IOperationManager, OperationManager>()
             .AddHostedService<FfmpegSetupService>()
             .AddHostedService<CacheInvalidationService>()
+            .AddHostedService<ReminderSenderService>()
             .AddMemoryCache();
         
         return serviceCollection;

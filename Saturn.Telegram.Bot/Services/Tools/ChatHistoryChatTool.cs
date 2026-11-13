@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
@@ -18,17 +17,9 @@ public class ChatHistoryChatTool : IChatTool
 {
     private const int DefaultLimit = 500;
     private const int MaxLimit = 1000;
-    private const int MaxAuthorCandidates = 10;
     private const string DateFormat = "yyyy-MM-dd";
-
-    private static readonly Dictionary<char, string> CyrillicToLatin = new()
-    {
-        ['а'] = "a", ['б'] = "b", ['в'] = "v", ['г'] = "g", ['д'] = "d", ['е'] = "e", ['ё'] = "e", ['ж'] = "zh",
-        ['з'] = "z", ['и'] = "i", ['й'] = "y", ['к'] = "k", ['л'] = "l", ['м'] = "m", ['н'] = "n", ['о'] = "o",
-        ['п'] = "p", ['р'] = "r", ['с'] = "s", ['т'] = "t", ['у'] = "u", ['ф'] = "f", ['х'] = "h", ['ц'] = "ts",
-        ['ч'] = "ch", ['ш'] = "sh", ['щ'] = "sch", ['ъ'] = "", ['ы'] = "y", ['ь'] = "", ['э'] = "e", ['ю'] = "yu",
-        ['я'] = "ya"
-    };
+    // Supergroup and channel ids are -100XXXXXXXXXX; t.me/c links take the XXXXXXXXXX part
+    private const long SupergroupIdOffset = -1_000_000_000_000;
 
     // Keep Cyrillic unescaped so the history doesn't blow up the token count
     private static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
@@ -48,7 +39,10 @@ public class ChatHistoryChatTool : IChatTool
                              "поиск по text с его именем вернёт только то, что о нём говорят другие. " +
                              "Твои собственные прошлые ответы в выдачу не попадают. " +
                              "При выводах опирайся в первую очередь на недавние сообщения: они точнее отражают, " +
-                             "что человек думает и чем живёт сейчас; старые — лишь фон.",
+                             "что человек думает и чем живёт сейчас; старые — лишь фон. " +
+                             "Если спрашивают, где или когда кто-то что-то писал («где это он такое говорил?», «скинь ссылку»), " +
+                             "найди это сообщение и дай ссылку на него: к link_prefix из ответа допиши id сообщения. " +
+                             "Ссылку бери только из результатов поиска, не выдумывай id.",
         functionParameters: BinaryData.FromObjectAsJson(new
         {
             type = "object",
@@ -98,12 +92,14 @@ public class ChatHistoryChatTool : IChatTool
 
     private readonly IMessageRepository _messageRepository;
     private readonly long _chatId;
+    private readonly string? _linkPrefix;
     private readonly ILogger<ChatHistoryChatTool> _logger;
 
     public ChatHistoryChatTool(IMessageRepository messageRepository, long chatId, ILogger<ChatHistoryChatTool> logger)
     {
         _messageRepository = messageRepository;
         _chatId = chatId;
+        _linkPrefix = GetLinkPrefix(chatId);
         _logger = logger;
     }
 
@@ -143,16 +139,15 @@ public class ChatHistoryChatTool : IChatTool
 
         if (userId == null && author != null)
         {
-            var authors = FindAuthors(await _messageRepository.GetChatAuthorsAsync(_chatId, сancellationToken), author);
-            var normalizedAuthor = author.Trim().TrimStart('@');
-            var exactMatch = authors.FirstOrDefault(a => string.Equals(a.Username, normalizedAuthor, StringComparison.OrdinalIgnoreCase));
+            var authors = ChatAuthorMatcher.Find(await _messageRepository.GetChatAuthorsAsync(_chatId, сancellationToken), author);
+            var exactMatch = ChatAuthorMatcher.FindExactUsername(authors, author);
 
             _logger.LogInformation("Author \"{Author}\" (search key \"{Key}\") matched {Count} chat members: {Candidates}",
-                author, ToSearchKey(author), authors.Count, authors.Count == 0 ? "none" : string.Join(", ", authors.Select(FormatCandidate)));
+                author, ChatAuthorMatcher.ToSearchKey(author), authors.Count, authors.Count == 0 ? "none" : string.Join(", ", authors.Select(ChatAuthorMatcher.FormatCandidate)));
 
             if (exactMatch != null)
             {
-                _logger.LogInformation("Author \"{Author}\" resolved by exact username to {Candidate}", author, FormatCandidate(exactMatch));
+                _logger.LogInformation("Author \"{Author}\" resolved by exact username to {Candidate}", author, ChatAuthorMatcher.FormatCandidate(exactMatch));
                 userId = exactMatch.UserId;
             }
             else if (authors.Count == 0)
@@ -164,7 +159,7 @@ public class ChatHistoryChatTool : IChatTool
                     note = $"В чате нет участника «{author}». Не подставляй сообщения других людей (и собеседника) вместо него: " +
                            "если кто-то из списка ниже явно тот, кого имели в виду, повтори поиск с его user_id, иначе спроси у собеседника",
                     chat_members = (await _messageRepository.GetChatAuthorsAsync(_chatId, сancellationToken))
-                        .Take(MaxAuthorCandidates * 3)
+                        .Take(ChatAuthorMatcher.MaxCandidates * 3)
                         .Select(a => new { user_id = a.UserId, username = a.Username, name = $"{a.FirstName} {a.LastName}".Trim() })
                 }, JsonOptions);
             }
@@ -185,7 +180,7 @@ public class ChatHistoryChatTool : IChatTool
             }
             else
             {
-                _logger.LogInformation("Author \"{Author}\" resolved to the only match {Candidate}", author, FormatCandidate(authors[0]));
+                _logger.LogInformation("Author \"{Author}\" resolved to the only match {Candidate}", author, ChatAuthorMatcher.FormatCandidate(authors[0]));
                 userId = authors[0].UserId;
             }
         }
@@ -208,87 +203,46 @@ public class ChatHistoryChatTool : IChatTool
             messages.Count, messages[0].MessageDate, messages[^1].MessageDate, string.Join(", ", authorStats));
 
         // One line per message instead of a JSON object: with hundreds of messages the field names alone cost thousands of tokens
+        const string order = "от старых к новым: последние строки — самые свежие, им отдавай приоритет";
+        if (_linkPrefix == null)
+        {
+            return JsonSerializer.Serialize(new
+            {
+                count = messages.Count,
+                format = "дата время (UTC) | автор | текст",
+                order,
+                messages = messages.Select(m => $"{FormatDate(m)} | {FormatAuthor(m.User)} | {m.Text}")
+            }, JsonOptions);
+        }
+
+        // Only the id per line: the full link on every one of hundreds of lines would cost far more tokens
         return JsonSerializer.Serialize(new
         {
             count = messages.Count,
-            format = "дата время (UTC) | автор | текст",
-            order = "от старых к новым: последние строки — самые свежие, им отдавай приоритет",
-            messages = messages.Select(m =>
-                $"{m.MessageDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} | {FormatAuthor(m.User)} | {m.Text}")
+            format = "id | дата время (UTC) | автор | текст",
+            order,
+            link_prefix = _linkPrefix,
+            link_example = $"{_linkPrefix}{messages[^1].Id}",
+            messages = messages.Select(m => $"{m.Id} | {FormatDate(m)} | {FormatAuthor(m.User)} | {m.Text}")
         }, JsonOptions);
     }
 
-    internal static List<ChatAuthor> FindAuthors(List<ChatAuthor> chatAuthors, string author)
-    {
-        var key = ToSearchKey(author);
-        if (key.Length == 0)
-            return [];
-
-        var matches = chatAuthors
-            .Where(a => new[] { a.Username, a.FirstName, a.LastName, $"{a.FirstName} {a.LastName}" }
-                .Any(name => ToSearchKey(name).Contains(key)))
-            .Take(MaxAuthorCandidates)
-            .ToList();
-        if (matches.Count > 0)
-            return matches;
-
-        // Nicknames and typos ("некита" for "Никита", "вова" vs "вава"): allow a couple of letters to differ
-        var maxDistance = key.Length <= 3 ? 0 : key.Length <= 6 ? 1 : 2;
-        if (maxDistance == 0)
-            return [];
-
-        return chatAuthors
-            .Where(a => new[] { a.Username, a.FirstName, a.LastName }
-                .Any(name => ContainsApproximately(ToSearchKey(name), key, maxDistance)))
-            .Take(MaxAuthorCandidates)
-            .ToList();
-    }
-
-    /// <summary>Whether some substring of <paramref name="value"/> is within <paramref name="maxDistance"/> edits of <paramref name="key"/>.</summary>
-    private static bool ContainsApproximately(string value, string key, int maxDistance)
-    {
-        if (value.Length == 0)
-            return false;
-
-        // Sellers' approximate substring matching: the match may start anywhere in value, so row 0 costs nothing
-        var previous = new int[value.Length + 1];
-        var current = new int[value.Length + 1];
-        for (var i = 1; i <= key.Length; i++)
-        {
-            current[0] = i;
-            for (var j = 1; j <= value.Length; j++)
-            {
-                var cost = key[i - 1] == value[j - 1] ? 0 : 1;
-                current[j] = Math.Min(Math.Min(current[j - 1] + 1, previous[j] + 1), previous[j - 1] + cost);
-            }
-            (previous, current) = (current, previous);
-        }
-
-        return previous.Min() <= maxDistance;
-    }
-
     /// <summary>
-    /// Brings a name to a comparable form: lowercase latin letters and digits only,
-    /// so "N. T. G." and "нтг" both become "ntg".
+    /// Base of a link to a message in the chat, like https://t.me/c/2680016267/. Only supergroups have
+    /// such links (they open for chat members), so for other chats there is nothing to link to.
     /// </summary>
-    private static string ToSearchKey(string? value)
+    private static string? GetLinkPrefix(long chatId)
     {
-        if (string.IsNullOrEmpty(value))
-            return string.Empty;
-
-        var builder = new StringBuilder(value.Length);
-        foreach (var c in value.ToLowerInvariant())
+        if (chatId > SupergroupIdOffset)
         {
-            if (CyrillicToLatin.TryGetValue(c, out var latin))
-                builder.Append(latin);
-            else if (char.IsLetterOrDigit(c))
-                builder.Append(c);
+            return null;
         }
-        return builder.ToString();
+
+        return $"https://t.me/c/{SupergroupIdOffset - chatId}/";
     }
 
-    private static string FormatCandidate(ChatAuthor author) =>
-        $"{$"{author.FirstName} {author.LastName}".Trim()} (@{author.Username}, id {author.UserId}, {author.MessageCount} msgs)";
+    private static string FormatDate(MessageEntity message) =>
+        message.MessageDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
 
     private static string FormatAuthor(UserEntity? user)
     {

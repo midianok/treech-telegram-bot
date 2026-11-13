@@ -99,7 +99,7 @@ public class UserProfileChatTool : IChatTool
         else if (!string.IsNullOrWhiteSpace(username))
         {
             var normalizedUsername = username.Trim().TrimStart('@');
-            var candidates = ChatHistoryChatTool.FindAuthors(chatAuthors, username);
+            var candidates = ChatAuthorMatcher.Find(chatAuthors, username);
             member = candidates.FirstOrDefault(a => string.Equals(a.Username, normalizedUsername, StringComparison.OrdinalIgnoreCase));
             if (member == null && candidates.Count > 1)
             {

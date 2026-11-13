@@ -17,6 +17,9 @@ public class MessageEntity
     public string? Text { get; set; }
 
     public string? StickerId { get; set; }
+
+    /// <summary>Emoji the sticker is associated with; known only for stickers saved after this column appeared.</summary>
+    public string? StickerEmoji { get; set; }
     
     public long? ReplyToMessageId { get; set; }
     

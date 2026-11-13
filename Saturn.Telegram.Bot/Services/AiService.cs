@@ -11,7 +11,7 @@ namespace Saturn.Bot.Service.Services;
 
 public class AiService : IAiService
 {
-    private const int MaxToolIterations = 3;
+    private const int MaxToolIterations = 10;
     // Long answers (roasts, summaries of a person) need well over 500 tokens, or they get cut mid-sentence
     private const int MaxOutputTokens = 2000;
     private const int MaxLoggedMessageLength = 300;

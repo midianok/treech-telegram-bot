@@ -322,6 +322,11 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasAnnotation("Npgsql:TsVectorConfig", "russian")
                         .HasAnnotation("Npgsql:TsVectorProperties", new[] { "Text" });
 
+                    b.Property<string>("StickerEmoji")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("sticker_emoji");
+
                     b.Property<string>("StickerId")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
@@ -411,6 +416,68 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasName("pk_operation_calls");
 
                     b.ToTable("operation_calls", (string)null);
+                });
+
+            modelBuilder.Entity("Saturn.Telegram.Db.Entities.ReminderEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ChatId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("chat_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("CreatedByUserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTime>("RemindAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("remind_at");
+
+                    b.Property<long?>("RequestMessageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("request_message_id");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("text");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reminders");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_reminders_created_by_user_id");
+
+                    b.HasIndex("RemindAt")
+                        .HasDatabaseName("ix_reminders_remind_at")
+                        .HasFilter("sent_at IS NULL");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_reminders_user_id");
+
+                    b.HasIndex("ChatId", "CreatedByUserId")
+                        .HasDatabaseName("ix_reminders_chat_id_created_by_user_id");
+
+                    b.ToTable("reminders", (string)null);
                 });
 
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.UserEntity", b =>
@@ -560,6 +627,27 @@ namespace Saturn.Telegram.Db.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_namorevo_gore_scores_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Saturn.Telegram.Db.Entities.ReminderEntity", b =>
+                {
+                    b.HasOne("Saturn.Telegram.Db.Entities.UserEntity", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_reminders_users_created_by_user_id");
+
+                    b.HasOne("Saturn.Telegram.Db.Entities.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_reminders_users_user_id");
+
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("User");
                 });

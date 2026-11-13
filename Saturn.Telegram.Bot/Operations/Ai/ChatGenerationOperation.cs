@@ -7,6 +7,7 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Telegram.Lib.Exceptions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Saturn.Telegram.Lib.Attributes;
@@ -31,6 +32,8 @@ public class ChatGenerationOperation : IOperation
         "Когда подкалываешь, прожариваешь, описываешь или оцениваешь человека, загляни и в его профиль (описание и аватарку), " +
         "но не пересказывай и не упоминай их: никаких «на аватарке ты…», «у тебя на фото…», «в био написано…». " +
         "Сделай из них выводы о человеке (чем увлекается, как себя подаёт, что ценит) и вплетай в шутки как то, что ты и так о нём знаешь. " +
+        "Исключение — ссылки на сообщения: если спрашивают, где или когда кто-то что-то писал, или просят ссылку, " +
+        "дай ссылку на найденное сообщение (одну или несколько, если их несколько подходящих). " +
         "Сообщения помечены автором в квадратных скобках. Твой собеседник — автор последнего сообщения; " +
         "люди, о которых он спрашивает или чьи сообщения ты нашёл, — другие участники чата, не путай их с ним. " +
         "Отвечай собеседнику, а о других говори в третьем лице, если тебя не просят обратиться к ним напрямую. " +
@@ -42,7 +45,11 @@ public class ChatGenerationOperation : IOperation
         "Тогда вместо ответа задай один короткий вопрос, а если есть варианты — перечисли их. " +
         "Примеры: спрашивают погоду, а город неизвестен и в истории его не найти — спроси город; " +
         "поиск по истории нашёл несколько подходящих участников — перечисли их (имя и username) и спроси, кого имели в виду. " +
-        "Если можно разумно предположить или вопрос и так понятен — отвечай сразу, не переспрашивай.";
+        "Если можно разумно предположить или вопрос и так понятен — отвечай сразу, не переспрашивай. " +
+        "Ты не только пишешь текст, но и можешь действовать в чате как живой участник: ставить реакции, слать стикеры, " +
+        "рисовать картинки, запускать опросы и ставить напоминания. Делай это, когда просят или когда это и правда к месту, " +
+        "а не в каждом ответе. Если реакции или стикера достаточно и добавить нечего, ответь пустым текстом — " +
+        "тогда бот ничего не напишет. Не описывай словами то, что сделал («ставлю реакцию», «отправляю стикер»).";
 
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
@@ -50,9 +57,8 @@ public class ChatGenerationOperation : IOperation
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IReadOnlyList<IChatTool> _tools;
+    private readonly ChatToolFactory _chatToolFactory;
     private readonly ILogger<ChatGenerationOperation> _logger;
-    private readonly ILogger<ChatHistoryChatTool> _chatHistoryToolLogger;
-    private readonly ILogger<UserProfileChatTool> _userProfileToolLogger;
     private readonly string _invokeCommand;
     private readonly string _botUsername;
 
@@ -63,10 +69,9 @@ public class ChatGenerationOperation : IOperation
         IChatCachedRepository chatCachedRepository,
         IMessageRepository messageRepository,
         IEnumerable<IChatTool> tools,
+        ChatToolFactory chatToolFactory,
         IOptions<BotOptions> botOptions,
-        ILogger<ChatGenerationOperation> logger,
-        ILogger<ChatHistoryChatTool> chatHistoryToolLogger,
-        ILogger<UserProfileChatTool> userProfileToolLogger)
+        ILogger<ChatGenerationOperation> logger)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
@@ -74,9 +79,8 @@ public class ChatGenerationOperation : IOperation
         _chatCachedRepository = chatCachedRepository;
         _messageRepository = messageRepository;
         _tools = tools.ToList();
+        _chatToolFactory = chatToolFactory;
         _logger = logger;
-        _chatHistoryToolLogger = chatHistoryToolLogger;
-        _userProfileToolLogger = userProfileToolLogger;
         _invokeCommand = botOptions.Value.InvokeCommand;
         _botUsername = botOptions.Value.BotUsername;
     }
@@ -158,10 +162,8 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new UserChatMessage(requestText));
         }
 
-        var tools = _tools
-            .Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id, _chatHistoryToolLogger))
-            .Append(new UserProfileChatTool(_telegramBotClient, _aiService, _messageRepository, msg.Chat.Id, _userProfileToolLogger))
-            .ToList();
+        var toolContext = new ChatToolContext(msg);
+        var tools = _tools.Concat(_chatToolFactory.Create(toolContext)).ToList();
         _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, reply photo {HasPhoto}",
             chatEntity.AiAgent?.Name ?? "none", senderName, replyPhoto != null);
         // Tool calls make the answer take well over the 5 seconds a single "typing" action lasts
@@ -171,6 +173,18 @@ public class ChatGenerationOperation : IOperation
         if (result != rawResult)
         {
             _logger.LogInformation("Markdown stripped from the answer: {Before} -> {After} chars", rawResult.Length, result.Length);
+        }
+
+        if (string.IsNullOrWhiteSpace(result))
+        {
+            if (!toolContext.ActionTaken)
+            {
+                throw new AiEmptyResponseException();
+            }
+
+            // The model answered with a reaction, sticker or the like and had nothing to add
+            _logger.LogInformation("Empty text answer after a chat action, sending nothing");
+            return;
         }
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
