@@ -55,7 +55,8 @@ public class MessageRepository : IMessageRepository
 
         var query = dbContext.Messages
             .Include(m => m.User)
-            .Where(m => m.ChatId == chatId && m.Text != null);
+            // The bot's own past answers are excluded so the model doesn't treat its earlier inventions as chat facts
+            .Where(m => m.ChatId == chatId && !m.IsBot && m.Text != null);
 
         if (userId != null)
             query = query.Where(m => m.UserId == userId);
