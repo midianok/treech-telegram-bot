@@ -81,7 +81,7 @@ public class MessageRepository : IMessageRepository
 
         var substringPattern = $"%{EscapeLikePattern(trimmedText)}%";
         return await TakeLatestAsync(
-            query.Where(m => EF.Functions.ILike(m.Text!, substringPattern)),
+            query.Where(m => EF.Functions.ILike(m.Text!, substringPattern, LikeEscapeCharacter)),
             limit,
             cancellationToken);
     }
@@ -93,8 +93,8 @@ public class MessageRepository : IMessageRepository
         return await dbContext.Messages
             .Where(m => m.ChatId == chatId && m.User != null)
             .GroupBy(m => new { m.UserId, m.User!.Username, m.User.FirstName, m.User.LastName })
+            .OrderByDescending(g => g.Count())
             .Select(g => new ChatAuthor(g.Key.UserId, g.Key.Username, g.Key.FirstName, g.Key.LastName, g.Count()))
-            .OrderByDescending(a => a.MessageCount)
             .ToListAsync(cancellationToken);
     }
 
@@ -112,7 +112,9 @@ public class MessageRepository : IMessageRepository
         return messages.OrderBy(m => m.MessageDate).ToList();
     }
 
+    // Npgsql emits ESCAPE '' unless the escape character is passed explicitly
+    private const string LikeEscapeCharacter = @"\";
+
     private static string EscapeLikePattern(string value) =>
-        // Backslash is the default LIKE escape character in PostgreSQL
         value.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
 }
