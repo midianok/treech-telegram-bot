@@ -62,9 +62,9 @@ public class ImageDescriptionOperation : IOperation
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
 
-        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
         var replyMessageId = msg.ReplyToMessage?.Id ?? msg.Id;
-        var result = await _aiService.CompleteChatAsync(messages, сancellationToken);
+        var result = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
+            () => _aiService.CompleteChatAsync(messages, сancellationToken), сancellationToken);
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.Markdown, new ReplyParameters { MessageId = replyMessageId }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply);

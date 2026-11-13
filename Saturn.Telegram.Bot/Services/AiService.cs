@@ -1,7 +1,6 @@
 ﻿using System.ClientModel;
 using System.Diagnostics;
 using System.Net;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
@@ -19,18 +18,15 @@ public class AiService : IAiService
     private const int MaxLoggedToolResultLength = 1500;
 
     private readonly ChatClient _chatClient;
-    private readonly ChatClient _visionChatClient;
     private readonly AtlasCloudImageClient _atlasCloudImageClient;
     private readonly ILogger<AiService> _logger;
 
     public AiService(
-        [FromKeyedServices("chat")] ChatClient chatClient,
-        [FromKeyedServices("vision")] ChatClient visionChatClient,
+        ChatClient chatClient,
         AtlasCloudImageClient atlasCloudImageClient,
         ILogger<AiService> logger)
     {
         _chatClient = chatClient;
-        _visionChatClient = visionChatClient;
         _atlasCloudImageClient = atlasCloudImageClient;
         _logger = logger;
     }
@@ -40,22 +36,13 @@ public class AiService : IAiService
             .SelectMany(m => m.Content)
             .Any(p => p.Kind == ChatMessageContentPartKind.Image);
 
-    private ChatClient SelectClient(IList<ChatMessage> messages) =>
-        HasImageContent(messages) ? _visionChatClient : _chatClient;
-
-    private static ChatCompletionOptions CreateOptions(IList<ChatMessage> messages)
+    private static ChatCompletionOptions CreateOptions()
     {
-        var options = new ChatCompletionOptions();
-        if (HasImageContent(messages))
-        {
-            // The vision model (deepseek-v4.1-flash) reasons by default: slower, pricier, and may spend the whole
-            // output budget on reasoning, leaving content empty.
-#pragma warning disable SCME0001
-            options.Patch.Set("$.enable_thinking"u8, false);
-#pragma warning restore SCME0001
-        }
-
-        return options;
+        // grok-4.7 always reasons; low effort roughly halves output tokens with no visible loss in answer quality
+        // and leaves more of the output budget for the answer itself
+#pragma warning disable OPENAI001
+        return new ChatCompletionOptions { ReasoningEffortLevel = ChatReasoningEffortLevel.Low };
+#pragma warning restore OPENAI001
     }
 
     public async Task<string> CompleteChatAsync(IList<ChatMessage> messages, CancellationToken сancellationToken)
@@ -64,7 +51,7 @@ public class AiService : IAiService
         {
             LogRequest(messages, 0);
             var stopwatch = Stopwatch.StartNew();
-            var result = await SelectClient(messages).CompleteChatAsync(messages, CreateOptions(messages), сancellationToken);
+            var result = await _chatClient.CompleteChatAsync(messages, CreateOptions(), сancellationToken);
             LogCompletion(result.Value, 0, stopwatch.Elapsed);
             return result.Value.Content.FirstOrDefault()?.Text ?? throw new AiEmptyResponseException();
         }
@@ -87,7 +74,7 @@ public class AiService : IAiService
     {
         try
         {
-            var options = CreateOptions(messages);
+            var options = CreateOptions();
             options.MaxOutputTokenCount = MaxOutputTokens;
             foreach (var tool in tools)
             {
@@ -108,7 +95,7 @@ public class AiService : IAiService
                 }
 
                 var stopwatch = Stopwatch.StartNew();
-                var result = await SelectClient(messagesList).CompleteChatAsync(messagesList, options, сancellationToken);
+                var result = await _chatClient.CompleteChatAsync(messagesList, options, сancellationToken);
                 var completion = result.Value;
                 LogCompletion(completion, iteration + 1, stopwatch.Elapsed);
 
@@ -233,8 +220,8 @@ public class AiService : IAiService
         if (!_logger.IsEnabled(LogLevel.Information))
             return;
 
-        _logger.LogInformation("AI request: {Count} messages, {ToolCount} tools, model client {Client}",
-            messages.Count, toolCount, HasImageContent(messages) ? "vision" : "chat");
+        _logger.LogInformation("AI request: {Count} messages, {ToolCount} tools, image {HasImage}",
+            messages.Count, toolCount, HasImageContent(messages));
         for (var i = 0; i < messages.Count; i++)
         {
             _logger.LogInformation("AI request message {Index}/{Count} [{Role}]: {Text}",

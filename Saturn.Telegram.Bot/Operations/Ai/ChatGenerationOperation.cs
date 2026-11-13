@@ -152,11 +152,12 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new UserChatMessage(requestText));
         }
 
-        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
         var tools = _tools.Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id, _chatHistoryToolLogger)).ToList();
         _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, reply photo {HasPhoto}",
             chatEntity.AiAgent?.Name ?? "none", senderName, replyPhoto != null);
-        var rawResult = await _aiService.CompleteChatAsync(messages, tools, сancellationToken);
+        // Tool calls make the answer take well over the 5 seconds a single "typing" action lasts
+        var rawResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
+            () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
         var result = rawResult.StripMarkdown();
         if (result != rawResult)
         {

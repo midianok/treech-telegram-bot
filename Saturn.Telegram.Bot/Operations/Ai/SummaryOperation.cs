@@ -6,6 +6,7 @@ using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
 using System.Text;
+using Saturn.Telegram.Lib.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -106,7 +107,8 @@ public class SummaryOperation : IOperation
 
         chatMessages.Add(new UserChatMessage(prompt));
 
-        var result = await _aiService.CompleteChatAsync(chatMessages, сancellationToken);
+        var result = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
+            () => _aiService.CompleteChatAsync(chatMessages, сancellationToken), сancellationToken);
 
         await _telegramBotClient.SendMessage(msg.Chat, result,
             ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);

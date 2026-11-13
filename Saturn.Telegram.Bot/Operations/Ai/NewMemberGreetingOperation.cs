@@ -41,13 +41,14 @@ public class NewMemberGreetingOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
+        var greeting = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing, async () =>
+        {
+            var members = await Task.WhenAll(msg.NewChatMembers!
+                .Where(x => !x.IsBot)
+                .Select(async user => (User: user, AvatarDescription: await DescribeAvatarAsync(user, сancellationToken))));
 
-        var members = await Task.WhenAll(msg.NewChatMembers!
-            .Where(x => !x.IsBot)
-            .Select(async user => (User: user, AvatarDescription: await DescribeAvatarAsync(user, сancellationToken))));
-
-        var greeting = await GenerateGreetingAsync(msg.Chat.Id, members, сancellationToken);
+            return await GenerateGreetingAsync(msg.Chat.Id, members, сancellationToken);
+        }, сancellationToken);
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, greeting,
             ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);

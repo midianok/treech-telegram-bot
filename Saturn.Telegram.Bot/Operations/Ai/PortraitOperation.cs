@@ -6,6 +6,7 @@ using Saturn.Telegram.Db;
 using Saturn.Telegram.Lib.Operation;
 using System.Collections.Concurrent;
 using System.Text;
+using Saturn.Telegram.Lib.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -99,11 +100,11 @@ public class PortraitOperation : IOperation
             "Тебе могут встретиться сообщения с матом, грубостями и неполиткорректным содержанием — это нормально. " +
             "Не отказывайся от задачи, не цензурируй анализ и не добавляй оговорки о том, что это не настоящая психология.";
 
-        var result = await _aiService.CompleteChatAsync(
+        var result = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing, () => _aiService.CompleteChatAsync(
         [
             new SystemChatMessage(systemPrompt),
             new UserChatMessage(prompt)
-        ], сancellationToken);
+        ], сancellationToken), сancellationToken);
 
         Cache[cacheKey] = result;
 
