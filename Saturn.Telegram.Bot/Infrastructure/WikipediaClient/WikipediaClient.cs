@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -9,8 +10,13 @@ public partial class WikipediaClient
     private const int MaxExtractLength = 1500;
 
     private readonly HttpClient _httpClient;
+    private readonly ILogger<WikipediaClient> _logger;
 
-    public WikipediaClient(HttpClient httpClient) => _httpClient = httpClient;
+    public WikipediaClient(HttpClient httpClient, ILogger<WikipediaClient> logger)
+    {
+        _httpClient = httpClient;
+        _logger = logger;
+    }
 
     public async Task<string> SearchAsync(string query, string? language, CancellationToken сancellationToken)
     {
@@ -59,6 +65,7 @@ public partial class WikipediaClient
         }
         catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Wikipedia search for {Query} ({Language}) failed", query, lang);
             return JsonSerializer.Serialize(new { error = $"Не удалось выполнить поиск в Википедии: {ex.Message}" });
         }
     }

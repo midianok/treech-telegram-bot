@@ -7,6 +7,7 @@ using Saturn.Telegram.Lib.Extensions;
 
 var builder = Host.CreateApplicationBuilder();
 
+builder.Logging.AddJsonConsoleLogging();
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.None);
 builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.None);
 builder.Services

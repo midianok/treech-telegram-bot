@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 
@@ -7,10 +8,12 @@ namespace Saturn.Telegram.Db.Repositories;
 public class MessageRepository : IMessageRepository
 {
     private readonly IDbContextFactory<SaturnContext> _dbContextFactory;
+    private readonly ILogger<MessageRepository> _logger;
     
-    public MessageRepository(IDbContextFactory<SaturnContext> dbContextFactory)
+    public MessageRepository(IDbContextFactory<SaturnContext> dbContextFactory, ILogger<MessageRepository> logger)
     {
         _dbContextFactory = dbContextFactory;
+        _logger = logger;
     }
     public async Task<List<MessageEntity>> GetMessageChainAsync(long chatId, long messageId)
     {
@@ -78,13 +81,19 @@ public class MessageRepository : IMessageRepository
             limit,
             cancellationToken);
         if (fullTextMatches.Count > 0)
+        {
+            _logger.LogInformation("Message search for \"{Text}\": full-text found {Count}", trimmedText, fullTextMatches.Count);
             return fullTextMatches;
+        }
 
         var substringPattern = $"%{EscapeLikePattern(trimmedText)}%";
-        return await TakeLatestAsync(
+        var substringMatches = await TakeLatestAsync(
             query.Where(m => EF.Functions.ILike(m.Text!, substringPattern, LikeEscapeCharacter)),
             limit,
             cancellationToken);
+        _logger.LogInformation("Message search for \"{Text}\": full-text found nothing, substring fallback found {Count}",
+            trimmedText, substringMatches.Count);
+        return substringMatches;
     }
 
     public async Task<List<ChatAuthor>> GetChatAuthorsAsync(long chatId, CancellationToken cancellationToken)

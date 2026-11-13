@@ -1,63 +1,65 @@
-using Microsoft.AspNetCore.HttpOverrides;
-using Saturn.Telegram.Api.Middleware;
-using Saturn.Telegram.Api.Services;
+using Microsoft.AspNetCore.HttpOverrides;
+using Saturn.Telegram.Api.Middleware;
+using Saturn.Telegram.Api.Services;
 using Saturn.Telegram.Db.Extensions;
-using Telegram.Bot;
-
+using Saturn.Telegram.Lib.Extensions;
+using Telegram.Bot;
+
 var builder = WebApplication.CreateBuilder(args);
-
-var pathBase = builder.Configuration["PATH_BASE"];
-
-builder.Services.AddSaturnContext(builder.Configuration);
-
-var botToken = builder.Configuration["BOT_TOKEN"] ?? throw new InvalidOperationException("BOT_TOKEN is not configured");
-
-builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botToken));
-builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<ChatMembershipService>();
-builder.Services.AddControllers();
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("https://routefabric.ru", "https://midianok.github.io")
-            .AllowAnyHeader()
-            .AllowAnyMethod());
-});
-
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-}
-
-var app = builder.Build();
-
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-
-if (!string.IsNullOrWhiteSpace(pathBase))
-{
-    if (!pathBase.StartsWith('/'))
-    {
-        pathBase = "/" + pathBase;
-    }
-
-    app.UsePathBase(pathBase);
-}
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger(options => options.RouteTemplate = "swagger/{documentName}/swagger.json");
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("v1/swagger.json", "Saturn API v1"));
-}
-else
-{
-    app.UseCors();
-    app.UseMiddleware<TelegramInitDataMiddleware>();
-}
-
-app.MapControllers();
-
-app.Run("http://0.0.0.0:5001");
+builder.Logging.AddJsonConsoleLogging();
+
+var pathBase = builder.Configuration["PATH_BASE"];
+
+builder.Services.AddSaturnContext(builder.Configuration);
+
+var botToken = builder.Configuration["BOT_TOKEN"] ?? throw new InvalidOperationException("BOT_TOKEN is not configured");
+
+builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botToken));
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ChatMembershipService>();
+builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins("https://routefabric.ru", "https://midianok.github.io")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+}
+
+var app = builder.Build();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+if (!string.IsNullOrWhiteSpace(pathBase))
+{
+    if (!pathBase.StartsWith('/'))
+    {
+        pathBase = "/" + pathBase;
+    }
+
+    app.UsePathBase(pathBase);
+}
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger(options => options.RouteTemplate = "swagger/{documentName}/swagger.json");
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("v1/swagger.json", "Saturn API v1"));
+}
+else
+{
+    app.UseCors();
+    app.UseMiddleware<TelegramInitDataMiddleware>();
+}
+
+app.MapControllers();
+
+app.Run("http://0.0.0.0:5001");

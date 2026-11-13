@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace Saturn.Bot.Service.Infrastructure.CurrencyClient;
@@ -5,8 +6,13 @@ namespace Saturn.Bot.Service.Infrastructure.CurrencyClient;
 public class CurrencyClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<CurrencyClient> _logger;
 
-    public CurrencyClient(HttpClient httpClient) => _httpClient = httpClient;
+    public CurrencyClient(HttpClient httpClient, ILogger<CurrencyClient> logger)
+    {
+        _httpClient = httpClient;
+        _logger = logger;
+    }
 
     public async Task<string> GetRatesAsync(string from, string[] to, CancellationToken сancellationToken)
     {
@@ -34,6 +40,7 @@ public class CurrencyClient
         }
         catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Exchange rate request for {From} failed", from);
             return $$$"""{"error":"Не удалось получить курсы валют: {{{ex.Message}}}"}""";
         }
     }

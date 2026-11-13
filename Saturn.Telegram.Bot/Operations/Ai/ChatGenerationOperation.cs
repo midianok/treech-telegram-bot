@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
@@ -24,8 +25,12 @@ public class ChatGenerationOperation : IOperation
     private const string BehaviorPrompt =
         "Отвечай обычным текстом без markdown: без звёздочек, решёток, обратных кавычек и заголовков. " +
         "Всё, что узнал через инструменты (история чата, погода, Википедия и т.д.), подавай так, будто знал это и так: " +
-        "не упоминай инструменты, поиск и историю чата, не пиши «смотрю по истории», «судя по истории чата», " +
-        "«я поискал», не спрашивай, видел ли кто-то историю. " +
+        "не упоминай инструменты, поиск, историю чата, логи и переписку как источник: никаких «смотрю по истории», " +
+        "«судя по истории чата», «я поискал», «я погрузился в твой чат-лог», «почитал твою переписку», " +
+        "не спрашивай, видел ли кто-то историю. " +
+        "Сообщения помечены автором в квадратных скобках. Твой собеседник — автор последнего сообщения; " +
+        "люди, о которых он спрашивает или чьи сообщения ты нашёл, — другие участники чата, не путай их с ним. " +
+        "Отвечай собеседнику, а о других говори в третьем лице, если тебя не просят обратиться к ним напрямую. " +
         "Уточняющий вопрос задавай только когда без него ответить нельзя: не хватает важной информации " +
         "и её не выяснить из переписки выше или через инструменты (например, по истории чата). " +
         "Тогда вместо ответа задай один короткий вопрос, а если есть варианты — перечисли их. " +
@@ -39,6 +44,8 @@ public class ChatGenerationOperation : IOperation
     private readonly IChatCachedRepository _chatCachedRepository;
     private readonly IMessageRepository _messageRepository;
     private readonly IReadOnlyList<IChatTool> _tools;
+    private readonly ILogger<ChatGenerationOperation> _logger;
+    private readonly ILogger<ChatHistoryChatTool> _chatHistoryToolLogger;
     private readonly string _invokeCommand;
     private readonly string _botUsername;
 
@@ -49,7 +56,9 @@ public class ChatGenerationOperation : IOperation
         IChatCachedRepository chatCachedRepository,
         IMessageRepository messageRepository,
         IEnumerable<IChatTool> tools,
-        IOptions<BotOptions> botOptions)
+        IOptions<BotOptions> botOptions,
+        ILogger<ChatGenerationOperation> logger,
+        ILogger<ChatHistoryChatTool> chatHistoryToolLogger)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
@@ -57,6 +66,8 @@ public class ChatGenerationOperation : IOperation
         _chatCachedRepository = chatCachedRepository;
         _messageRepository = messageRepository;
         _tools = tools.ToList();
+        _logger = logger;
+        _chatHistoryToolLogger = chatHistoryToolLogger;
         _invokeCommand = botOptions.Value.InvokeCommand;
         _botUsername = botOptions.Value.BotUsername;
     }
@@ -104,9 +115,11 @@ public class ChatGenerationOperation : IOperation
                         return new UserChatMessage(text);
                     });
                 messages.AddRange(chainMessages);
+                _logger.LogInformation("Reply to bot: loaded chain of {Count} messages", messageChain.Count);
             }
             else
             {
+                _logger.LogInformation("Reply to bot: message {MessageId} not found in DB, using only the replied text", msg.ReplyToMessage.Id);
                 messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
             }
         }
@@ -121,22 +134,31 @@ public class ChatGenerationOperation : IOperation
         {
             messages.Add(new SystemChatMessage($"Тебе сейчас пишет: {senderName}"));
         }
+        // Same "[sender]: text" marking as in the reply chain, so the model doesn't mix up the sender with people found in history
+        var requestText = string.IsNullOrEmpty(senderName) ? request : $"[{senderName}]: {request}";
         var replyPhoto = msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize);
         if (replyPhoto != null)
         {
             var imageBytes = await _telegramBotClient.DownloadFileAsync(replyPhoto.FileId, сancellationToken);
             messages.Add(new UserChatMessage(
                 ChatMessageContentPart.CreateImagePart(new BinaryData(imageBytes), "image/jpeg", ChatImageDetailLevel.Auto),
-                ChatMessageContentPart.CreateTextPart(request)));
+                ChatMessageContentPart.CreateTextPart(requestText)));
         }
         else
         {
-            messages.Add(new UserChatMessage(request));
+            messages.Add(new UserChatMessage(requestText));
         }
 
         await _telegramBotClient.SendChatAction(msg.Chat, ChatAction.Typing, cancellationToken: сancellationToken);
-        var tools = _tools.Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id)).ToList();
-        var result = (await _aiService.CompleteChatAsync(messages, tools, сancellationToken)).StripMarkdown();
+        var tools = _tools.Append(new ChatHistoryChatTool(_messageRepository, msg.Chat.Id, _chatHistoryToolLogger)).ToList();
+        _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, reply photo {HasPhoto}",
+            chatEntity.AiAgent?.Name ?? "none", senderName, replyPhoto != null);
+        var rawResult = await _aiService.CompleteChatAsync(messages, tools, сancellationToken);
+        var result = rawResult.StripMarkdown();
+        if (result != rawResult)
+        {
+            _logger.LogInformation("Markdown stripped from the answer: {Before} -> {After} chars", rawResult.Length, result.Length);
+        }
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply);

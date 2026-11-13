@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Entities;
@@ -97,11 +98,13 @@ public class ChatHistoryChatTool : IChatTool
 
     private readonly IMessageRepository _messageRepository;
     private readonly long _chatId;
+    private readonly ILogger<ChatHistoryChatTool> _logger;
 
-    public ChatHistoryChatTool(IMessageRepository messageRepository, long chatId)
+    public ChatHistoryChatTool(IMessageRepository messageRepository, long chatId, ILogger<ChatHistoryChatTool> logger)
     {
         _messageRepository = messageRepository;
         _chatId = chatId;
+        _logger = logger;
     }
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
@@ -144,8 +147,12 @@ public class ChatHistoryChatTool : IChatTool
             var normalizedAuthor = author.Trim().TrimStart('@');
             var exactMatch = authors.FirstOrDefault(a => string.Equals(a.Username, normalizedAuthor, StringComparison.OrdinalIgnoreCase));
 
+            _logger.LogInformation("Author \"{Author}\" (search key \"{Key}\") matched {Count} chat members: {Candidates}",
+                author, ToSearchKey(author), authors.Count, authors.Count == 0 ? "none" : string.Join(", ", authors.Select(FormatCandidate)));
+
             if (exactMatch != null)
             {
+                _logger.LogInformation("Author \"{Author}\" resolved by exact username to {Candidate}", author, FormatCandidate(exactMatch));
                 userId = exactMatch.UserId;
             }
             else if (authors.Count == 0)
@@ -169,15 +176,27 @@ public class ChatHistoryChatTool : IChatTool
             }
             else
             {
+                _logger.LogInformation("Author \"{Author}\" resolved to the only match {Candidate}", author, FormatCandidate(authors[0]));
                 userId = authors[0].UserId;
             }
         }
+
+        _logger.LogInformation("Searching chat {ChatId} history: user {UserId}, text \"{Text}\", from {From:yyyy-MM-dd}, to {To:yyyy-MM-dd}, limit {Limit}",
+            _chatId, userId, text, from, to?.AddDays(-1), limit);
 
         var messages = await _messageRepository.SearchMessagesAsync(_chatId, userId, from, to, text, limit, сancellationToken);
         if (messages.Count == 0)
         {
             return """{"messages":[],"note":"Ничего не найдено"}""";
         }
+
+        // Not the whole result (it can be hundreds of messages) — just enough to see who and what period the model got
+        var authorStats = messages
+            .GroupBy(m => FormatAuthor(m.User))
+            .OrderByDescending(g => g.Count())
+            .Select(g => $"{g.Key}: {g.Count()}");
+        _logger.LogInformation("Chat history search returned {Count} messages from {First:yyyy-MM-dd HH:mm} to {Last:yyyy-MM-dd HH:mm}, by author: {Authors}",
+            messages.Count, messages[0].MessageDate, messages[^1].MessageDate, string.Join(", ", authorStats));
 
         // One line per message instead of a JSON object: with hundreds of messages the field names alone cost thousands of tokens
         return JsonSerializer.Serialize(new
@@ -222,6 +241,9 @@ public class ChatHistoryChatTool : IChatTool
         }
         return builder.ToString();
     }
+
+    private static string FormatCandidate(ChatAuthor author) =>
+        $"{$"{author.FirstName} {author.LastName}".Trim()} (@{author.Username}, id {author.UserId}, {author.MessageCount} msgs)";
 
     private static string FormatAuthor(UserEntity? user)
     {
