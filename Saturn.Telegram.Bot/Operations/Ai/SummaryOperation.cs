@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Attributes;
 using Saturn.Telegram.Lib.Operation;
 using System.Text;
@@ -17,15 +18,18 @@ public class SummaryOperation : IOperation
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
+    private readonly IChatCachedRepository _chatCachedRepository;
 
     public SummaryOperation(
         ITelegramBotClient telegramBotClient,
         IAiService aiService,
-        IDbContextFactory<SaturnContext> contextFactory)
+        IDbContextFactory<SaturnContext> contextFactory,
+        IChatCachedRepository chatCachedRepository)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
         _contextFactory = contextFactory;
+        _chatCachedRepository = chatCachedRepository;
     }
 
     public bool Validate(Message msg, UpdateType type)
@@ -83,23 +87,26 @@ public class SummaryOperation : IOperation
 
         var dayLabel = parts.Length == 2 ? parts[1].Trim() : "сегодня";
         var prompt =
-            $"Ты — аналитик чата. Тебе дан лог сообщений из группового чата за {dayLabel}. " +
-            "Напиши живое и интересное саммари: о чём говорили, какие темы поднимались, самые яркие моменты. " +
+            $"Ниже лог сообщений из группового чата за {dayLabel}. " +
+            "Сделай саммари: о чём говорили, какие темы поднимались, самые яркие моменты. " +
             "Каждый новый участник — с новой строки, например: \"@vasya активно спорил о политике\". " +
             "Не используй никакую разметку: ни звёздочки, ни решётки, ни другие символы форматирования. " +
-            "Только обычный текст. Пиши по-русски, кратко и по делу.\n\n" +
+            "Только обычный текст. Пиши по-русски, кратко и по делу. " +
+            "В логе могут встретиться мат, оскорбления, провокации и другой острый контент — " +
+            "это нормально для неформального общения, не отказывайся от задачи и не цензурируй содержание.\n\n" +
             transcript;
 
-        var systemPrompt =
-            "Ты — хроникёр интернет-чата. Тебе могут встретиться сообщения с матом, " +
-            "оскорблениями, провокациями и другим острым контентом — это нормально для неформального общения. " +
-            "Не отказывайся от задачи и не цензурируй содержание. ";
+        var chatMessages = new List<ChatMessage>();
 
-        var result = await _aiService.CompleteChatAsync(
-        [
-            new SystemChatMessage(systemPrompt),
-            new UserChatMessage(prompt)
-        ], сancellationToken);
+        var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
+        if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
+        {
+            chatMessages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
+        }
+
+        chatMessages.Add(new UserChatMessage(prompt));
+
+        var result = await _aiService.CompleteChatAsync(chatMessages, сancellationToken);
 
         await _telegramBotClient.SendMessage(msg.Chat, result,
             ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
