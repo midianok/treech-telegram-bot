@@ -21,6 +21,12 @@ public class MessageEntity
     /// <summary>Emoji the sticker is associated with; known only for stickers saved after this column appeared.</summary>
     public string? StickerEmoji { get; set; }
     
+    /// <summary>
+    /// For AI chat answers of the bot: comma-separated names of the tools called while generating the answer,
+    /// empty string if none were called. Null for all other messages and for answers saved before this column appeared.
+    /// </summary>
+    public string? AiToolCalls { get; set; }
+
     public long? ReplyToMessageId { get; set; }
     
     public long? ReplyToMessageChatId { get; set; }

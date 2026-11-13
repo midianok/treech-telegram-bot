@@ -22,7 +22,7 @@ public class SaveMessageService : ISaveMessageService
         _logger = logger;
     }
 
-    public async Task SaveMessageAsync(Message msg)
+    public async Task SaveMessageAsync(Message msg, IReadOnlyCollection<string>? aiToolCalls = null)
     {
         try
         {
@@ -32,7 +32,7 @@ public class SaveMessageService : ISaveMessageService
 
             await ProcessUser(msg, db);
             await ProcessChat(msg, db);
-            await ProcessMessage(msg, db);
+            await ProcessMessage(msg, aiToolCalls, db);
 
             await db.SaveChangesAsync();
         }
@@ -42,9 +42,10 @@ public class SaveMessageService : ISaveMessageService
         }
     }
     
-    private async Task ProcessMessage(Message msg, SaturnContext db)
+    private async Task ProcessMessage(Message msg, IReadOnlyCollection<string>? aiToolCalls, SaturnContext db)
     {
         var entity = CreateMessage(msg);
+        entity.AiToolCalls = aiToolCalls == null ? null : string.Join(",", aiToolCalls);
         var exists = await db.Messages.AnyAsync(m => m.Id == msg.Id && m.ChatId == msg.Chat.Id);
         if (exists)
         {

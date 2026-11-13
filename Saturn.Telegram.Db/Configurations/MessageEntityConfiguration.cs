@@ -27,6 +27,9 @@ public class MessageEntityConfiguration : IEntityTypeConfiguration<MessageEntity
         builder.Property(x => x.StickerEmoji)
             .HasMaxLength(16);
 
+        builder.Property(x => x.AiToolCalls)
+            .HasMaxLength(512);
+
         builder.HasOne(x => x.Chat)
             .WithMany(x => x.Messages)
             .HasForeignKey(x => x.ChatId);

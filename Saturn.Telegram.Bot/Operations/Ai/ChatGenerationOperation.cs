@@ -50,8 +50,12 @@ public class ChatGenerationOperation : IOperation
         ДЕЙСТВИЯ
         - Можешь ставить реакции, отправлять стикеры и изображения, создавать опросы и напоминания.
         - Делай это по просьбе или когда действительно уместно.
+        - Действие происходит только тогда, когда ты вызываешь инструмент. Просят напомнить, запустить опрос, нарисовать — вызови инструмент в этом же ответе, а не обещай.
+        - Никогда не пиши, что поставил, запустил, нарисовал или отправил, если в этом ответе не вызвал инструмент.
+        - О напоминаниях (есть ли они, сколько осталось) говори только по результату list_reminders, а не по памяти или прошлым ответам.
+        - После твоих прошлых ответов в истории указано, какие инструменты ты на самом деле вызывал. Если там сказано, что не вызывал, — действия не было, даже если в ответе написано иначе.
         - Если достаточно реакции или стикера, верни пустой текст.
-        - Не сообщай текстом о выполненных действиях.
+        - Не сообщай текстом о выполненных действиях. Исключение — напоминания: коротко подтверди, кому и когда напомнишь.
         
         ПОВЕДЕНИЕ
         - Веди себя как полноценный участник сообщества, а не справочный бот.
@@ -126,16 +130,23 @@ public class ChatGenerationOperation : IOperation
             var messageChain = await _messageRepository.GetMessageChainAsync(msg.Chat.Id, msg.ReplyToMessage!.Id);
             if (messageChain.Count > 0)
             {
-                var chainMessages = messageChain.OrderBy(x => x.MessageDate)
-                    .Select(x =>
+                foreach (var chainMessage in messageChain.OrderBy(x => x.MessageDate))
+                {
+                    if (chainMessage.IsBot)
                     {
-                        if (x.IsBot)
-                            return (ChatMessage)new AssistantChatMessage(x.Text ?? string.Empty);
-                        var senderName = GetSenderName(x.User);
-                        var text = string.IsNullOrEmpty(senderName) ? x.Text : $"[{senderName}]: {x.Text}";
-                        return new UserChatMessage(text);
-                    });
-                messages.AddRange(chainMessages);
+                        messages.Add(new AssistantChatMessage(chainMessage.Text ?? string.Empty));
+                        var toolCallsNote = GetToolCallsNote(chainMessage.AiToolCalls);
+                        if (toolCallsNote != null)
+                        {
+                            messages.Add(new SystemChatMessage(toolCallsNote));
+                        }
+                        continue;
+                    }
+
+                    var chainSenderName = GetSenderName(chainMessage.User);
+                    var text = string.IsNullOrEmpty(chainSenderName) ? chainMessage.Text : $"[{chainSenderName}]: {chainMessage.Text}";
+                    messages.Add(new UserChatMessage(text));
+                }
                 _logger.LogInformation("Reply to bot: loaded chain of {Count} messages", messageChain.Count);
             }
             else
@@ -175,8 +186,9 @@ public class ChatGenerationOperation : IOperation
         _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, reply photo {HasPhoto}",
             chatEntity.AiAgent?.Name ?? "none", senderName, replyPhoto != null);
         // Tool calls make the answer take well over the 5 seconds a single "typing" action lasts
-        var rawResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
+        var aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
             () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
+        var rawResult = aiResult.Text;
         var result = rawResult.StripMarkdown();
         if (result != rawResult)
         {
@@ -196,7 +208,24 @@ public class ChatGenerationOperation : IOperation
         }
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
-        await _saveMessageService.SaveMessageAsync(reply);
+        await _saveMessageService.SaveMessageAsync(reply, aiResult.ToolCalls);
+    }
+
+    /// <summary>
+    /// The history keeps only the text of past answers, so the model can't tell a real action from a claimed one
+    /// and starts imitating «поставил напоминание» without calling the tool. Tell it what was actually called.
+    /// </summary>
+    private static string? GetToolCallsNote(string? aiToolCalls)
+    {
+        if (aiToolCalls == null)
+        {
+            // Not an AI chat answer or saved before tool calls were recorded
+            return null;
+        }
+
+        return aiToolCalls.Length == 0
+            ? "В ответе выше ты не вызывал инструментов: никаких действий (напоминаний, опросов, реакций, стикеров, картинок) не было, даже если в тексте сказано иначе."
+            : $"В ответе выше ты вызывал инструменты: {aiToolCalls.Replace(",", ", ")}.";
     }
 
     private static string GetSenderName(User? user)

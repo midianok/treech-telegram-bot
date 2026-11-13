@@ -299,6 +299,11 @@ namespace Saturn.Telegram.Db.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("chat_id");
 
+                    b.Property<string>("AiToolCalls")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("ai_tool_calls");
+
                     b.Property<bool>("IsBot")
                         .HasColumnType("boolean")
                         .HasColumnName("is_bot");

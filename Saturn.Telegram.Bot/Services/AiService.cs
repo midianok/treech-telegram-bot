@@ -67,7 +67,7 @@ public class AiService : IAiService
         }
     }
 
-    public async Task<string> CompleteChatAsync(
+    public async Task<AiChatResult> CompleteChatAsync(
         IList<ChatMessage> messages,
         IReadOnlyList<IChatTool> tools,
         CancellationToken сancellationToken)
@@ -82,6 +82,7 @@ public class AiService : IAiService
             }
 
             var messagesList = messages.ToList();
+            var calledTools = new List<string>();
             LogRequest(messagesList, tools.Count);
 
             for (var iteration = 0; ; iteration++)
@@ -106,8 +107,8 @@ public class AiService : IAiService
                         _logger.LogWarning("AI answer cut off by the output limit of {Limit} tokens", MaxOutputTokens);
                     }
 
-                    return completion.Content.FirstOrDefault()?.Text ?? 
-                           throw new AiEmptyResponseException();
+                    var text = completion.Content.FirstOrDefault()?.Text ?? throw new AiEmptyResponseException();
+                    return new AiChatResult(text, calledTools);
                 }
                 
                 messagesList.Add(new AssistantChatMessage(completion));
@@ -116,6 +117,11 @@ public class AiService : IAiService
                 {
                     _logger.LogInformation("Tool call {ToolName} (iteration {Iteration}) with arguments {Arguments}",
                         toolCall.FunctionName, iteration + 1, toolCall.FunctionArguments.ToString());
+
+                    if (!calledTools.Contains(toolCall.FunctionName))
+                    {
+                        calledTools.Add(toolCall.FunctionName);
+                    }
 
                     var toolResult = await ExecuteToolAsync(tools, toolCall, сancellationToken);
                     messagesList.Add(new ToolChatMessage(toolCall.Id, toolResult));
