@@ -4,6 +4,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 
 namespace Saturn.Bot.Service.Services.Tools;
@@ -14,8 +15,8 @@ namespace Saturn.Bot.Service.Services.Tools;
 /// </summary>
 public class ChatHistoryChatTool : IChatTool
 {
-    private const int DefaultLimit = 30;
-    private const int MaxLimit = 100;
+    private const int DefaultLimit = 500;
+    private const int MaxLimit = 1000;
     private const int MaxAuthorCandidates = 10;
     private const string DateFormat = "yyyy-MM-dd";
 
@@ -79,7 +80,9 @@ public class ChatHistoryChatTool : IChatTool
                 limit = new
                 {
                     type = "integer",
-                    description = $"Максимум сообщений в ответе, по умолчанию {DefaultLimit}, не больше {MaxLimit}"
+                    description = $"Максимум сообщений в ответе, по умолчанию {DefaultLimit}, не больше {MaxLimit}. " +
+                                  "Для обобщённых вопросов о человеке или теме («что думаешь о нём», «как он обычно общается») " +
+                                  "бери много; для точечных («что он писал вчера про работу») можно меньше"
                 }
             }
         })
@@ -169,17 +172,13 @@ public class ChatHistoryChatTool : IChatTool
             return """{"messages":[],"note":"Ничего не найдено"}""";
         }
 
+        // One line per message instead of a JSON object: with hundreds of messages the field names alone cost thousands of tokens
         return JsonSerializer.Serialize(new
         {
-            messages = messages.Select(m => new
-            {
-                date = m.MessageDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture),
-                user_id = m.UserId,
-                username = m.User?.Username,
-                name = $"{m.User?.FirstName} {m.User?.LastName}".Trim(),
-                is_bot = m.IsBot,
-                text = m.Text
-            })
+            count = messages.Count,
+            format = "дата время (UTC) | автор | текст",
+            messages = messages.Select(m =>
+                $"{m.MessageDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)} | {FormatAuthor(m.User)} | {m.Text}")
         }, JsonOptions);
     }
 
@@ -214,6 +213,15 @@ public class ChatHistoryChatTool : IChatTool
                 builder.Append(c);
         }
         return builder.ToString();
+    }
+
+    private static string FormatAuthor(UserEntity? user)
+    {
+        if (user == null)
+            return "?";
+
+        var name = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrEmpty(user.Username) ? name : $"{name} (@{user.Username})";
     }
 
     private static string? GetString(JsonElement root, string propertyName)
