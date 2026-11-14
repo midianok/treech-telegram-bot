@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 
@@ -12,7 +13,6 @@ public class ReactionChatTool : IChatTool
 {
     private const int MaxReactionsPerRequest = 3;
 
-    // Bots can only use the standard reaction set
     private static readonly string[] AllowedEmoji =
     [
         "❤", "👍", "👎", "🔥", "🥰", "👏", "😁", "🤔", "🤯", "😱", "🤬", "😢", "🎉", "🤩", "🤮", "💩", "🙏", "👌", "🕊",

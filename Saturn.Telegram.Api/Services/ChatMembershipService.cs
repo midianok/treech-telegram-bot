@@ -14,7 +14,6 @@ public class ChatMembershipService(
         if (!userId.HasValue)
             return true;
 
-        // Личный чат с ботом: chatId совпадает с userId, проверять членство не нужно.
         if (chatId == userId.Value)
             return true;
 
@@ -31,8 +30,6 @@ public class ChatMembershipService(
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // Сбой Telegram API не кешируем: иначе любые запросы игрока (в том числе отправка рекорда)
-            // отклоняются, пока не протухнет кеш.
             logger.LogWarning(ex, "GetChatMember failed for chat {ChatId}, user {UserId}", chatId, userId.Value);
             return false;
         }

@@ -92,7 +92,6 @@ public class SilenceOperation : IOperation
 
     private async Task BreakSilenceAsync(long chatId)
     {
-        // Try strategies in random order, use first one that produces a result
         var strategies = new Func<long, Task<string?>>[]
         {
             GenerateStoryAsync,
@@ -112,7 +111,6 @@ public class SilenceOperation : IOperation
         }
     }
 
-    // Strategy 1: random story using the chat's AI agent persona
     private async Task<string?> GenerateStoryAsync(long chatId)
     {
         var chatEntity = await _chatCachedRepository.GetAsync(chatId);
@@ -123,7 +121,6 @@ public class SilenceOperation : IOperation
         return await _aiService.CompleteChatAsync(messages, CancellationToken.None);
     }
 
-    // Strategy 2: question based on a random week of chat history
     private async Task<string?> GenerateDailyQuestionAsync(long chatId)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
@@ -157,7 +154,6 @@ public class SilenceOperation : IOperation
         ], CancellationToken.None);
     }
 
-    // Strategy 3: summary of a random past day with the date embedded naturally
     private async Task<string?> GenerateRandomDaySummaryAsync(long chatId)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();
@@ -208,7 +204,6 @@ public class SilenceOperation : IOperation
         ], CancellationToken.None);
     }
 
-    // Strategy 4: top words of a random active chat member
     private async Task<string?> GenerateTopWordsAsync(long chatId)
     {
         await using var db = await _contextFactory.CreateDbContextAsync();

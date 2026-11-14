@@ -13,7 +13,6 @@ public class ReminderEntityConfiguration : IEntityTypeConfiguration<ReminderEnti
         builder.Property(x => x.Text)
             .HasMaxLength(1000);
 
-        // The sender polls for due reminders, so only pending ones need to be indexed
         builder.HasIndex(x => x.RemindAt)
             .HasFilter("sent_at IS NULL");
 

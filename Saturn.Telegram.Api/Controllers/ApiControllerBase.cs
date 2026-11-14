@@ -56,7 +56,6 @@ public abstract class ApiControllerBase : ControllerBase
         }
         catch (DbUpdateException)
         {
-            // Параллельный запрос (или бот) успел создать пользователя.
             db.Entry(entity).State = EntityState.Detached;
             return await db.Users.FindAsync([userId], cancellationToken);
         }

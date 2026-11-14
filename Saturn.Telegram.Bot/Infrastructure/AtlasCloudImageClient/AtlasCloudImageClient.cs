@@ -78,7 +78,6 @@ public class AtlasCloudImageClient
 
         var image = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
 
-        // Grok не умеет отключать звук — генерирует его всегда, поэтому generateAudio учитывается только в fallback.
         var primaryRequest = new
         {
             model = ImageToVideoModel,

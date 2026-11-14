@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 
@@ -18,10 +19,8 @@ public class ChatHistoryChatTool : IChatTool
     private const int DefaultLimit = 500;
     private const int MaxLimit = 1000;
     private const string DateFormat = "yyyy-MM-dd";
-    // Supergroup and channel ids are -100XXXXXXXXXX; t.me/c links take the XXXXXXXXXX part
     private const long SupergroupIdOffset = -1_000_000_000_000;
 
-    // Keep Cyrillic unescaped so the history doesn't blow up the token count
     private static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     public string FunctionName => "search_chat_history";
@@ -129,7 +128,6 @@ public class ChatHistoryChatTool : IChatTool
         {
             if (!TryParseDate(dateToString, out var dateTo))
                 return """{"error":"date_to должна быть в формате yyyy-MM-dd"}""";
-            // Inclusive end date: take everything before the start of the next day
             to = dateTo.AddDays(1);
         }
 
@@ -152,7 +150,6 @@ public class ChatHistoryChatTool : IChatTool
             }
             else if (authors.Count == 0)
             {
-                // Show who is in the chat, so the model asks the user instead of roasting someone else's messages
                 return JsonSerializer.Serialize(new
                 {
                     messages = Array.Empty<object>(),
@@ -194,7 +191,6 @@ public class ChatHistoryChatTool : IChatTool
             return """{"messages":[],"note":"Ничего не найдено"}""";
         }
 
-        // Not the whole result (it can be hundreds of messages) — just enough to see who and what period the model got
         var authorStats = messages
             .GroupBy(m => FormatAuthor(m.User))
             .OrderByDescending(g => g.Count())
@@ -202,7 +198,6 @@ public class ChatHistoryChatTool : IChatTool
         _logger.LogInformation("Chat history search returned {Count} messages from {First:yyyy-MM-dd HH:mm} to {Last:yyyy-MM-dd HH:mm}, by author: {Authors}",
             messages.Count, messages[0].MessageDate, messages[^1].MessageDate, string.Join(", ", authorStats));
 
-        // One line per message instead of a JSON object: with hundreds of messages the field names alone cost thousands of tokens
         const string order = "от старых к новым: последние строки — самые свежие, им отдавай приоритет";
         if (_linkPrefix == null)
         {
@@ -215,7 +210,6 @@ public class ChatHistoryChatTool : IChatTool
             }, JsonOptions);
         }
 
-        // Only the id per line: the full link on every one of hundreds of lines would cost far more tokens
         return JsonSerializer.Serialize(new
         {
             count = messages.Count,

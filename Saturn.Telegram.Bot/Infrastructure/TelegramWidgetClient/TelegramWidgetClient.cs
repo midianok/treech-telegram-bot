@@ -28,10 +28,8 @@ public class TelegramWidgetClient
 
     private async Task CallAsync(string method, object request, CancellationToken cancellationToken)
     {
-        // Buffered body (with Content-Length) rather than PostAsJsonAsync's chunked stream.
         using var content = new StringContent(JsonSerializer.Serialize(request, request.GetType(), JsonOptions), Encoding.UTF8, "application/json");
 
-        // Relative URI: BaseAddress is ".../bot<token>/", so the token never appears in exception messages.
         using var response = await _httpClient.PostAsync(method, content, cancellationToken);
 
         BotApiResponse? body;

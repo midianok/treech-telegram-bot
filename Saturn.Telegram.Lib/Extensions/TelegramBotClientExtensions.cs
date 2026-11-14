@@ -6,7 +6,6 @@ namespace Saturn.Telegram.Lib.Extensions;
 
 public static class TelegramBotClientExtensions
 {
-    // Telegram shows a chat action for at most 5 seconds, so it has to be repeated while the work runs
     private static readonly TimeSpan ChatActionInterval = TimeSpan.FromSeconds(4);
 
     /// <summary>
@@ -45,7 +44,6 @@ public static class TelegramBotClientExtensions
             }
             catch (Exception)
             {
-                // The indicator is cosmetic: a failed action must not break the answer, just try again later
                 try
                 {
                     await Task.Delay(ChatActionInterval, cancellationToken);

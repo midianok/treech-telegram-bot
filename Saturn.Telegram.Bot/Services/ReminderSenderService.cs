@@ -66,11 +66,9 @@ public class ReminderSenderService : BackgroundService
             }
             catch (ApiRequestException ex) when (ex.ErrorCode != (int)HttpStatusCode.TooManyRequests)
             {
-                // Telegram refused for good (bot kicked, chat gone): retrying won't help, so drop the reminder
                 _logger.LogWarning(ex, "Reminder {ReminderId} for chat {ChatId} rejected by Telegram, dropping it", reminder.Id, reminder.ChatId);
             }
 
-            // Flood limits, network failures and the like throw past this point and leave the reminder pending for the next tick
             await _reminderRepository.MarkSentAsync(reminder.Id, DateTime.UtcNow, cancellationToken);
         }
     }

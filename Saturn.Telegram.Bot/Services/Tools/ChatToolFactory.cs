@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -52,12 +53,10 @@ public class ChatToolFactory
         return
         [
             new ChatHistoryChatTool(_messageRepository, request.Chat.Id, _loggerFactory.CreateLogger<ChatHistoryChatTool>()),
-            new UserProfileChatTool(_telegramBotClient, _aiService, _messageRepository, request.Chat.Id,
-                _loggerFactory.CreateLogger<UserProfileChatTool>()),
+            new UserProfileChatTool(_telegramBotClient, _aiService, _messageRepository, request.Chat.Id, _loggerFactory.CreateLogger<UserProfileChatTool>()),
             new ReactionChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<ReactionChatTool>()),
             new StickerChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<StickerChatTool>()),
-            new ImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageQuota, context, isAdmin,
-                _loggerFactory.CreateLogger<ImageChatTool>()),
+            new ImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageQuota, context, isAdmin, _loggerFactory.CreateLogger<ImageChatTool>()),
             new PollChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<PollChatTool>()),
             new ReminderChatTool(_messageRepository, _reminderRepository, context, _loggerFactory.CreateLogger<ReminderChatTool>()),
             new ListRemindersChatTool(_reminderRepository, context),

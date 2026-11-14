@@ -16,8 +16,6 @@ public class CoinTransactionEntityConfiguration : IEntityTypeConfiguration<CoinT
         builder.Property(x => x.ExternalPaymentId)
             .HasMaxLength(256);
 
-        // Postgres treats NULLs as distinct, so charges/refunds (null id) coexist while
-        // top-ups stay unique per Telegram payment charge — the idempotency guard.
         builder.HasIndex(x => x.ExternalPaymentId)
             .IsUnique();
 

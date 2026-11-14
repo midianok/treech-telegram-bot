@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Lib.Exceptions;
 using Telegram.Bot;
 using Telegram.Bot.Types;

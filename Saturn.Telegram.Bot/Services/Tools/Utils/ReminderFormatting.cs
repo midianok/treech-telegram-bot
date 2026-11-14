@@ -1,7 +1,7 @@
 using System.Globalization;
 using Saturn.Telegram.Db.Entities;
 
-namespace Saturn.Bot.Service.Services.Tools;
+namespace Saturn.Bot.Service.Services.Tools.Utils;
 
 /// <summary>Shared bits of the reminder tools: time zones and how reminders are shown to the model.</summary>
 public static class ReminderFormatting

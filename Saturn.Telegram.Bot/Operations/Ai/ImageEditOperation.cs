@@ -20,7 +20,6 @@ public class ImageEditOperation : IOperation
     private const string CommandPrefix2 = "измени";
     private const int MaxImages = 3;
 
-    // Free tier: one edit per user per hour. Hitting the limit opens the paywall.
     private static readonly TimeSpan FreeEditPeriod = TimeSpan.FromHours(1);
 
     private readonly ITelegramBotClient _telegramBotClient;
@@ -86,14 +85,12 @@ public class ImageEditOperation : IOperation
         var prompt = text[prefix.Length..].Trim();
         var userId = msg.From.Id;
 
-        // Admin: unlimited and free.
         if (IsAdmin(msg))
         {
             await RunEditAsync(msg, prompt, сancellationToken);
             return;
         }
 
-        // Free tier: one edit per hour. A failed edit must not burn the quota.
         if (TryConsumeFreeEdit(userId))
         {
             try
@@ -108,7 +105,6 @@ public class ImageEditOperation : IOperation
             return;
         }
 
-        // Paid tier: charge coins, refund on any failure (moderation, timeout, budget...).
         if (await _coinRepository.TryChargeAsync(userId, _sparkShop.ImageEditCost, nameof(ImageEditOperation), сancellationToken))
         {
             try
@@ -123,7 +119,6 @@ public class ImageEditOperation : IOperation
             return;
         }
 
-        // No free quota and not enough coins: offer to top up.
         await _sparkShop.SendOfferAsync(msg, "Бесплатное редактирование на этот час использовано, а трич койнов не хватает.", сancellationToken);
     }
 

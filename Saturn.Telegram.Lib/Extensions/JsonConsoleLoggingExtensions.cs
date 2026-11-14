@@ -18,7 +18,6 @@ public static class JsonConsoleLoggingExtensions
             options.IncludeScopes = true;
             options.JsonWriterOptions = new JsonWriterOptions
             {
-                // Keep Cyrillic readable instead of \uXXXX escapes
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
         });

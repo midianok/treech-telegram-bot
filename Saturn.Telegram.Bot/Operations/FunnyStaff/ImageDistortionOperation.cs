@@ -119,7 +119,6 @@ public class ImageDistortionOperation : IOperation
             }
             catch
             {
-                 /* ignore rate limit errors */
             }
         };
     }

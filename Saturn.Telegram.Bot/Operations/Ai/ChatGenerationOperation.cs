@@ -5,6 +5,7 @@ using Saturn.Bot.Service.Extensions;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Exceptions;
@@ -15,7 +16,6 @@ using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-// ReSharper disable MethodSupportsCancellation
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
@@ -36,8 +36,7 @@ public class ChatGenerationOperation : IOperation
         - Учитывай локальные шутки, мемы и предыдущие обсуждения.
         
         УЧАСТНИКИ
-        - Автор последнего сообщения — твой собеседник. Автор каждой строки указан в квадратных скобках.
-        - Не путай участников и не приписывай им чужие слова.
+        - Автор каждой строки указан в квадратных скобках.
         - Обращайся к собеседнику, об остальных говори в третьем лице.
         - При прожарке, описании или оценке человека учитывай его собственные сообщения и профиль (био, аватарку). Используй выводы для персонализации, но никогда не упоминай источники.
         - Если сообщений нужного человека нет, не выдумывай факты.
@@ -166,7 +165,6 @@ public class ChatGenerationOperation : IOperation
         {
             messages.Add(new SystemChatMessage($"Тебе сейчас пишет: {senderName}"));
         }
-        // Same "[sender]: text" marking as in the reply chain, so the model doesn't mix up the sender with people found in history
         var requestText = string.IsNullOrEmpty(senderName) ? request : $"[{senderName}]: {request}";
         var replyPhoto = msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize);
         if (replyPhoto != null)
@@ -185,7 +183,6 @@ public class ChatGenerationOperation : IOperation
         var tools = _tools.Concat(_chatToolFactory.Create(toolContext)).ToList();
         _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, reply photo {HasPhoto}",
             chatEntity.AiAgent?.Name ?? "none", senderName, replyPhoto != null);
-        // Tool calls make the answer take well over the 5 seconds a single "typing" action lasts
         var aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
             () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
         var rawResult = aiResult.Text;
@@ -202,7 +199,6 @@ public class ChatGenerationOperation : IOperation
                 throw new AiEmptyResponseException();
             }
 
-            // The model answered with a reaction, sticker or the like and had nothing to add
             _logger.LogInformation("Empty text answer after a chat action, sending nothing");
             return;
         }
@@ -219,7 +215,6 @@ public class ChatGenerationOperation : IOperation
     {
         if (aiToolCalls == null)
         {
-            // Not an AI chat answer or saved before tool calls were recorded
             return null;
         }
 

@@ -12,6 +12,7 @@ using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib;
@@ -32,7 +33,6 @@ public static class ServiceCollectionsExtensions
             return new TelegramBotClient(botToken);
         }).AddSingleton<ITelegramBotClient>(sp => sp.GetRequiredService<TelegramBotClient>());
         
-        // One model for text and images: grok-4.7 accepts image input
         serviceCollection.AddSingleton<ChatClient>(_ =>
         {
             var apiKey = configuration.GetSectionOrThrow("ATLAS_CLOUD_API_KEY");
@@ -59,15 +59,12 @@ public static class ServiceCollectionsExtensions
             x.Timeout = TimeSpan.FromSeconds(10);
         });
 
-        // Wikimedia requires a descriptive User-Agent, otherwise requests may be throttled
         serviceCollection.AddHttpClient<WikipediaClient>(x =>
         {
             x.DefaultRequestHeaders.UserAgent.ParseAdd("SaturnBot/1.0 (Telegram bot)");
             x.Timeout = TimeSpan.FromSeconds(10);
         });
 
-        // Bot API 10.4 widget methods aren't in Telegram.Bot yet, so they go through a plain HttpClient
-        // to the Bot API beta, where widgets are available.
         serviceCollection.AddHttpClient<TelegramWidgetClient>(x =>
         {
             var botToken = configuration.GetSectionOrThrow("BOT_TOKEN");

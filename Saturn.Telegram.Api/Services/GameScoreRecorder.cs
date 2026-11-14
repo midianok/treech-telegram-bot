@@ -35,7 +35,6 @@ public static class GameScoreRecorder
 
         var previousScore = existing?.Score;
 
-        // Игроки, которые были на уровне или выше прежнего рекорда, а теперь ниже нового.
         var overtaken = await scores
             .Include(x => x.User)
             .Where(x => x.ChatId == chatId && x.UserId != userId && x.Score < score)
@@ -54,8 +53,6 @@ public static class GameScoreRecorder
         }
         else
         {
-            // Контекст настроен на NoTracking, поэтому изменение свойства не попадёт в SaveChanges —
-            // обновляем напрямую в БД. Условие по Score не даёт параллельному запросу понизить рекорд.
             await scores
                 .Where(x => x.UserId == userId && x.ChatId == chatId && x.Score < score)
                 .ExecuteUpdateAsync(s => s.SetProperty(x => x.Score, score), cancellationToken);

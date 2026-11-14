@@ -10,7 +10,6 @@ public class DateTimeChatTool : IChatTool
 {
     private const string DefaultTimeZone = "Europe/Moscow";
 
-    // Explicit names so the result doesn't depend on ICU / culture data in the container
     private static readonly string[] DayNames = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
     private static readonly string[] MonthNames = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
 

@@ -126,7 +126,6 @@ public class AnimateOperation : IOperation
         }
         catch (InvalidOperationException ex)
         {
-            // Статусное сообщение уже заменено текстом ошибки.
             _logger.LogError(ex, "Video generation failed");
         }
         catch (OperationCanceledException)

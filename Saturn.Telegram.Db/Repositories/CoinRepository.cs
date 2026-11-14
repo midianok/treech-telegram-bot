@@ -27,7 +27,6 @@ public class CoinRepository : ICoinRepository
         await using var db = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
-        // Conditional UPDATE locks the row and prevents overdraft under concurrency.
         var affected = await db.Users
             .Where(u => u.Id == userId && u.CoinBalance >= amount)
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.CoinBalance, u => u.CoinBalance - amount), cancellationToken);
@@ -105,7 +104,6 @@ public class CoinRepository : ICoinRepository
         }
         catch (DbUpdateException)
         {
-            // Unique index on external_payment_id: a concurrent delivery already credited this charge.
             await transaction.RollbackAsync(cancellationToken);
             return false;
         }

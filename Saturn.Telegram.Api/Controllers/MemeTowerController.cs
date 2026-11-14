@@ -43,8 +43,6 @@ public class MemeTowerController : ApiControllerBase
     [HttpPost("score")]
     public async Task<ActionResult<GameScoreResultDto>> AddScore([FromBody] AddMemeTowerScoreRequest request)
     {
-        // Не привязываемся к RequestAborted: игрок мог закрыть Mini App сразу после проигрыша,
-        // и обрыв соединения не должен отменять сохранение результата.
         var cancellationToken = CancellationToken.None;
 
         if (request.Score < 0)
@@ -96,7 +94,6 @@ public class MemeTowerController : ApiControllerBase
                 "Мемный трич",
                 $"https://t.me/{_botUsername}/{MiniAppShortName}?startapp={request.ChatId}"));
 
-        // Рекорд уже сохранён: сбой объявления в чате не должен превращаться в ошибку отправки результата.
         try
         {
             await _botClient.SendMessage(

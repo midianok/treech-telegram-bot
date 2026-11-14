@@ -12,7 +12,6 @@ namespace Saturn.Bot.Service.Services;
 public class AiService : IAiService
 {
     private const int MaxToolIterations = 10;
-    // Long answers (roasts, summaries of a person) need well over 500 tokens, or they get cut mid-sentence
     private const int MaxOutputTokens = 2000;
     private const int MaxLoggedMessageLength = 300;
     private const int MaxLoggedToolResultLength = 1500;
@@ -38,8 +37,6 @@ public class AiService : IAiService
 
     private static ChatCompletionOptions CreateOptions()
     {
-        // grok-4.7 always reasons; low effort roughly halves output tokens with no visible loss in answer quality
-        // and leaves more of the output budget for the answer itself
 #pragma warning disable OPENAI001
         return new ChatCompletionOptions { ReasoningEffortLevel = ChatReasoningEffortLevel.Low };
 #pragma warning restore OPENAI001
@@ -87,7 +84,6 @@ public class AiService : IAiService
 
             for (var iteration = 0; ; iteration++)
             {
-                // After the limit, forbid further tool calls so the model answers from what it has gathered
                 var toolLimitReached = iteration >= MaxToolIterations;
                 if (toolLimitReached)
                 {
@@ -211,7 +207,6 @@ public class AiService : IAiService
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // A broken tool shouldn't kill the whole answer: report it and let the model answer without it
             _logger.LogError(ex, "Tool {ToolName} failed with arguments {Arguments}", toolCall.FunctionName, toolCall.FunctionArguments.ToString());
             toolResult = """{"error":"Инструмент временно недоступен"}""";
         }

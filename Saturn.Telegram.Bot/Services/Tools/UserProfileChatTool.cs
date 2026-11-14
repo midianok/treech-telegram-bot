@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Telegram.Bot;
@@ -89,7 +90,6 @@ public class UserProfileChatTool : IChatTool
             ? usernameElement.GetString()
             : null;
 
-        // Only members of this chat: the tool must not become a way to look up arbitrary Telegram users
         var chatAuthors = await _messageRepository.GetChatAuthorsAsync(_chatId, сancellationToken);
         ChatAuthor? member;
         if (userId != null)
@@ -150,7 +150,6 @@ public class UserProfileChatTool : IChatTool
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            // Telegram refuses getChat for users the bot can't see; that's the same as a hidden bio for the model
             _logger.LogWarning(exception, "Failed to get bio of user {UserId}", userId);
             return null;
         }

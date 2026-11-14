@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
@@ -92,7 +93,6 @@ public class StickerChatTool : IChatTool
         }
         else
         {
-            // Emoji are only known for stickers saved recently; until then the chat's favourites are a safe bet
             sticker = stickers.Take(RandomPickAmong).ElementAt(Random.Shared.Next(Math.Min(RandomPickAmong, stickers.Count)));
         }
 
@@ -109,7 +109,6 @@ public class StickerChatTool : IChatTool
             return ToolArguments.Error("Не удалось отправить стикер");
         }
 
-        // Learn the emoji of old stickers saved before it was stored
         if (sticker.Emoji == null && !string.IsNullOrEmpty(sent.Sticker?.Emoji))
         {
             await _messageRepository.SetStickerEmojiAsync(sticker.StickerId, sent.Sticker.Emoji, сancellationToken);

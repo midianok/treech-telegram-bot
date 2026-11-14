@@ -1,6 +1,6 @@
 using Telegram.Bot.Types;
 
-namespace Saturn.Bot.Service.Services.Tools;
+namespace Saturn.Bot.Service.Services.Tools.Utils;
 
 /// <summary>State of one AI chat request shared by the tools that act in the chat.</summary>
 public class ChatToolContext

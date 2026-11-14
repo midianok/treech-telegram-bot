@@ -58,7 +58,6 @@ public class MessageRepository : IMessageRepository
 
         var query = dbContext.Messages
             .Include(m => m.User)
-            // The bot's own past answers are excluded so the model doesn't treat its earlier inventions as chat facts
             .Where(m => m.ChatId == chatId && !m.IsBot && m.Text != null);
 
         if (userId != null)
@@ -73,8 +72,6 @@ public class MessageRepository : IMessageRepository
         if (string.IsNullOrWhiteSpace(text))
             return await TakeLatestAsync(query, limit, cancellationToken);
 
-        // Full-text search handles Russian morphology ("машина" finds "машину"), but misses word fragments,
-        // slang and transliteration — fall back to a plain substring match when it finds nothing
         var trimmedText = text.Trim();
         var fullTextMatches = await TakeLatestAsync(
             query.Where(m => m.SearchVector!.Matches(EF.Functions.WebSearchToTsQuery("russian", trimmedText))),
@@ -144,7 +141,6 @@ public class MessageRepository : IMessageRepository
         return messages.OrderBy(m => m.MessageDate).ToList();
     }
 
-    // Npgsql emits ESCAPE '' unless the escape character is passed explicitly
     private const string LikeEscapeCharacter = @"\";
 
     private static string EscapeLikePattern(string value) =>

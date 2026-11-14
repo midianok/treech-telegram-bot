@@ -66,7 +66,6 @@ public class GenerationProgressService : IGenerationProgressService
         }
         catch (Exception ex) when (ex is AiContentModerationException or AiBudgetExhaustedException or AiEmptyResponseException)
         {
-            // Ответ пользователю на эти ошибки отправляет OperationManager.
             await TryDeleteAsync(statusMessage);
             throw;
         }
@@ -93,7 +92,6 @@ public class GenerationProgressService : IGenerationProgressService
             _ => status
         };
 
-        // AtlasCloud не отдаёт процент готовности — оцениваем по типичной длительности генерации.
         var percent = (int)Math.Min(MaxEstimatedPercent, elapsed / options.ExpectedDuration * 100);
         var filled = percent * BarLength / 100;
         var bar = new string('▓', filled) + new string('░', BarLength - filled);

@@ -1,12 +1,11 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 
-namespace Saturn.Bot.Service.Services.Tools;
+namespace Saturn.Bot.Service.Services.Tools.Utils;
 
 /// <summary>Helpers for reading tool call arguments and writing tool results.</summary>
 public static class ToolArguments
 {
-    // Keep Cyrillic and emoji unescaped so results stay readable and cheap in tokens
     public static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     public static string? GetString(JsonElement root, string propertyName)

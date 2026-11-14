@@ -24,7 +24,6 @@ public class WidgetOperation(
     private static readonly Lazy<string> RunnerHtml = new(() =>
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Media", "Widgets", "runner.html")));
 
-    // "/widget", or "/widget@BotUsername" in groups
     public bool Validate(Message msg, UpdateType type) =>
         msg.HasText(Command) ||
         (!string.IsNullOrEmpty(botOptions.Value.BotUsername) && msg.HasText($"{Command}@{botOptions.Value.BotUsername}"));

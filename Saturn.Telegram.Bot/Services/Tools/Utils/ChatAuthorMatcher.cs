@@ -1,7 +1,7 @@
 using System.Text;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 
-namespace Saturn.Bot.Service.Services.Tools;
+namespace Saturn.Bot.Service.Services.Tools.Utils;
 
 /// <summary>
 /// Finds chat members by a loosely written name: part of a username, first or last name,
@@ -38,7 +38,6 @@ public static class ChatAuthorMatcher
             return matches;
         }
 
-        // Nicknames and typos ("некита" for "Никита", "вова" vs "вава"): allow a couple of letters to differ
         var maxDistance = key.Length <= 3 ? 0 : key.Length <= 6 ? 1 : 2;
         if (maxDistance == 0)
         {
@@ -96,7 +95,6 @@ public static class ChatAuthorMatcher
             return false;
         }
 
-        // Sellers' approximate substring matching: the match may start anywhere in value, so row 0 costs nothing
         var previous = new int[value.Length + 1];
         var current = new int[value.Length + 1];
         for (var i = 1; i <= key.Length; i++)

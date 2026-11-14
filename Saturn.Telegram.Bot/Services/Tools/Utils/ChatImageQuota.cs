@@ -1,4 +1,4 @@
-namespace Saturn.Bot.Service.Services.Tools;
+namespace Saturn.Bot.Service.Services.Tools.Utils;
 
 /// <summary>Limits pictures the AI chat draws on request: one per user per period, like the «покажи» command.</summary>
 public class ChatImageQuota

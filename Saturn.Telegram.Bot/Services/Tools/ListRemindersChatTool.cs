@@ -1,6 +1,7 @@
 using System.Text.Json;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 
 namespace Saturn.Bot.Service.Services.Tools;

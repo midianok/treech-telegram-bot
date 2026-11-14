@@ -20,8 +20,6 @@ public class SparkShop : ISparkShop
     private const string BuyCallbackPrefix = "buy:";
     private const string BuyRubCallbackPrefix = "buyrub:";
 
-    // Top-up bundles (stars / rubles -> coins), see docs/monetisation-plan.md §3.
-    // Rub is null for bundles below the YooKassa minimum: they're sold for stars only.
     private static readonly SparkBundle[] Bundles =
     [
         new(Stars: 12, Rub: null, Sparks: 12),
@@ -117,7 +115,7 @@ public class SparkShop : ISparkShop
             msg.From.Id, sparks, payment.TelegramPaymentChargeId, cancellationToken);
         if (!credited)
         {
-            return; // duplicate delivery, already processed
+            return;
         }
 
         _logger.LogInformation(
@@ -152,7 +150,6 @@ public class SparkShop : ISparkShop
             title: "Трич койны",
             description: $"{bundle.Sparks} трич койнов для редактирования изображений",
             payload: $"{PayloadPrefix}:{bundle.Stars}:{bundle.Sparks}",
-            // Stars (XTR) require an empty provider token; RUB goes through YooKassa and is priced in kopecks.
             providerToken: rub ? _yookassaProviderToken : "",
             currency: rub ? RubCurrency : StarsCurrency,
             prices: [new LabeledPrice($"{bundle.Sparks} трич койнов", rub ? bundle.Rub!.Value * 100 : bundle.Stars)],
