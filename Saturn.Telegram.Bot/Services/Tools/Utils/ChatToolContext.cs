@@ -5,13 +5,17 @@ namespace Saturn.Bot.Service.Services.Tools.Utils;
 /// <summary>State of one AI chat request shared by the tools that act in the chat.</summary>
 public class ChatToolContext
 {
-    public ChatToolContext(Message request)
+    public ChatToolContext(Message request, IReadOnlyList<byte[]> images)
     {
         Request = request;
+        Images = images;
     }
 
     /// <summary>The message the bot is answering.</summary>
     public Message Request { get; }
+
+    /// <summary>Pictures the request is about: the replied photo and the photo attached to the request.</summary>
+    public IReadOnlyList<byte[]> Images { get; }
 
     /// <summary>
     /// The bot already did something visible (reaction, sticker, picture, poll, reminder),

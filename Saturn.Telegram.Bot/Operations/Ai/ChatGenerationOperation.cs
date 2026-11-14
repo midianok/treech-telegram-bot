@@ -47,12 +47,13 @@ public class ChatGenerationOperation : IOperation
         - При неоднозначности перечисли возможные варианты.
         
         ДЕЙСТВИЯ
-        - Можешь ставить реакции, отправлять стикеры и изображения, создавать опросы и напоминания.
+        - Можешь ставить реакции, отправлять стикеры, рисовать и редактировать изображения, создавать опросы и напоминания.
         - Делай это по просьбе или когда действительно уместно.
         - Действие происходит только тогда, когда ты вызываешь инструмент. Просят напомнить, запустить опрос, нарисовать — вызови инструмент в этом же ответе, а не обещай.
         - Никогда не пиши, что поставил, запустил, нарисовал или отправил, если в этом ответе не вызвал инструмент.
         - О напоминаниях (есть ли они, сколько осталось) говори только по результату list_reminders, а не по памяти или прошлым ответам.
         - После твоих прошлых ответов в истории указано, какие инструменты ты на самом деле вызывал. Если там сказано, что не вызывал, — действия не было, даже если в ответе написано иначе.
+        - Если инструмент ответил, что лимит исчерпан или действие не получилось, — действия не было: коротко и в своём стиле скажи об этом собеседнику, не обещай и не выдумывай результат.
         - Если достаточно реакции или стикера, верни пустой текст.
         - Не сообщай текстом о выполненных действиях. Исключение — напоминания: коротко подтверди, кому и когда напомнишь.
         
@@ -98,19 +99,20 @@ public class ChatGenerationOperation : IOperation
 
     public bool Validate(Message msg, UpdateType type)
     {
-        if (string.IsNullOrEmpty(msg.Text))
+        var text = msg.Text ?? msg.Caption;
+        if (string.IsNullOrEmpty(text))
         {
             return false;
         }
 
-        return msg.Text.StartsWith($"{_invokeCommand} ", StringComparison.CurrentCultureIgnoreCase) ||
-               msg.Text.StartsWith($"{_invokeCommand}, ", StringComparison.CurrentCultureIgnoreCase) ||
+        return text.StartsWith($"{_invokeCommand} ", StringComparison.CurrentCultureIgnoreCase) ||
+               text.StartsWith($"{_invokeCommand}, ", StringComparison.CurrentCultureIgnoreCase) ||
                IsReplyToBot(msg);
     }
 
     public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        var request = msg.Text!.ToLower()
+        var request = (msg.Text ?? msg.Caption)!.ToLower()
             .Replace($"{_invokeCommand}, ", string.Empty)
             .Replace($"{_invokeCommand} ", string.Empty);
 
@@ -155,9 +157,11 @@ public class ChatGenerationOperation : IOperation
             }
         }
 
-        if (!isReplyToBot && msg.ReplyToMessage is { Type: MessageType.Text } && !string.IsNullOrWhiteSpace(msg.ReplyToMessage.Text))
+        var repliedText = msg.ReplyToMessage?.Text ?? msg.ReplyToMessage?.Caption;
+        if (!isReplyToBot && !string.IsNullOrWhiteSpace(repliedText))
         {
-            messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
+            var repliedSenderName = GetSenderName(msg.ReplyToMessage!.From);
+            messages.Add(new UserChatMessage(string.IsNullOrEmpty(repliedSenderName) ? repliedText : $"[{repliedSenderName}]: {repliedText}"));
         }
 
         var senderName = GetSenderName(msg.From);
@@ -166,23 +170,25 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new SystemChatMessage($"Тебе сейчас пишет: {senderName}"));
         }
         var requestText = string.IsNullOrEmpty(senderName) ? request : $"[{senderName}]: {request}";
-        var replyPhoto = msg.ReplyToMessage?.Photo?.MaxBy(x => x.FileSize);
-        if (replyPhoto != null)
+        var images = await DownloadImagesAsync(msg, сancellationToken);
+        if (images.Count > 0)
         {
-            var imageBytes = await _telegramBotClient.DownloadFileAsync(replyPhoto.FileId, сancellationToken);
-            messages.Add(new UserChatMessage(
-                ChatMessageContentPart.CreateImagePart(new BinaryData(imageBytes), "image/jpeg", ChatImageDetailLevel.Auto),
-                ChatMessageContentPart.CreateTextPart(requestText)));
+            messages.Add(new SystemChatMessage(
+                "К запросу приложена картинка (из сообщения, на которое ответили, или из самого запроса). " +
+                "Пойми по запросу, что с ней сделать: ответить на вопрос о ней, нарисовать новую (generate_image) или отредактировать её (edit_image)."));
+            messages.Add(new UserChatMessage(images
+                .Select(image => ChatMessageContentPart.CreateImagePart(new BinaryData(image), "image/jpeg", ChatImageDetailLevel.Auto))
+                .Append(ChatMessageContentPart.CreateTextPart(requestText))));
         }
         else
         {
             messages.Add(new UserChatMessage(requestText));
         }
 
-        var toolContext = new ChatToolContext(msg);
+        var toolContext = new ChatToolContext(msg, images);
         var tools = _tools.Concat(_chatToolFactory.Create(toolContext)).ToList();
-        _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, reply photo {HasPhoto}",
-            chatEntity.AiAgent?.Name ?? "none", senderName, replyPhoto != null);
+        _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, images {ImageCount}",
+            chatEntity.AiAgent?.Name ?? "none", senderName, images.Count);
         var aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
             () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
         var rawResult = aiResult.Text;
@@ -205,6 +211,20 @@ public class ChatGenerationOperation : IOperation
 
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply, aiResult.ToolCalls);
+    }
+
+    private async Task<IReadOnlyList<byte[]>> DownloadImagesAsync(Message msg, CancellationToken сancellationToken)
+    {
+        var images = new List<byte[]>();
+        foreach (var photo in new[] { msg.ReplyToMessage?.Photo, msg.Photo })
+        {
+            var largest = photo?.MaxBy(x => x.FileSize);
+            if (largest != null)
+            {
+                images.Add(await _telegramBotClient.DownloadFileAsync(largest.FileId, сancellationToken));
+            }
+        }
+        return images;
     }
 
     /// <summary>

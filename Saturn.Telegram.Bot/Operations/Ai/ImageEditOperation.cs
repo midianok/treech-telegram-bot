@@ -1,8 +1,5 @@
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
-using Saturn.Bot.Service.Options;
+using Saturn.Bot.Service.Services;
 using Saturn.Bot.Service.Services.Abstractions;
-using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Saturn.Telegram.Lib.Operation;
 using Saturn.Telegram.Lib.Attributes;
@@ -20,16 +17,12 @@ public class ImageEditOperation : IOperation
     private const string CommandPrefix2 = "измени";
     private const int MaxImages = 3;
 
-    private static readonly TimeSpan FreeEditPeriod = TimeSpan.FromHours(1);
-
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
-    private readonly ICoinRepository _coinRepository;
+    private readonly ImageEditQuota _imageEditQuota;
     private readonly ISparkShop _sparkShop;
-    private readonly IMemoryCache _memoryCache;
     private readonly IGenerationProgressService _generationProgressService;
-    private readonly string? _adminUsername;
 
     private static readonly GenerationProgressOptions ProgressOptions = new(
         Title: "🖌 Редактирую картинку",
@@ -42,20 +35,16 @@ public class ImageEditOperation : IOperation
         ITelegramBotClient telegramBotClient,
         IAiService aiService,
         ISaveMessageService saveMessageService,
-        ICoinRepository coinRepository,
+        ImageEditQuota imageEditQuota,
         ISparkShop sparkShop,
-        IMemoryCache memoryCache,
-        IGenerationProgressService generationProgressService,
-        IOptions<BotOptions> botOptions)
+        IGenerationProgressService generationProgressService)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
         _saveMessageService = saveMessageService;
-        _coinRepository = coinRepository;
+        _imageEditQuota = imageEditQuota;
         _sparkShop = sparkShop;
-        _memoryCache = memoryCache;
         _generationProgressService = generationProgressService;
-        _adminUsername = botOptions.Value.AdminUsername;
     }
 
     public bool Validate(Message msg, UpdateType type)
@@ -83,43 +72,23 @@ public class ImageEditOperation : IOperation
         var text = msg.Text ?? msg.Caption;
         var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
         var prompt = text[prefix.Length..].Trim();
-        var userId = msg.From.Id;
 
-        if (IsAdmin(msg))
+        var charge = await _imageEditQuota.TryChargeAsync(msg.From, nameof(ImageEditOperation), сancellationToken);
+        if (charge == ImageEditCharge.Denied)
+        {
+            await _sparkShop.SendOfferAsync(msg, "Бесплатное редактирование на этот час использовано, а трич койнов не хватает.", сancellationToken);
+            return;
+        }
+
+        try
         {
             await RunEditAsync(msg, prompt, сancellationToken);
-            return;
         }
-
-        if (TryConsumeFreeEdit(userId))
+        catch
         {
-            try
-            {
-                await RunEditAsync(msg, prompt, сancellationToken);
-            }
-            catch
-            {
-                ReleaseFreeEdit(userId);
-                throw;
-            }
-            return;
+            await _imageEditQuota.RefundAsync(msg.From, charge, nameof(ImageEditOperation), сancellationToken);
+            throw;
         }
-
-        if (await _coinRepository.TryChargeAsync(userId, _sparkShop.ImageEditCost, nameof(ImageEditOperation), сancellationToken))
-        {
-            try
-            {
-                await RunEditAsync(msg, prompt, сancellationToken);
-            }
-            catch
-            {
-                await _coinRepository.RefundAsync(userId, _sparkShop.ImageEditCost, nameof(ImageEditOperation), сancellationToken);
-                throw;
-            }
-            return;
-        }
-
-        await _sparkShop.SendOfferAsync(msg, "Бесплатное редактирование на этот час использовано, а трич койнов не хватает.", сancellationToken);
     }
 
     private async Task RunEditAsync(Message msg, string prompt, CancellationToken сancellationToken)
@@ -157,24 +126,4 @@ public class ImageEditOperation : IOperation
                 await _saveMessageService.SaveMessageAsync(reply);
             },
             сancellationToken);
-
-    private bool IsAdmin(Message msg) =>
-        !string.IsNullOrEmpty(_adminUsername) &&
-        string.Equals(msg.From?.Username, _adminUsername, StringComparison.OrdinalIgnoreCase);
-
-    private bool TryConsumeFreeEdit(long userId)
-    {
-        var key = FreeEditKey(userId);
-        if (_memoryCache.TryGetValue(key, out _))
-        {
-            return false;
-        }
-
-        _memoryCache.Set(key, true, FreeEditPeriod);
-        return true;
-    }
-
-    private void ReleaseFreeEdit(long userId) => _memoryCache.Remove(FreeEditKey(userId));
-
-    private static string FreeEditKey(long userId) => $"free_edit:{userId}";
 }

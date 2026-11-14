@@ -23,9 +23,8 @@ public class ImageChatTool : IChatTool
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly IGenerationProgressService _generationProgressService;
-    private readonly ChatImageQuota _quota;
+    private readonly ImageGenerationQuota _quota;
     private readonly ChatToolContext _context;
-    private readonly bool _isAdmin;
     private readonly ILogger _logger;
     private bool _imageSent;
 
@@ -33,9 +32,8 @@ public class ImageChatTool : IChatTool
         ITelegramBotClient telegramBotClient,
         IAiService aiService,
         IGenerationProgressService generationProgressService,
-        ChatImageQuota quota,
+        ImageGenerationQuota quota,
         ChatToolContext context,
-        bool isAdmin,
         ILogger logger)
     {
         _telegramBotClient = telegramBotClient;
@@ -43,7 +41,6 @@ public class ImageChatTool : IChatTool
         _generationProgressService = generationProgressService;
         _quota = quota;
         _context = context;
-        _isAdmin = isAdmin;
         _logger = logger;
     }
 
@@ -53,8 +50,9 @@ public class ImageChatTool : IChatTool
         functionName: "generate_image",
         functionDescription: "Нарисовать картинку и отправить её в чат. Используй, когда собеседник просит нарисовать, " +
                              "показать или изобразить что-то («нарисуй, как Дима это говорит», «покажи кота-бухгалтера»). " +
+                             "Если просят изменить картинку из запроса, используй edit_image. " +
                              "Сам по своей инициативе не рисуй. Картинка уходит в чат сразу, текстом можешь коротко её прокомментировать. " +
-                             $"Лимит — одна картинка на человека раз в {ChatImageQuota.Period.TotalMinutes:0} минут.",
+                             $"Лимит общий с командой «покажи» — одна картинка на человека раз в {ImageGenerationQuota.Period.TotalMinutes:0} минут.",
         functionParameters: BinaryData.FromObjectAsJson(new
         {
             type = "object",
@@ -86,15 +84,22 @@ public class ImageChatTool : IChatTool
         }
 
         var request = _context.Request;
-        var userId = request.From!.Id;
-        if (!_isAdmin && !_quota.TryConsume(userId, out var wait))
+        var user = request.From!;
+        if (!_quota.TryConsume(user, out var wait))
         {
-            return ToolArguments.Error($"Лимит картинок: следующую этому собеседнику можно через {Math.Ceiling(wait.TotalMinutes):0} мин. Скажи ему об этом");
+            return ToolArguments.Result(new
+            {
+                ok = false,
+                limitReached = true,
+                note = $"Картинку НЕ нарисовал: лимит — одна картинка на человека раз в {ImageGenerationQuota.Period.TotalMinutes:0} минут, " +
+                       $"следующую этому собеседнику можно через {Math.Ceiling(wait.TotalMinutes):0} мин. " +
+                       "Ответь ему своими словами, что пока рисовать не будешь и когда можно снова; не делай вид, что картинка будет"
+            });
         }
 
         try
         {
-            _logger.LogInformation("Generating image for user {UserId} in chat {ChatId}: {Prompt}", userId, request.Chat.Id, prompt);
+            _logger.LogInformation("Generating image for user {UserId} in chat {ChatId}: {Prompt}", user.Id, request.Chat.Id, prompt);
             await _generationProgressService.RunAsync(
                 request,
                 ProgressOptions,
@@ -110,7 +115,7 @@ public class ImageChatTool : IChatTool
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !сancellationToken.IsCancellationRequested)
         {
-            _quota.Release(userId);
+            _quota.Release(user);
             _logger.LogWarning(ex, "Image generation from the AI chat failed");
             return ex switch
             {

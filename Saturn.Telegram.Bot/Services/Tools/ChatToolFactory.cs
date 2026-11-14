@@ -20,7 +20,8 @@ public class ChatToolFactory
     private readonly IReminderRepository _reminderRepository;
     private readonly IAiService _aiService;
     private readonly IGenerationProgressService _generationProgressService;
-    private readonly ChatImageQuota _imageQuota;
+    private readonly ImageGenerationQuota _imageGenerationQuota;
+    private readonly ImageEditQuota _imageEditQuota;
     private readonly ILoggerFactory _loggerFactory;
     private readonly string? _adminUsername;
 
@@ -30,7 +31,8 @@ public class ChatToolFactory
         IReminderRepository reminderRepository,
         IAiService aiService,
         IGenerationProgressService generationProgressService,
-        ChatImageQuota imageQuota,
+        ImageGenerationQuota imageGenerationQuota,
+        ImageEditQuota imageEditQuota,
         IOptions<BotOptions> botOptions,
         ILoggerFactory loggerFactory)
     {
@@ -39,7 +41,8 @@ public class ChatToolFactory
         _reminderRepository = reminderRepository;
         _aiService = aiService;
         _generationProgressService = generationProgressService;
-        _imageQuota = imageQuota;
+        _imageGenerationQuota = imageGenerationQuota;
+        _imageEditQuota = imageEditQuota;
         _loggerFactory = loggerFactory;
         _adminUsername = botOptions.Value.AdminUsername;
     }
@@ -50,17 +53,28 @@ public class ChatToolFactory
         var isAdmin = !string.IsNullOrEmpty(_adminUsername) &&
                       string.Equals(request.From?.Username, _adminUsername, StringComparison.OrdinalIgnoreCase);
 
-        return
+        IChatTool[] tools =
         [
             new ChatHistoryChatTool(_messageRepository, request.Chat.Id, _loggerFactory.CreateLogger<ChatHistoryChatTool>()),
             new UserProfileChatTool(_telegramBotClient, _aiService, _messageRepository, request.Chat.Id, _loggerFactory.CreateLogger<UserProfileChatTool>()),
             new ReactionChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<ReactionChatTool>()),
             new StickerChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<StickerChatTool>()),
-            new ImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageQuota, context, isAdmin, _loggerFactory.CreateLogger<ImageChatTool>()),
+            new ImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageGenerationQuota, context, _loggerFactory.CreateLogger<ImageChatTool>()),
             new PollChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<PollChatTool>()),
             new ReminderChatTool(_messageRepository, _reminderRepository, context, _loggerFactory.CreateLogger<ReminderChatTool>()),
             new ListRemindersChatTool(_reminderRepository, context),
             new CancelReminderChatTool(_reminderRepository, context, isAdmin, _loggerFactory.CreateLogger<CancelReminderChatTool>())
+        ];
+
+        if (context.Images.Count == 0)
+        {
+            return tools;
+        }
+
+        return
+        [
+            ..tools,
+            new EditImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageEditQuota, context, _loggerFactory.CreateLogger<EditImageChatTool>())
         ];
     }
 }
