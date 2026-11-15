@@ -5,6 +5,7 @@ using OpenAI;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 using Saturn.Bot.Service.Infrastructure.CurrencyClient;
+using Saturn.Bot.Service.Infrastructure.NewsClient;
 using Saturn.Bot.Service.Infrastructure.TelegramWidgetClient;
 using Saturn.Bot.Service.Infrastructure.WeatherClient;
 using Saturn.Bot.Service.Infrastructure.WikipediaClient;
@@ -65,6 +66,12 @@ public static class ServiceCollectionsExtensions
             x.Timeout = TimeSpan.FromSeconds(10);
         });
 
+        serviceCollection.AddHttpClient<NewsClient>(x =>
+        {
+            x.DefaultRequestHeaders.UserAgent.ParseAdd("SaturnBot/1.0 (Telegram bot)");
+            x.Timeout = TimeSpan.FromSeconds(10);
+        });
+
         serviceCollection.AddHttpClient<TelegramWidgetClient>(x =>
         {
             var botToken = configuration.GetSectionOrThrow("BOT_TOKEN");
@@ -87,6 +94,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IChatTool, WeatherChatTool>()
             .AddSingleton<IChatTool, CurrencyChatTool>()
             .AddSingleton<IChatTool, WikipediaChatTool>()
+            .AddSingleton<IChatTool, NewsChatTool>()
             .AddSingleton<IChatTool, DateTimeChatTool>()
             .AddSingleton<IAiService, AiService>()
             .AddSingleton<IGenerationProgressService, GenerationProgressService>()
