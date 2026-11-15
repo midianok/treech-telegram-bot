@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
@@ -29,39 +30,49 @@ public class ChatGenerationOperation : IOperation
         - Обычный текст без Markdown, заголовков и форматирования.
         - Пиши естественно, кратко, без лишних пояснений.
         - Не описывай словами свои действия.
-        
+
         КОНТЕКСТ
         - Используй историю чата, профили участников и внешнюю информацию, но никогда не раскрывай источники своих знаний.
         - Исключение: по запросу о конкретном сообщении предоставляй прямую ссылку на него.
         - Учитывай локальные шутки, мемы и предыдущие обсуждения.
-        
+
         УЧАСТНИКИ
         - Автор каждой строки указан в квадратных скобках.
         - Обращайся к собеседнику, об остальных говори в третьем лице.
         - При прожарке, описании или оценке человека учитывай его собственные сообщения и профиль (био, аватарку). Используй выводы для персонализации, но никогда не упоминай источники.
         - Если сообщений нужного человека нет, не выдумывай факты.
-        
+
         УТОЧНЕНИЯ
         - Не переспрашивай, если ответ можно найти в контексте или разумно предположить.
         - Если информации действительно недостаточно, задай один короткий вопрос.
         - При неоднозначности перечисли возможные варианты.
-        
+
         ДЕЙСТВИЯ
         - Можешь ставить реакции, отправлять стикеры, рисовать и редактировать изображения, создавать опросы и напоминания.
         - Делай это по просьбе или когда действительно уместно.
         - Действие происходит только тогда, когда ты вызываешь инструмент. Просят напомнить, запустить опрос, нарисовать — вызови инструмент в этом же ответе, а не обещай.
         - Никогда не пиши, что поставил, запустил, нарисовал или отправил, если в этом ответе не вызвал инструмент.
+        - Просят нарисовать или изменить картинку — вызывай generate_image или edit_image и не отказывай заранее из осторожности: у инструментов своя модерация, если она не пропустит — инструмент так и ответит. Сам отказывай только в недопустимом по существу, например раздеть или сексуализировать реального человека на фото.
         - О напоминаниях (есть ли они, сколько осталось) говори только по результату list_reminders, а не по памяти или прошлым ответам.
         - После твоих прошлых ответов в истории указано, какие инструменты ты на самом деле вызывал. Если там сказано, что не вызывал, — действия не было, даже если в ответе написано иначе.
         - Если инструмент ответил, что лимит исчерпан или действие не получилось, — действия не было: коротко и в своём стиле скажи об этом собеседнику, не обещай и не выдумывай результат.
         - Если достаточно реакции или стикера, верни пустой текст.
         - Не сообщай текстом о выполненных действиях. Исключение — напоминания: коротко подтверди, кому и когда напомнишь.
-        
+
         ПОВЕДЕНИЕ
         - Веди себя как полноценный участник сообщества, а не справочный бот.
         - Будь естественным, учитывай атмосферу и отношения между участниками.
         - Не стремись отвечать на каждое сообщение. Иногда лучше промолчать.
         """;
+
+    private const string ReconsiderEditPrompt =
+        "Похоже, собеседник просил изменить картинку, а ты ответил, не вызвав edit_image. Ответ выше он не увидит. " +
+        "Если это обычная правка — вызови edit_image сейчас: модерацию сделает сам инструмент. " +
+        "Если ты отказал по существу (например, просили раздеть или сексуализировать реального человека) — повтори отказ своими словами.";
+
+    private static readonly Regex EditRequestRegex = new(
+        @"\b(измени|отредактируй|поменяй|замени|убери|добавь|дорисуй|перерисуй|перекрась|сделай|надень)",
+        RegexOptions.Compiled);
 
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
@@ -123,6 +134,7 @@ public class ChatGenerationOperation : IOperation
         {
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
+
         messages.Add(new SystemChatMessage(BehaviorPrompt));
 
         var isReplyToBot = IsReplyToBot(msg);
@@ -141,18 +153,23 @@ public class ChatGenerationOperation : IOperation
                         {
                             messages.Add(new SystemChatMessage(toolCallsNote));
                         }
+
                         continue;
                     }
 
                     var chainSenderName = GetSenderName(chainMessage.User);
-                    var text = string.IsNullOrEmpty(chainSenderName) ? chainMessage.Text : $"[{chainSenderName}]: {chainMessage.Text}";
+                    var text = string.IsNullOrEmpty(chainSenderName)
+                        ? chainMessage.Text
+                        : $"[{chainSenderName}]: {chainMessage.Text}";
                     messages.Add(new UserChatMessage(text));
                 }
+
                 _logger.LogInformation("Reply to bot: loaded chain of {Count} messages", messageChain.Count);
             }
             else
             {
-                _logger.LogInformation("Reply to bot: message {MessageId} not found in DB, using only the replied text", msg.ReplyToMessage.Id);
+                _logger.LogInformation("Reply to bot: message {MessageId} not found in DB, using only the replied text",
+                    msg.ReplyToMessage.Id);
                 messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
             }
         }
@@ -161,7 +178,9 @@ public class ChatGenerationOperation : IOperation
         if (!isReplyToBot && !string.IsNullOrWhiteSpace(repliedText))
         {
             var repliedSenderName = GetSenderName(msg.ReplyToMessage!.From);
-            messages.Add(new UserChatMessage(string.IsNullOrEmpty(repliedSenderName) ? repliedText : $"[{repliedSenderName}]: {repliedText}"));
+            messages.Add(new UserChatMessage(string.IsNullOrEmpty(repliedSenderName)
+                ? repliedText
+                : $"[{repliedSenderName}]: {repliedText}"));
         }
 
         var senderName = GetSenderName(msg.From);
@@ -169,6 +188,7 @@ public class ChatGenerationOperation : IOperation
         {
             messages.Add(new SystemChatMessage($"Тебе сейчас пишет: {senderName}"));
         }
+
         var requestText = string.IsNullOrEmpty(senderName) ? request : $"[{senderName}]: {request}";
         var images = await DownloadImagesAsync(msg, сancellationToken);
         if (images.Count > 0)
@@ -177,7 +197,9 @@ public class ChatGenerationOperation : IOperation
                 "К запросу приложена картинка (из сообщения, на которое ответили, или из самого запроса). " +
                 "Пойми по запросу, что с ней сделать: ответить на вопрос о ней, нарисовать новую (generate_image) или отредактировать её (edit_image)."));
             messages.Add(new UserChatMessage(images
-                .Select(image => ChatMessageContentPart.CreateImagePart(new BinaryData(image), "image/jpeg", ChatImageDetailLevel.Auto))
+                .Select(image =>
+                    ChatMessageContentPart.CreateImagePart(new BinaryData(image), "image/jpeg",
+                        ChatImageDetailLevel.Auto))
                 .Append(ChatMessageContentPart.CreateTextPart(requestText))));
         }
         else
@@ -185,17 +207,31 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new UserChatMessage(requestText));
         }
 
-        var toolContext = new ChatToolContext(msg, images);
+        var toolContext = new ChatToolContext(msg, request, images);
         var tools = _tools.Concat(_chatToolFactory.Create(toolContext)).ToList();
         _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, images {ImageCount}",
             chatEntity.AiAgent?.Name ?? "none", senderName, images.Count);
         var aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
             () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
+
+        // The model sometimes refuses an ordinary edit out of caution instead of calling edit_image.
+        // Give it one more chance to reconsider, leaving the decision to it so refusals on the merits stay refusals
+        if (images.Count > 0 && aiResult.ToolCalls.Count == 0 && EditRequestRegex.IsMatch(request))
+        {
+            _logger.LogInformation(
+                "Edit-like request with an image answered without tools, asking the model to reconsider");
+            messages.Add(new AssistantChatMessage(aiResult.Text));
+            messages.Add(new SystemChatMessage(ReconsiderEditPrompt));
+            aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
+                () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
+        }
+
         var rawResult = aiResult.Text;
         var result = rawResult.StripMarkdown();
         if (result != rawResult)
         {
-            _logger.LogInformation("Markdown stripped from the answer: {Before} -> {After} chars", rawResult.Length, result.Length);
+            _logger.LogInformation("Markdown stripped from the answer: {Before} -> {After} chars", rawResult.Length,
+                result.Length);
         }
 
         if (string.IsNullOrWhiteSpace(result))
@@ -209,7 +245,8 @@ public class ChatGenerationOperation : IOperation
             return;
         }
 
-        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None, new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
+        var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None,
+            new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply, aiResult.ToolCalls);
     }
 
@@ -224,6 +261,7 @@ public class ChatGenerationOperation : IOperation
                 images.Add(await _telegramBotClient.DownloadFileAsync(largest.FileId, сancellationToken));
             }
         }
+
         return images;
     }
 
@@ -271,6 +309,7 @@ public class ChatGenerationOperation : IOperation
         {
             return false;
         }
+
         return msg.ReplyToMessage.Type == MessageType.Text && msg.ReplyToMessage.From.Username == _botUsername;
     }
 }

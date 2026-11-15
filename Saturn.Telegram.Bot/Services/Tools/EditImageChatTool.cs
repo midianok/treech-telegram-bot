@@ -48,12 +48,14 @@ public class EditImageChatTool : IChatTool
 
     public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
         functionName: "edit_image",
-        functionDescription: "Отредактировать картинку из запроса (на которую ответил собеседник или которую приложил) и отправить результат в чат. " +
-                             "Используй, когда просят изменить, дорисовать, убрать, заменить что-то на этой картинке или перерисовать её " +
-                             "в другом стиле («сделай фон зелёным», «надень на него шляпу», «сделай в стиле аниме»). " +
-                             "Если нужна новая картинка без опоры на эту — используй generate_image. " +
-                             "Результат уходит в чат сразу, текстом можешь коротко его прокомментировать. " +
-                             "Лимит общий с командой «измени»: одно бесплатное редактирование в час, дальше за трич койны.",
+        functionDescription:
+        "Отредактировать картинку из запроса (на которую ответил собеседник или которую приложил) и отправить результат в чат. " +
+        "Используй, когда просят изменить, дорисовать, убрать, заменить что-то на этой картинке или перерисовать её " +
+        "в другом стиле («сделай фон зелёным», «надень на него шляпу», «сделай в стиле аниме»). " +
+        "Если нужна новая картинка без опоры на эту — используй generate_image. " +
+        "Модерацию делает сам инструмент, на обычные правки не отказывай заранее. " +
+        "Результат уходит в чат сразу, текстом можешь коротко его прокомментировать. " +
+        "Лимит общий с командой «измени»: одно бесплатное редактирование в час, дальше за трич койны.",
         functionParameters: BinaryData.FromObjectAsJson(new
         {
             type = "object",
@@ -62,7 +64,8 @@ public class EditImageChatTool : IChatTool
                 prompt = new
                 {
                     type = "string",
-                    description = "Инструкция для редактирования на английском: что именно изменить и что оставить как есть"
+                    description =
+                        "Инструкция для редактирования на английском: что именно изменить и что оставить как есть"
                 }
             },
             required = new[] { "prompt" }
@@ -83,6 +86,9 @@ public class EditImageChatTool : IChatTool
             return ToolArguments.Error("Опиши, что изменить");
         }
 
+        // The model tends to soften or lose details when retelling the request, so the edit model also gets the original wording
+        prompt = $"{prompt}\n\nOriginal request: {_context.RequestText}";
+
         var request = _context.Request;
         var user = request.From!;
         var charge = await _quota.TryChargeAsync(user, nameof(EditImageChatTool), сancellationToken);
@@ -93,10 +99,11 @@ public class EditImageChatTool : IChatTool
             {
                 ok = false,
                 limitReached = true,
-                note = $"Картинку НЕ отредактировал: бесплатное редактирование на этот час у собеседника уже использовано, " +
-                       $"а платное стоит {_quota.Cost} трич койнов, у него на балансе {balance}. " +
-                       "Ответь ему своими словами, что редактировать пока не будешь: можно подождать час или пополнить баланс командой «баланс». " +
-                       "Не делай вид, что картинка будет"
+                note =
+                    $"Картинку НЕ отредактировал: бесплатное редактирование на этот час у собеседника уже использовано, " +
+                    $"а платное стоит {_quota.Cost} трич койнов, у него на балансе {balance}. " +
+                    "Ответь ему своими словами, что редактировать пока не будешь: можно подождать час или пополнить баланс командой «баланс». " +
+                    "Не делай вид, что картинка будет"
             });
         }
 
@@ -112,7 +119,8 @@ public class EditImageChatTool : IChatTool
                 {
                     using var stream = new MemoryStream(result);
                     await _telegramBotClient.SendPhoto(request.Chat.Id, new InputFileStream(stream),
-                        replyParameters: new ReplyParameters { MessageId = request.Id, AllowSendingWithoutReply = true },
+                        replyParameters: new ReplyParameters
+                            { MessageId = request.Id, AllowSendingWithoutReply = true },
                         cancellationToken: сancellationToken);
                 },
                 сancellationToken);
@@ -123,7 +131,8 @@ public class EditImageChatTool : IChatTool
             _logger.LogWarning(ex, "Image editing from the AI chat failed");
             return ex switch
             {
-                AiContentModerationException => ToolArguments.Error("Картинка не прошла модерацию, так отредактировать нельзя"),
+                AiContentModerationException => ToolArguments.Error(
+                    "Картинка не прошла модерацию, так отредактировать нельзя"),
                 AiBudgetExhaustedException => ToolArguments.Error("Деньги на генерацию кончились"),
                 _ => ToolArguments.Error("Не получилось отредактировать, собеседник уже видит сообщение об ошибке")
             };
