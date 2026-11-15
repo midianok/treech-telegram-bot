@@ -69,10 +69,7 @@ public class ChatGenerationOperation : IOperation
         "Похоже, собеседник просил изменить картинку, а ты ответил, не вызвав edit_image. Ответ выше он не увидит. " +
         "Если это обычная правка — вызови edit_image сейчас: модерацию сделает сам инструмент. " +
         "Если ты отказал по существу (например, просили раздеть или сексуализировать реального человека) — повтори отказ своими словами.";
-
-    private static readonly Regex EditRequestRegex = new(
-        @"\b(измени|отредактируй|поменяй|замени|убери|добавь|дорисуй|перерисуй|перекрась|сделай|надень)",
-        RegexOptions.Compiled);
+    
 
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
@@ -216,7 +213,7 @@ public class ChatGenerationOperation : IOperation
 
         // The model sometimes refuses an ordinary edit out of caution instead of calling edit_image.
         // Give it one more chance to reconsider, leaving the decision to it so refusals on the merits stay refusals
-        if (images.Count > 0 && aiResult.ToolCalls.Count == 0 && EditRequestRegex.IsMatch(request))
+        if (images.Count > 0 && aiResult.ToolCalls.Count == 0)
         {
             _logger.LogInformation(
                 "Edit-like request with an image answered without tools, asking the model to reconsider");
