@@ -65,11 +65,10 @@ public class ChatGenerationOperation : IOperation
         - Не стремись отвечать на каждое сообщение. Иногда лучше промолчать.
         """;
 
-    private const string ReconsiderEditPrompt =
-        "Похоже, собеседник просил изменить картинку, а ты ответил, не вызвав edit_image. Ответ выше он не увидит. " +
-        "Если это обычная правка — вызови edit_image сейчас: модерацию сделает сам инструмент. " +
-        "Если ты отказал по существу (например, просили раздеть или сексуализировать реального человека) — повтори отказ своими словами.";
-    
+    private const string EditIntentPrompt =
+        "К сообщению пользователя приложена картинка. Определи, просит ли он изменить, отредактировать, дорисовать " +
+        "или перерисовать эту картинку. Вопросы о картинке, её обсуждение и просьбы нарисовать что-то новое — это не правка. " +
+        "Ответь одним словом: да или нет.";
 
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
@@ -78,6 +77,7 @@ public class ChatGenerationOperation : IOperation
     private readonly IMessageRepository _messageRepository;
     private readonly IReadOnlyList<IChatTool> _tools;
     private readonly ChatToolFactory _chatToolFactory;
+    private readonly ImageEditOperation _imageEditOperation;
     private readonly ILogger<ChatGenerationOperation> _logger;
     private readonly string _invokeCommand;
     private readonly string _botUsername;
@@ -90,6 +90,7 @@ public class ChatGenerationOperation : IOperation
         IMessageRepository messageRepository,
         IEnumerable<IChatTool> tools,
         ChatToolFactory chatToolFactory,
+        ImageEditOperation imageEditOperation,
         IOptions<BotOptions> botOptions,
         ILogger<ChatGenerationOperation> logger)
     {
@@ -100,6 +101,7 @@ public class ChatGenerationOperation : IOperation
         _messageRepository = messageRepository;
         _tools = tools.ToList();
         _chatToolFactory = chatToolFactory;
+        _imageEditOperation = imageEditOperation;
         _logger = logger;
         _invokeCommand = botOptions.Value.InvokeCommand;
         _botUsername = botOptions.Value.BotUsername;
@@ -210,17 +212,16 @@ public class ChatGenerationOperation : IOperation
             chatEntity.AiAgent?.Name ?? "none", senderName, images.Count);
         var aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
             () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
-
-        // The model sometimes refuses an ordinary edit out of caution instead of calling edit_image.
-        // Give it one more chance to reconsider, leaving the decision to it so refusals on the merits stay refusals
+        
         if (images.Count > 0 && aiResult.ToolCalls.Count == 0)
         {
-            _logger.LogInformation(
-                "Edit-like request with an image answered without tools, asking the model to reconsider");
-            messages.Add(new AssistantChatMessage(aiResult.Text));
-            messages.Add(new SystemChatMessage(ReconsiderEditPrompt));
-            aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
-                () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
+            var editPrompt = GetEditPrompt(msg);
+            if (await IsEditRequestAsync(editPrompt, сancellationToken))
+            {
+                _logger.LogInformation("Edit request with an image answered without tools, editing the image directly");
+                await _imageEditOperation.EditAsync(msg, images, editPrompt, сancellationToken);
+                return;
+            }
         }
 
         var rawResult = aiResult.Text;
@@ -245,6 +246,41 @@ public class ChatGenerationOperation : IOperation
         var reply = await _telegramBotClient.SendMessage(msg.Chat, result, ParseMode.None,
             new ReplyParameters { MessageId = msg.Id }, cancellationToken: сancellationToken);
         await _saveMessageService.SaveMessageAsync(reply, aiResult.ToolCalls);
+    }
+
+    /// <summary>
+    /// The model sometimes refuses an ordinary edit out of caution instead of calling edit_image, and an empty tool list
+    /// can't tell such a refusal from an answer to a question about the picture. Ask separately, without the image
+    /// and the history, whether the wording itself asks for an edit.
+    /// </summary>
+    private async Task<bool> IsEditRequestAsync(string request, CancellationToken сancellationToken)
+    {
+        try
+        {
+            var answer = await _aiService.CompleteChatAsync(
+                [new SystemChatMessage(EditIntentPrompt), new UserChatMessage(request)], сancellationToken);
+            _logger.LogInformation("Edit intent for {Request}: {Answer}", request, answer);
+            return answer.Trim().StartsWith("да", StringComparison.CurrentCultureIgnoreCase);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !сancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Edit intent check failed, keeping the text answer");
+            return false;
+        }
+    }
+
+    private string GetEditPrompt(Message msg)
+    {
+        var text = (msg.Text ?? msg.Caption)!;
+        foreach (var prefix in new[] { $"{_invokeCommand}, ", $"{_invokeCommand} " })
+        {
+            if (text.StartsWith(prefix, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return text[prefix.Length..].Trim();
+            }
+        }
+
+        return text.Trim();
     }
 
     private async Task<IReadOnlyList<byte[]>> DownloadImagesAsync(Message msg, CancellationToken сancellationToken)

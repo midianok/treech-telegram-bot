@@ -73,6 +73,14 @@ public class ImageEditOperation : IOperation
         var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
         var prompt = text[prefix.Length..].Trim();
 
+        var images = await DownloadImagesAsync(msg, сancellationToken);
+        await EditAsync(msg, images, prompt, сancellationToken);
+    }
+    
+    public async Task EditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt, CancellationToken сancellationToken)
+    {
+        if (msg.From == null) return;
+
         var charge = await _imageEditQuota.TryChargeAsync(msg.From, nameof(ImageEditOperation), сancellationToken);
         if (charge == ImageEditCharge.Denied)
         {
@@ -82,7 +90,7 @@ public class ImageEditOperation : IOperation
 
         try
         {
-            await RunEditAsync(msg, prompt, сancellationToken);
+            await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt, сancellationToken);
         }
         catch
         {
@@ -91,7 +99,7 @@ public class ImageEditOperation : IOperation
         }
     }
 
-    private async Task RunEditAsync(Message msg, string prompt, CancellationToken сancellationToken)
+    private async Task<IReadOnlyList<byte[]>> DownloadImagesAsync(Message msg, CancellationToken сancellationToken)
     {
         var images = new List<byte[]>();
 
@@ -107,7 +115,7 @@ public class ImageEditOperation : IOperation
             images.Add(await _telegramBotClient.DownloadFileAsync(fileId, сancellationToken));
         }
 
-        await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt, сancellationToken);
+        return images;
     }
 
     private Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt, CancellationToken сancellationToken) =>
@@ -121,7 +129,7 @@ public class ImageEditOperation : IOperation
                 var reply = await _telegramBotClient.SendPhoto(
                     msg.Chat.Id,
                     new InputFileStream(resultStream),
-                    replyParameters: new ReplyParameters { MessageId = msg.MessageId });
+                    replyParameters: new ReplyParameters { MessageId = msg.MessageId }, cancellationToken: сancellationToken);
 
                 await _saveMessageService.SaveMessageAsync(reply);
             },
