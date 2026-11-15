@@ -61,6 +61,7 @@ public class ChatToolFactory
             new StickerChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<StickerChatTool>()),
             new ImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageGenerationQuota, context, _loggerFactory.CreateLogger<ImageChatTool>()),
             new PollChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<PollChatTool>()),
+            new MuteChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<MuteChatTool>()),
             new ReminderChatTool(_messageRepository, _reminderRepository, context, _loggerFactory.CreateLogger<ReminderChatTool>()),
             new ListRemindersChatTool(_reminderRepository, context),
             new CancelReminderChatTool(_reminderRepository, context, isAdmin, _loggerFactory.CreateLogger<CancelReminderChatTool>())
