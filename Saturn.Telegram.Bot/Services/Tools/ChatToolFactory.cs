@@ -62,6 +62,10 @@ public class ChatToolFactory
             new ImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageGenerationQuota, context, _loggerFactory.CreateLogger<ImageChatTool>()),
             new PollChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<PollChatTool>()),
             new MuteChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<MuteChatTool>()),
+            new UnmuteChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<UnmuteChatTool>()),
+            new BanChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<BanChatTool>()),
+            new UnbanChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<UnbanChatTool>()),
+            new KickChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<KickChatTool>()),
             new ReminderChatTool(_messageRepository, _reminderRepository, context, _loggerFactory.CreateLogger<ReminderChatTool>()),
             new ListRemindersChatTool(_reminderRepository, context),
             new CancelReminderChatTool(_reminderRepository, context, isAdmin, _loggerFactory.CreateLogger<CancelReminderChatTool>())
