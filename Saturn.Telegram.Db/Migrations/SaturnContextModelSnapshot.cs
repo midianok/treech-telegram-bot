@@ -123,26 +123,6 @@ namespace Saturn.Telegram.Db.Migrations
                     b.ToTable("coin_transactions", (string)null);
                 });
 
-            modelBuilder.Entity("Saturn.Telegram.Db.Entities.GamePointsEntity", b =>
-                {
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("user_id");
-
-                    b.Property<long>("ChatId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("chat_id");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("integer")
-                        .HasColumnName("points");
-
-                    b.HasKey("UserId", "ChatId")
-                        .HasName("pk_game_points");
-
-                    b.ToTable("game_points", (string)null);
-                });
-
             modelBuilder.Entity("Saturn.Telegram.Db.Entities.ImagePromptEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -554,18 +534,6 @@ namespace Saturn.Telegram.Db.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_coin_transactions_users_user_id");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Saturn.Telegram.Db.Entities.GamePointsEntity", b =>
-                {
-                    b.HasOne("Saturn.Telegram.Db.Entities.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_game_points_users_user_id");
 
                     b.Navigation("User");
                 });

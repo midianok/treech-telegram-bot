@@ -26,8 +26,6 @@ public sealed class SaturnContext : DbContext
 
     public DbSet<LogEntity> Logs { get; set; } = null!;
 
-    public DbSet<GamePointsEntity> GamePoints { get; set; } = null!;
-
     public DbSet<CoinTransactionEntity> CoinTransactions { get; set; } = null!;
 
     public DbSet<MemeTowerScoreEntity> MemeTowerScores { get; set; } = null!;
@@ -49,7 +47,6 @@ public sealed class SaturnContext : DbContext
         modelBuilder.ApplyConfiguration(new KarmaChangeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new NamorevoGoreScoreEntityConfiguration());
         modelBuilder.ApplyConfiguration(new LogEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new GamePointsEntityConfiguration());
         modelBuilder.ApplyConfiguration(new CoinTransactionEntityConfiguration());
         modelBuilder.ApplyConfiguration(new MemeTowerScoreEntityConfiguration());
     }
