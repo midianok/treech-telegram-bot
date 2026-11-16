@@ -73,14 +73,6 @@ public class ImageEditOperation : IOperation
         var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
         var prompt = text[prefix.Length..].Trim();
 
-        var images = await DownloadImagesAsync(msg, сancellationToken);
-        await EditAsync(msg, images, prompt, сancellationToken);
-    }
-    
-    public async Task EditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt, CancellationToken сancellationToken)
-    {
-        if (msg.From == null) return;
-
         var charge = await _imageEditQuota.TryChargeAsync(msg.From, nameof(ImageEditOperation), сancellationToken);
         if (charge == ImageEditCharge.Denied)
         {
@@ -90,7 +82,7 @@ public class ImageEditOperation : IOperation
 
         try
         {
-            await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt, сancellationToken);
+            await RunEditAsync(msg, prompt, сancellationToken);
         }
         catch
         {
@@ -99,7 +91,7 @@ public class ImageEditOperation : IOperation
         }
     }
 
-    private async Task<IReadOnlyList<byte[]>> DownloadImagesAsync(Message msg, CancellationToken сancellationToken)
+    private async Task RunEditAsync(Message msg, string prompt, CancellationToken сancellationToken)
     {
         var images = new List<byte[]>();
 
@@ -115,7 +107,7 @@ public class ImageEditOperation : IOperation
             images.Add(await _telegramBotClient.DownloadFileAsync(fileId, сancellationToken));
         }
 
-        return images;
+        await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt, сancellationToken);
     }
 
     private Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt, CancellationToken сancellationToken) =>
