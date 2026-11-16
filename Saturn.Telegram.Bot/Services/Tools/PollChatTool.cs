@@ -6,6 +6,7 @@ using Saturn.Bot.Service.Services.Tools.Utils;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -31,41 +32,24 @@ public class PollChatTool : IChatTool
 
     public string FunctionName => "create_poll";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "create_poll",
-        functionDescription: "Запустить опрос в чате. Используй, когда просят устроить голосование " +
-                             "или когда спор удобно решить голосованием («кто прав?», «куда идём в пятницу?»). " +
-                             "Опрос уходит в чат сразу, текстом можешь коротко его представить.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("create_poll", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                question = new
-                {
-                    type = "string",
-                    description = $"Вопрос, до {MaxQuestionLength} символов"
-                },
-                options = new
-                {
-                    type = "array",
-                    items = new { type = "string" },
-                    description = $"Варианты ответа, от {MinOptions} до {MaxOptions}, каждый до {MaxOptionLength} символов"
-                },
-                is_anonymous = new
-                {
-                    type = "boolean",
-                    description = "Анонимный ли опрос, по умолчанию нет — чтобы было видно, кто как голосовал"
-                },
-                allows_multiple_answers = new
-                {
-                    type = "boolean",
-                    description = "Можно ли выбрать несколько вариантов, по умолчанию нет"
-                }
-            },
-            required = new[] { "question", "options" }
-        })
-    );
+            question = new { type = "string" },
+            options = new { type = "array", items = new { type = "string" } },
+            is_anonymous = new { type = "boolean" },
+            allows_multiple_answers = new { type = "boolean" }
+        },
+        required = new[] { "question", "options" }
+    }, new
+    {
+        maxQuestionLength = MaxQuestionLength,
+        minOptions = MinOptions,
+        maxOptions = MaxOptions,
+        maxOptionLength = MaxOptionLength
+    });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

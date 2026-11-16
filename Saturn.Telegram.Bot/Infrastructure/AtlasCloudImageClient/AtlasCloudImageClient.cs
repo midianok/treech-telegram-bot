@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Infrastructure.AtlasCloudImageClient;
 
@@ -73,7 +74,7 @@ public class AtlasCloudImageClient
     public async Task<byte[]> GenerateVideoFromImageAsync(byte[] imageBytes, string? prompt, string aspectRatio, bool generateAudio = false, Action<string>? onStatusChanged = null, CancellationToken cancellationToken = default)
     {
         var effectivePrompt = string.IsNullOrWhiteSpace(prompt)
-            ? "Animate this image naturally. If any person speaks or mouths words, they must speak Russian."
+            ? PromptLibrary.Get("Media/AnimateImage")
             : prompt;
 
         var image = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";

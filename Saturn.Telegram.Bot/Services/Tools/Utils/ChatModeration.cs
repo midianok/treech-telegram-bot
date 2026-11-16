@@ -34,31 +34,15 @@ public static class ChatModeration
         return null;
     }
 
-    /// <summary>Tool description tail shared by the moderation tools.</summary>
-    public const string AccessNote = "Права проверяет сам инструмент — всегда вызывай его, не решай за него. " +
-                                     "Если инструмент отказал, просто откажи в своём стиле и никогда не рассказывай и не гадай, " +
-                                     "кто может об этом просить. Цель — ответ собеседника (target=replied), user_id или username.";
-
-    /// <summary>JSON schema properties that pick the target member.</summary>
-    public static Dictionary<string, object> TargetProperties(string action) => new()
+    /// <summary>
+    /// JSON schema properties that pick the target member. Their descriptions are in Prompts/Shared/ModerationTarget.md,
+    /// which takes the <c>action</c> parameter.
+    /// </summary>
+    public static IReadOnlyDictionary<string, object> TargetProperties { get; } = new Dictionary<string, object>
     {
-        ["target"] = new
-        {
-            type = "string",
-            @enum = new[] { "replied" },
-            description = $"replied — {action} автора сообщения, на которое ответил собеседник"
-        },
-        ["user_id"] = new
-        {
-            type = "integer",
-            description = "Telegram ID участника"
-        },
-        ["username"] = new
-        {
-            type = "string",
-            description = "Username, имя или фамилия участника, например «@vasya» или «Дима». " +
-                          "Если подходят несколько участников, вернётся список кандидатов — уточни у собеседника"
-        }
+        ["target"] = new { type = "string", @enum = new[] { "replied" } },
+        ["user_id"] = new { type = "integer" },
+        ["username"] = new { type = "string" }
     };
 
     /// <summary>Finds the target member from the tool arguments; on failure returns an error for the model instead.</summary>

@@ -7,6 +7,7 @@ using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Extensions;
 using Telegram.Bot;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -16,47 +17,19 @@ namespace Saturn.Bot.Service.Services.Tools;
 /// </summary>
 public class UserProfileChatTool : IChatTool
 {
-    private const string AvatarPrompt =
-        "Это аватарка пользователя Telegram. Опиши, что на ней изображено: кто или что, внешность, одежда, поза, " +
-        "выражение лица, фон, предметы, надписи, стиль изображения и общая атмосфера. " +
-        "Отметь самые характерные и необычные детали. Описывай только то, что видно, ничего не придумывай. " +
-        "Затем кратко предположи, что это может говорить о владельце: увлечения, вкусы, как он хочет себя подать " +
-        "(подавай это как предположения, а не факты). Без разметки, по-русски, 3–5 предложений.";
-
     private static readonly JsonSerializerOptions JsonOptions = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     public string FunctionName => "get_user_profile";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "get_user_profile",
-        functionDescription: "Получить профиль Telegram участника текущего чата: описание профиля (bio) и описание аватарки. " +
-                             "Описание и аватарка возвращаются, только если пользователь их не скрыл настройками приватности. " +
-                             "Используй, когда спрашивают про чей-то профиль, био или аватарку. " +
-                             "Обязательно вызывай, когда просят подколоть, прожарить, описать или оценить человека, " +
-                             "вместе с поиском по истории чата: это дополнительные знания о нём (увлечения, вкусы, образ, " +
-                             "как он себя подаёт). Используй их как то, что ты и так о нём знаешь: не пересказывай аватарку " +
-                             "или описание профиля и не упоминай их («на аватарке ты…», «в био написано…»). " +
-                             "Укажи user_id или username.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("get_user_profile", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                user_id = new
-                {
-                    type = "integer",
-                    description = "Telegram ID участника"
-                },
-                username = new
-                {
-                    type = "string",
-                    description = "Username, имя или фамилия участника, например «@vasya» или «Дима». " +
-                                  "Если подходят несколько участников, вернётся список кандидатов — " +
-                                  "уточни у собеседника, кого он имел в виду, или повтори запрос с user_id нужного"
-                }
-            }
-        })
-    );
+            user_id = new { type = "integer" },
+            username = new { type = "string" }
+        }
+    });
 
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
@@ -171,7 +144,7 @@ public class UserProfileChatTool : IChatTool
             [
                 new UserChatMessage(
                     ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpeg", ChatImageDetailLevel.Auto),
-                    ChatMessageContentPart.CreateTextPart(AvatarPrompt))
+                    ChatMessageContentPart.CreateTextPart(PromptLibrary.Get("AvatarDescription")))
             ], сancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

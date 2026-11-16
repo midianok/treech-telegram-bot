@@ -6,6 +6,7 @@ using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -28,16 +29,11 @@ public class UnbanChatTool : IChatTool
 
     public string FunctionName => "unban_user";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "unban_user",
-        functionDescription: "Разбанить участника чата: он снова сможет вступить в чат по ссылке-приглашению, " +
-                             "сам бот его не вернёт. Вызывай, когда собеседник просит разбанить кого-то. " + ChatModeration.AccessNote,
-        functionParameters: BinaryData.FromObjectAsJson(new
-        {
-            type = "object",
-            properties = ChatModeration.TargetProperties("разбанить")
-        })
-    );
+    public ChatTool Definition { get; } = PromptLibrary.Tool("unban_user", new
+    {
+        type = "object",
+        properties = ChatModeration.TargetProperties
+    }, new { action = "разбанить" });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

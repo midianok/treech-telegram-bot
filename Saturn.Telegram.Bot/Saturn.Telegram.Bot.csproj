@@ -35,13 +35,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="Help.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
+      <None Remove="Prompts\**\*.md" />
+      <EmbeddedResource Include="Prompts\**\*.md" LogicalName="Prompts/%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Services\Tools\Utils\" />
+      <Content Include="Help.md">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

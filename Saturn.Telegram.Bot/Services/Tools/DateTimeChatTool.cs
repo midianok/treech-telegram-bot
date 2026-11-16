@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -17,25 +18,14 @@ public class DateTimeChatTool : IChatTool
 
     public string FunctionName => "get_current_datetime";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "get_current_datetime",
-        functionDescription: "Получить текущие дату и время: день недели, месяц, номер недели, день года, смещение от UTC. " +
-                             "Используй, когда нужно знать, какое сегодня число или сколько сейчас времени, " +
-                             "посчитать относительные даты («вчера», «на прошлой неделе») перед поиском по истории чата " +
-                             "или сколько осталось до какой-то даты.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("get_current_datetime", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                time_zone = new
-                {
-                    type = "string",
-                    description = $"Часовой пояс IANA, например Europe/Moscow, Asia/Yekaterinburg, UTC. По умолчанию {DefaultTimeZone}"
-                }
-            }
-        })
-    );
+            time_zone = new { type = "string" }
+        }
+    }, new { defaultTimeZone = DefaultTimeZone });
 
     public Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

@@ -2,6 +2,7 @@ using System.Text.Json;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.WeatherClient;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -9,23 +10,15 @@ public class WeatherChatTool : IChatTool
 {
     public string FunctionName => "get_weather";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "get_weather",
-        functionDescription: "Получить текущую погоду для указанного города или локации",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("get_weather", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                location = new
-                {
-                    type = "string",
-                    description = "Название города или локации на русском или английском языке"
-                }
-            },
-            required = new[] { "location" }
-        })
-    );
+            location = new { type = "string" }
+        },
+        required = new[] { "location" }
+    });
 
     private readonly WeatherClient _weatherClient;
 

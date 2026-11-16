@@ -2,12 +2,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
-using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 
-namespace Saturn.Bot.Service.Services.Tools;
+namespace Saturn.Bot.Service.Services.Tools.Utils;
 
 /// <summary>
 /// Creates the AI chat tools bound to one request: they need to know which chat and message

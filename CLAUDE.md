@@ -40,6 +40,14 @@ Use `[ChatOnly]` attribute to restrict an operation to group chats. Use `ICooldo
 
 After adding a new operation, document it in `Saturn.Telegram.Bot/Help.md` in Russian — this file is sent to users in response to the `помощь` command (via `HelpOperation`). It is copied to the output directory at build time. Add the new command to the relevant section (ИИ, Статистика, Развлечения, Прочее) using the same format: `` `команда` — описание ``.
 
+## Prompts
+
+All AI prompts and tool descriptions live as Markdown files in `Saturn.Telegram.Bot/Prompts/` (embedded into the assembly) and are read via the static `PromptLibrary` (`Saturn.Telegram.Bot/Services/Prompts/PromptLibrary.cs`). Never hardcode prompt text in C#.
+
+- `PromptLibrary.Get("Chat/CurrentSender", new { sender })` renders `Prompts/Chat/CurrentSender.md`. Placeholders are `{{name}}`, filled from an anonymous object or a dictionary; a missing or unused parameter throws.
+- `{{> Shared/ModerationAccess}}` includes another prompt file with the same parameters; `<!-- ... -->` comments are stripped, so use them to document a file's parameters.
+- Tools: `PromptLibrary.Tool("get_weather", schema, args)` builds the `ChatTool` from `Prompts/Tools/get_weather.md`. The JSON schema in code holds only types, enums and `required`. The text before the first `## heading` is the function description, and each `## param_name` section describes that property. Every property needs a section, and every section needs a property.
+
 ## Environment Variables
 
 Configured via `.env` (picked up by Docker Compose):

@@ -6,6 +6,7 @@ using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -28,24 +29,14 @@ public class BanChatTool : IChatTool
 
     public string FunctionName => "ban_user";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "ban_user",
-        functionDescription: "Забанить участника чата: он вылетит из чата и не сможет вернуться, пока бан не кончится. " +
-                             "Вызывай, когда собеседник просит забанить кого-то. Если просят просто выгнать — это kick_user. " +
-                             ChatModeration.AccessNote + " Без срока бан навсегда.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("ban_user", new
+    {
+        type = "object",
+        properties = new Dictionary<string, object>(ChatModeration.TargetProperties)
         {
-            type = "object",
-            properties = new Dictionary<string, object>(ChatModeration.TargetProperties("забанить"))
-            {
-                ["minutes"] = new
-                {
-                    type = "integer",
-                    description = "На сколько минут бан, если собеседник назвал срок (час — 60, день — 1440); без срока не указывай — бан навсегда"
-                }
-            }
-        })
-    );
+            ["minutes"] = new { type = "integer" }
+        }
+    }, new { action = "забанить" });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

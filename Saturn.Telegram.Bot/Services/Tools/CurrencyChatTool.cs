@@ -2,6 +2,7 @@ using System.Text.Json;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Infrastructure.CurrencyClient;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -9,29 +10,16 @@ public class CurrencyChatTool : IChatTool
 {
     public string FunctionName => "get_exchange_rate";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "get_exchange_rate",
-        functionDescription: "Получить актуальный курс валют",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("get_exchange_rate", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                from = new
-                {
-                    type = "string",
-                    description = "Базовая валюта (ISO 4217, например USD, EUR, RUB)"
-                },
-                to = new
-                {
-                    type = "array",
-                    items = new { type = "string" },
-                    description = "Целевые валюты (ISO 4217)"
-                }
-            },
-            required = new[] { "from", "to" }
-        })
-    );
+            from = new { type = "string" },
+            to = new { type = "array", items = new { type = "string" } }
+        },
+        required = new[] { "from", "to" }
+    });
 
     private readonly CurrencyClient _currencyClient;
 

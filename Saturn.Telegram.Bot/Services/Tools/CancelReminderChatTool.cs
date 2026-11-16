@@ -4,6 +4,7 @@ using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -25,25 +26,15 @@ public class CancelReminderChatTool : IChatTool
 
     public string FunctionName => "cancel_reminder";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "cancel_reminder",
-        functionDescription: "Отменить напоминание по id. Отменить можно напоминание, которое собеседник поставил сам или которое поставили ему. " +
-                             "id бери из list_reminders, не угадывай; если под просьбу подходят несколько напоминаний — " +
-                             "уточни у собеседника, какое отменить, либо отмени все, если он просит все. В ответе подтверди, что отменил.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("cancel_reminder", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                reminder_id = new
-                {
-                    type = "integer",
-                    description = "id напоминания из list_reminders"
-                }
-            },
-            required = new[] { "reminder_id" }
-        })
-    );
+            reminder_id = new { type = "integer" }
+        },
+        required = new[] { "reminder_id" }
+    });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

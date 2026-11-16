@@ -6,6 +6,7 @@ using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -28,16 +29,11 @@ public class KickChatTool : IChatTool
 
     public string FunctionName => "kick_user";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "kick_user",
-        functionDescription: "Выгнать участника из чата без бана: он сможет вернуться по ссылке-приглашению. " +
-                             "Вызывай, когда собеседник просит кикнуть или выгнать кого-то. " + ChatModeration.AccessNote,
-        functionParameters: BinaryData.FromObjectAsJson(new
-        {
-            type = "object",
-            properties = ChatModeration.TargetProperties("выгнать")
-        })
-    );
+    public ChatTool Definition { get; } = PromptLibrary.Tool("kick_user", new
+    {
+        type = "object",
+        properties = ChatModeration.TargetProperties
+    }, new { action = "выгнать" });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

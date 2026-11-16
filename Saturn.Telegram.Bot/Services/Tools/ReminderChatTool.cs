@@ -6,6 +6,7 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -39,55 +40,20 @@ public class ReminderChatTool : IChatTool
 
     public string FunctionName => "set_reminder";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "set_reminder",
-        functionDescription: "Поставить напоминание: в нужное время бот напишет в этот чат, упомянув человека. " +
-                             "Используй, когда просят напомнить («напомни мне через час выключить духовку», " +
-                             "«напомни Васе завтра в 10, что он должен 500»). " +
-                             "Время задай либо через in_minutes (для «через 2 часа»), либо через at (для «завтра в 10»); " +
-                             "для at сначала узнай текущую дату через get_current_datetime. " +
-                             "В ответе подтверди, кому и когда напомнишь. " +
-                             "Посмотреть и отменить напоминания можно через list_reminders и cancel_reminder.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("set_reminder", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                text = new
-                {
-                    type = "string",
-                    description = $"О чём напомнить, коротко, до {MaxTextLength} символов, например «ты должен Пете 500 рублей»"
-                },
-                user = new
-                {
-                    type = "string",
-                    description = "Кому напомнить: часть username или имени участника чата, как в search_chat_history. " +
-                                  "Не указывай, если напомнить нужно самому собеседнику"
-                },
-                user_id = new
-                {
-                    type = "integer",
-                    description = "Telegram ID участника, если он уже известен (например, из списка кандидатов)"
-                },
-                in_minutes = new
-                {
-                    type = "integer",
-                    description = "Через сколько минут напомнить"
-                },
-                at = new
-                {
-                    type = "string",
-                    description = $"Когда напомнить, в формате {DateTimeFormat} по времени time_zone"
-                },
-                time_zone = new
-                {
-                    type = "string",
-                    description = $"Часовой пояс IANA для at, по умолчанию {DefaultTimeZone}"
-                }
-            },
-            required = new[] { "text" }
-        })
-    );
+            text = new { type = "string" },
+            user = new { type = "string" },
+            user_id = new { type = "integer" },
+            in_minutes = new { type = "integer" },
+            at = new { type = "string" },
+            time_zone = new { type = "string" }
+        },
+        required = new[] { "text" }
+    }, new { maxTextLength = MaxTextLength, dateTimeFormat = DateTimeFormat, defaultTimeZone = DefaultTimeZone });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

@@ -7,6 +7,7 @@ using Saturn.Telegram.Lib.Exceptions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -46,31 +47,15 @@ public class EditImageChatTool : IChatTool
 
     public string FunctionName => "edit_image";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "edit_image",
-        functionDescription:
-        "Отредактировать картинку из запроса (на которую ответил собеседник или которую приложил) и отправить результат в чат. " +
-        "Используй, когда просят изменить, дорисовать, убрать, заменить что-то на этой картинке или перерисовать её " +
-        "в другом стиле («сделай фон зелёным», «надень на него шляпу», «сделай в стиле аниме»). " +
-        "Если нужна новая картинка без опоры на эту — используй generate_image. " +
-        "Модерацию делает сам инструмент, на обычные правки не отказывай заранее. " +
-        "Результат уходит в чат сразу, текстом можешь коротко его прокомментировать. " +
-        "Лимит общий с командой «измени»: одно бесплатное редактирование в час, дальше за трич койны.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("edit_image", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                prompt = new
-                {
-                    type = "string",
-                    description =
-                        "Инструкция для редактирования на английском: что именно изменить и что оставить как есть"
-                }
-            },
-            required = new[] { "prompt" }
-        })
-    );
+            prompt = new { type = "string" }
+        },
+        required = new[] { "prompt" }
+    });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {
@@ -87,7 +72,7 @@ public class EditImageChatTool : IChatTool
         }
 
         // The model tends to soften or lose details when retelling the request, so the edit model also gets the original wording
-        prompt = $"{prompt}\n\nOriginal request: {_context.RequestText}";
+        prompt = PromptLibrary.Get("Media/EditImage", new { prompt, request = _context.RequestText });
 
         var request = _context.Request;
         var user = request.From!;

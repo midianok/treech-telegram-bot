@@ -7,6 +7,7 @@ using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -32,26 +33,15 @@ public class StickerChatTool : IChatTool
 
     public string FunctionName => "send_sticker";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "send_sticker",
-        functionDescription: "Отправить в чат стикер из тех, что участники чата сами часто шлют, подобранный по эмодзи-настроению. " +
-                             "Используй изредка, когда стикер выразит эмоцию лучше слов: ржач, фейспалм, злость, одобрение. " +
-                             "Если стикера достаточно и сказать нечего, можешь после него ответить пустым текстом.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("send_sticker", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                emoji = new
-                {
-                    type = "string",
-                    description = "Одно эмодзи, передающее настроение стикера, например 😂, 😡, 👍, 🤔, 😭. " +
-                                  "Если стикера с таким эмодзи нет, вернётся список доступных — выбери из него"
-                }
-            },
-            required = new[] { "emoji" }
-        })
-    );
+            emoji = new { type = "string" }
+        },
+        required = new[] { "emoji" }
+    });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

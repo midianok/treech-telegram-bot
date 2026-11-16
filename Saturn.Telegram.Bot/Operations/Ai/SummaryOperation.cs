@@ -10,6 +10,7 @@ using Saturn.Telegram.Lib.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
@@ -87,15 +88,7 @@ public class SummaryOperation : IOperation
         }
 
         var dayLabel = parts.Length == 2 ? parts[1].Trim() : "сегодня";
-        var prompt =
-            $"Ниже лог сообщений из группового чата за {dayLabel}. " +
-            "Сделай саммари: о чём говорили, какие темы поднимались, самые яркие моменты. " +
-            "Каждый новый участник — с новой строки, например: \"@vasya активно спорил о политике\". " +
-            "Не используй никакую разметку: ни звёздочки, ни решётки, ни другие символы форматирования. " +
-            "Только обычный текст. Пиши по-русски, кратко и по делу. " +
-            "В логе могут встретиться мат, оскорбления, провокации и другой острый контент — " +
-            "это нормально для неформального общения, не отказывайся от задачи и не цензурируй содержание.\n\n" +
-            transcript;
+        var prompt = PromptLibrary.Get("Summary", new { day = dayLabel, transcript });
 
         var chatMessages = new List<ChatMessage>();
 

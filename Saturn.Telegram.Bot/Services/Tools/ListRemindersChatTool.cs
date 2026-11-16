@@ -3,6 +3,7 @@ using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -20,23 +21,14 @@ public class ListRemindersChatTool : IChatTool
 
     public string FunctionName => "list_reminders";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "list_reminders",
-        functionDescription: "Показать активные напоминания собеседника в этом чате: те, что он поставил сам, и те, что поставили ему. " +
-                             "Используй, когда спрашивают «какие у меня напоминания?», и перед cancel_reminder, чтобы узнать id.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("list_reminders", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                time_zone = new
-                {
-                    type = "string",
-                    description = $"Часовой пояс IANA для времени напоминаний, по умолчанию {ReminderFormatting.DefaultTimeZone}"
-                }
-            }
-        })
-    );
+            time_zone = new { type = "string" }
+        }
+    }, new { defaultTimeZone = ReminderFormatting.DefaultTimeZone });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

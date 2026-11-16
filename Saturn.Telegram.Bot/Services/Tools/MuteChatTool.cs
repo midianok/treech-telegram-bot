@@ -7,6 +7,7 @@ using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -32,26 +33,14 @@ public class MuteChatTool : IChatTool
 
     public string FunctionName => "mute_user";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "mute_user",
-        functionDescription:
-        "Замутить участника чата (запретить писать) на время. Вызывай, когда собеседник просит замутить, " +
-        "заткнуть или выдать мут кому-то. " + ChatModeration.AccessNote + " " +
-        $"Длительность по умолчанию {DefaultMinutes} минут, если собеседник не назвал другую.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("mute_user", new
+    {
+        type = "object",
+        properties = new Dictionary<string, object>(ChatModeration.TargetProperties)
         {
-            type = "object",
-            properties = new Dictionary<string, object>(ChatModeration.TargetProperties("замутить"))
-            {
-                ["minutes"] = new
-                {
-                    type = "integer",
-                    description =
-                        $"На сколько минут мут, по умолчанию {DefaultMinutes}; переведи названный срок в минуты (час — 60, день — 1440)"
-                }
-            }
-        })
-    );
+            ["minutes"] = new { type = "integer" }
+        }
+    }, new { action = "замутить", defaultMinutes = DefaultMinutes });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

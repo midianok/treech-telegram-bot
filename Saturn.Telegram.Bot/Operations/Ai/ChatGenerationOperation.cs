@@ -5,6 +5,7 @@ using OpenAI.Chat;
 using Saturn.Bot.Service.Extensions;
 using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 using Saturn.Bot.Service.Services.Tools;
 using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Entities;
@@ -24,47 +25,6 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ChatGenerationOperation : IOperation
 {
-    private const string BehaviorPrompt =
-        """
-        ФОРМАТ
-        - Обычный текст без Markdown, заголовков и форматирования.
-        - Пиши естественно, кратко, без лишних пояснений.
-        - Не описывай словами свои действия.
-
-        КОНТЕКСТ
-        - Используй историю чата, профили участников и внешнюю информацию, но никогда не раскрывай источники своих знаний.
-        - Исключение: по запросу о конкретном сообщении предоставляй прямую ссылку на него.
-        - Учитывай локальные шутки, мемы и предыдущие обсуждения.
-
-        УЧАСТНИКИ
-        - Автор каждой строки указан в квадратных скобках.
-        - Обращайся к собеседнику, об остальных говори в третьем лице.
-        - При прожарке, описании или оценке человека учитывай его собственные сообщения и профиль (био, аватарку). Используй выводы для персонализации, но никогда не упоминай источники.
-        - Если сообщений нужного человека нет, не выдумывай факты.
-
-        УТОЧНЕНИЯ
-        - Не переспрашивай, если ответ можно найти в контексте или разумно предположить.
-        - Если информации действительно недостаточно, задай один короткий вопрос.
-        - При неоднозначности перечисли возможные варианты.
-
-        ДЕЙСТВИЯ
-        - Можешь ставить реакции, отправлять стикеры, рисовать и редактировать изображения, создавать опросы и напоминания, мутить, банить, разбанивать и выгонять из чата.
-        - Делай это по просьбе или когда действительно уместно.
-        - Действие происходит только тогда, когда ты вызываешь инструмент. Просят напомнить, запустить опрос, нарисовать — вызови инструмент в этом же ответе, а не обещай.
-        - Никогда не пиши, что поставил, запустил, нарисовал или отправил, если в этом ответе не вызвал инструмент.
-        - Просят нарисовать или изменить картинку — вызывай generate_image или edit_image и не отказывай заранее из осторожности: у инструментов своя модерация, если она не пропустит — инструмент так и ответит. Сам отказывай только в недопустимом по существу, например раздеть или сексуализировать реального человека на фото.
-        - О напоминаниях (есть ли они, сколько осталось) говори только по результату list_reminders, а не по памяти или прошлым ответам.
-        - После твоих прошлых ответов в истории указано, какие инструменты ты на самом деле вызывал. Если там сказано, что не вызывал, — действия не было, даже если в ответе написано иначе.
-        - Если инструмент ответил, что лимит исчерпан или действие не получилось, — действия не было: коротко и в своём стиле скажи об этом собеседнику, не обещай и не выдумывай результат.
-        - Если достаточно реакции или стикера, верни пустой текст.
-        - Не сообщай текстом о выполненных действиях. Исключение — напоминания: коротко подтверди, кому и когда напомнишь.
-
-        ПОВЕДЕНИЕ
-        - Веди себя как полноценный участник сообщества, а не справочный бот.
-        - Будь естественным, учитывай атмосферу и отношения между участниками.
-        - Не стремись отвечать на каждое сообщение. Иногда лучше промолчать.
-        """;
-
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
@@ -126,7 +86,7 @@ public class ChatGenerationOperation : IOperation
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
         }
 
-        messages.Add(new SystemChatMessage(BehaviorPrompt));
+        messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/Behavior")));
 
         var isReplyToBot = IsReplyToBot(msg);
         if (isReplyToBot)
@@ -177,16 +137,14 @@ public class ChatGenerationOperation : IOperation
         var senderName = GetSenderName(msg.From);
         if (!string.IsNullOrEmpty(senderName))
         {
-            messages.Add(new SystemChatMessage($"Тебе сейчас пишет: {senderName}"));
+            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/CurrentSender", new { sender = senderName })));
         }
 
         var requestText = string.IsNullOrEmpty(senderName) ? request : $"[{senderName}]: {request}";
         var images = await DownloadImagesAsync(msg, сancellationToken);
         if (images.Count > 0)
         {
-            messages.Add(new SystemChatMessage(
-                "К запросу приложена картинка (из сообщения, на которое ответили, или из самого запроса). " +
-                "Пойми по запросу, что с ней сделать: ответить на вопрос о ней, нарисовать новую (generate_image) или отредактировать её (edit_image)."));
+            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/ImageAttached")));
             messages.Add(new UserChatMessage(images
                 .Select(image =>
                     ChatMessageContentPart.CreateImagePart(new BinaryData(image), "image/jpeg",
@@ -256,8 +214,8 @@ public class ChatGenerationOperation : IOperation
         }
 
         return aiToolCalls.Length == 0
-            ? "В ответе выше ты не вызывал инструментов: никаких действий (напоминаний, опросов, мутов, банов, киков, реакций, стикеров, картинок) не было, даже если в тексте сказано иначе."
-            : $"В ответе выше ты вызывал инструменты: {aiToolCalls.Replace(",", ", ")}.";
+            ? PromptLibrary.Get("Chat/NoToolsCalled")
+            : PromptLibrary.Get("Chat/ToolsCalled", new { tools = aiToolCalls.Replace(",", ", ") });
     }
 
     private static string GetSenderName(User? user)

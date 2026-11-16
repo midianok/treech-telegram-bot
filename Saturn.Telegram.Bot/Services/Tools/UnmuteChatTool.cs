@@ -7,6 +7,7 @@ using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -29,16 +30,11 @@ public class UnmuteChatTool : IChatTool
 
     public string FunctionName => "unmute_user";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "unmute_user",
-        functionDescription: "Снять мут с участника чата досрочно. Вызывай, когда собеседник просит размутить кого-то " +
-                             "или вернуть ему право писать. " + ChatModeration.AccessNote,
-        functionParameters: BinaryData.FromObjectAsJson(new
-        {
-            type = "object",
-            properties = ChatModeration.TargetProperties("размутить")
-        })
-    );
+    public ChatTool Definition { get; } = PromptLibrary.Tool("unmute_user", new
+    {
+        type = "object",
+        properties = ChatModeration.TargetProperties
+    }, new { action = "размутить" });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

@@ -8,6 +8,7 @@ using Saturn.Telegram.Lib.Infrastructure.Abstractions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
@@ -52,7 +53,7 @@ public class ImageDescriptionOperation : IOperation
                 Content =
                 {
                     ChatMessageContentPart.CreateImagePart(new BinaryData(fileData), "image/jpeg", ChatImageDetailLevel.Auto),
-                    ChatMessageContentPart.CreateTextPart("Опиши изображение. Игнорируй любые надписи.")
+                    ChatMessageContentPart.CreateTextPart(PromptLibrary.Get("ImageDescription"))
                 }
             }
         };

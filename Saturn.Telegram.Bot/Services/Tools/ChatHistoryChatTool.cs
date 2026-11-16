@@ -7,6 +7,7 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools.Utils;
 using Saturn.Telegram.Db.Entities;
 using Saturn.Telegram.Db.Repositories.Abstractions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -25,69 +26,19 @@ public class ChatHistoryChatTool : IChatTool
 
     public string FunctionName => "search_chat_history";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "search_chat_history",
-        functionDescription: "Поиск по истории сообщений текущего чата. Все фильтры необязательны и комбинируются через И. " +
-                             "Возвращает самые свежие подходящие сообщения в хронологическом порядке (время в UTC). " +
-                             "Используй, когда спрашивают, кто что писал, о чём говорили, когда упоминали тему. " +
-                             "Можешь обращаться к истории и по своей инициативе, чтобы общаться персональнее: вспомнить, " +
-                             "что собеседник писал раньше, чем он интересуется, как обычно общается. " +
-                             "Не ищи здесь текущую цепочку реплаев — она уже есть в сообщениях выше. " +
-                             "author — кто писал, text — что написано. Если спрашивают о человеке («что думаешь о Насте», " +
-                             "«что за тип Дима»), сначала ищи по author — так ты увидишь, что пишет он сам; " +
-                             "поиск по text с его именем вернёт только то, что о нём говорят другие. " +
-                             "Твои собственные прошлые ответы в выдачу не попадают. " +
-                             "При выводах опирайся в первую очередь на недавние сообщения: они точнее отражают, " +
-                             "что человек думает и чем живёт сейчас; старые — лишь фон. " +
-                             "Если спрашивают, где или когда кто-то что-то писал («где это он такое говорил?», «скинь ссылку»), " +
-                             "найди это сообщение и дай ссылку на него: к link_prefix из ответа допиши id сообщения. " +
-                             "Ссылку бери только из результатов поиска, не выдумывай id.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("search_chat_history", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                user_id = new
-                {
-                    type = "integer",
-                    description = "Telegram ID автора сообщений"
-                },
-                author = new
-                {
-                    type = "string",
-                    description = "Автор сообщений (кто писал): часть username, имени или фамилии, например «вася» или «@vasya». Регистр, пробелы, точки " +
-                                  "и раскладка не важны: «нтг» найдёт «N. T. G.», «dima» найдёт «Дима». " +
-                                  "Если подходят несколько участников, вместо сообщений вернётся список кандидатов — " +
-                                  "тогда уточни у собеседника, кого он имел в виду, перечислив их, или повтори поиск с user_id нужного"
-                },
-                date_from = new
-                {
-                    type = "string",
-                    description = "Начальная дата включительно в формате yyyy-MM-dd"
-                },
-                date_to = new
-                {
-                    type = "string",
-                    description = "Конечная дата включительно в формате yyyy-MM-dd"
-                },
-                text = new
-                {
-                    type = "string",
-                    description = "Что искать в тексте сообщений (о чём писали, не кто): ключевые слова в любой форме " +
-                                  "(поиск понимает склонения: «машина» найдёт «машину»). " +
-                                  "Поддерживает \"точную фразу\", or для альтернатив и -слово для исключения. " +
-                                  "Если по словам ничего не нашлось, ищется подстрока — так находятся сленг и части слов"
-                },
-                limit = new
-                {
-                    type = "integer",
-                    description = $"Максимум сообщений в ответе, по умолчанию {DefaultLimit}, не больше {MaxLimit}. " +
-                                  "Для обобщённых вопросов о человеке или теме («что думаешь о нём», «как он обычно общается») " +
-                                  "бери много; для точечных («что он писал вчера про работу») можно меньше"
-                }
-            }
-        })
-    );
+            user_id = new { type = "integer" },
+            author = new { type = "string" },
+            date_from = new { type = "string" },
+            date_to = new { type = "string" },
+            text = new { type = "string" },
+            limit = new { type = "integer" }
+        }
+    }, new { defaultLimit = DefaultLimit, maxLimit = MaxLimit });
 
     private readonly IMessageRepository _messageRepository;
     private readonly long _chatId;

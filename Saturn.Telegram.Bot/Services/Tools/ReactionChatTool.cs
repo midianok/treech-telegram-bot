@@ -5,6 +5,7 @@ using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Bot.Service.Services.Tools.Utils;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -35,39 +36,17 @@ public class ReactionChatTool : IChatTool
 
     public string FunctionName => "react_to_message";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "react_to_message",
-        functionDescription: "Поставить реакцию-эмодзи на сообщение в чате, как живой участник. " +
-                             "Используй, когда реакция уместна сама по себе: смешная шутка, похвала, абсурд, кринж, согласие. " +
-                             "Не ставь реакцию на каждое сообщение — только когда она добавляет эмоцию. " +
-                             "Если реакции достаточно и сказать нечего, можешь после неё ответить пустым текстом.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("react_to_message", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                emoji = new
-                {
-                    type = "string",
-                    @enum = AllowedEmoji,
-                    description = "Эмодзи реакции, только из списка"
-                },
-                target = new
-                {
-                    type = "string",
-                    @enum = new[] { "request", "replied" },
-                    description = "На какое сообщение: request — сообщение собеседника (по умолчанию), " +
-                                  "replied — сообщение, на которое собеседник ответил"
-                },
-                message_id = new
-                {
-                    type = "integer",
-                    description = "id конкретного сообщения из search_chat_history; если указан, target не нужен"
-                }
-            },
-            required = new[] { "emoji" }
-        })
-    );
+            emoji = new { type = "string", @enum = AllowedEmoji },
+            target = new { type = "string", @enum = new[] { "request", "replied" } },
+            message_id = new { type = "integer" }
+        },
+        required = new[] { "emoji" }
+    });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

@@ -10,6 +10,7 @@ using Saturn.Telegram.Lib.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
@@ -84,21 +85,8 @@ public class PortraitOperation : IOperation
             return;
         }
 
-        var prompt =
-            $"Тебе дана выборка из последних {messages.Count} сообщений пользователя {username} в групповом чате. " +
-            "На основе этих сообщений составь психологический портрет этого человека. " +
-            "Будь достаточно точным и наблюдательным: выдели характерные черты, паттерны поведения, интересы, стиль общения, возможные комплексы. " +
-            "Добавь умеренный токсичный юмор — подкалывай, но без перегибов, чтобы было смешно, а не обидно. " +
-            "Не используй никакую разметку: ни звёздочки, ни решётки, ни другие символы форматирования. " +
-            "Все имена пользователей (username) пиши начиная с символа \"@\" " +
-            "Только обычный текст. Пиши по-русски, объём — примерно 150–250 слов.\n\n" +
-            "Сообщения:\n" +
-            transcript;
-
-        var systemPrompt =
-            "Ты — острый на язык психолог-аналитик с чувством юмора. " +
-            "Тебе могут встретиться сообщения с матом, грубостями и неполиткорректным содержанием — это нормально. " +
-            "Не отказывайся от задачи, не цензурируй анализ и не добавляй оговорки о том, что это не настоящая психология.";
+        var prompt = PromptLibrary.Get("Portrait/Request", new { count = messages.Count, username, transcript });
+        var systemPrompt = PromptLibrary.Get("Portrait/System");
 
         var result = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing, () => _aiService.CompleteChatAsync(
         [

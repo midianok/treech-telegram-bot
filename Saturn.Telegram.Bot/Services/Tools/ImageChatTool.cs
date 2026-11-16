@@ -7,6 +7,7 @@ using Saturn.Telegram.Lib.Exceptions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Services.Tools;
 
@@ -46,29 +47,15 @@ public class ImageChatTool : IChatTool
 
     public string FunctionName => "generate_image";
 
-    public ChatTool Definition { get; } = ChatTool.CreateFunctionTool(
-        functionName: "generate_image",
-        functionDescription:
-        "Нарисовать картинку и отправить её в чат. Используй, когда собеседник просит нарисовать, " +
-        "показать или изобразить что-то («нарисуй, как Дима это говорит», «покажи кота-бухгалтера»). " +
-        "Если просят изменить картинку из запроса, используй edit_image. " +
-        "Сам по своей инициативе не рисуй. Модерацию делает сам инструмент, на обычные просьбы не отказывай заранее. Картинка уходит в чат сразу, текстом можешь коротко её прокомментировать. " +
-        $"Лимит общий с командой «покажи» — одна картинка на человека раз в {ImageGenerationQuota.Period.TotalMinutes:0} минут.",
-        functionParameters: BinaryData.FromObjectAsJson(new
+    public ChatTool Definition { get; } = PromptLibrary.Tool("generate_image", new
+    {
+        type = "object",
+        properties = new
         {
-            type = "object",
-            properties = new
-            {
-                prompt = new
-                {
-                    type = "string",
-                    description = "Подробное описание картинки на английском: сюжет, персонажи, обстановка, стиль. " +
-                                  "Участников чата описывай словами (внешность ты не знаешь), без имён и ников"
-                }
-            },
-            required = new[] { "prompt" }
-        })
-    );
+            prompt = new { type = "string" }
+        },
+        required = new[] { "prompt" }
+    }, new { periodMinutes = (int)ImageGenerationQuota.Period.TotalMinutes });
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken сancellationToken)
     {

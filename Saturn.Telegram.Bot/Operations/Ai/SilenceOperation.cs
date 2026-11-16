@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Saturn.Bot.Service.Services.Prompts;
 
 namespace Saturn.Bot.Service.Operations.Ai;
 
@@ -117,7 +118,7 @@ public class SilenceOperation : IOperation
         var messages = new List<ChatMessage>();
         if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
             messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
-        messages.Add(new UserChatMessage("В чате долго молчат. Расскажи какую-нибудь историю про человека которого ты знаешь"));
+        messages.Add(new UserChatMessage(PromptLibrary.Get("Silence/Story")));
         return await _aiService.CompleteChatAsync(messages, CancellationToken.None);
     }
 
@@ -146,11 +147,8 @@ public class SilenceOperation : IOperation
 
         return await _aiService.CompleteChatAsync(
         [
-            new SystemChatMessage("Ты — участник группового чата. Не цензурируй содержание."),
-            new UserChatMessage(
-                "В чате установилась тишина. На основе этих сообщений задай один интересный вопрос для обсуждения — " +
-                "связанный с темами, о которых говорили. Только вопрос, без вступления. Пиши по-русски.\n\n" +
-                transcript)
+            new SystemChatMessage(PromptLibrary.Get("Silence/DailyQuestion/System")),
+            new UserChatMessage(PromptLibrary.Get("Silence/DailyQuestion/Request", new { transcript }))
         ], CancellationToken.None);
     }
 
@@ -193,14 +191,8 @@ public class SilenceOperation : IOperation
 
         return await _aiService.CompleteChatAsync(
         [
-            new SystemChatMessage("Ты — хроникёр чата. Не цензурируй содержание."),
-            new UserChatMessage(
-                $"Вот переписка из группового чата за {dateHint}. " +
-                "Напиши короткое живое саммари — о чём говорили, какие были яркие моменты. " +
-                "Упомяни когда это было, но не пиши дату цифрами — вместо этого используй " +
-                "день недели, время года, праздник или вставь фразу вроде «тем вечером», «в тот день». " +
-                "Без разметки. По-русски. 3–5 предложений.\n\n" +
-                transcript)
+            new SystemChatMessage(PromptLibrary.Get("Silence/DaySummary/System")),
+            new UserChatMessage(PromptLibrary.Get("Silence/DaySummary/Request", new { date = dateHint, transcript }))
         ], CancellationToken.None);
     }
 
