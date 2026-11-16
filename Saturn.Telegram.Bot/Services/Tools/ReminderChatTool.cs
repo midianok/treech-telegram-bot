@@ -40,7 +40,9 @@ public class ReminderChatTool : IChatTool
 
     public string FunctionName => "set_reminder";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("set_reminder", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("set_reminder", new
     {
         type = "object",
         properties = new
@@ -159,7 +161,7 @@ public class ReminderChatTool : IChatTool
 
         if (remindAt <= now)
         {
-            error = "Это время уже прошло — проверь текущую дату через get_current_datetime";
+            error = "Это время уже прошло — проверь текущую дату и часовой пояс";
             return false;
         }
         if (remindAt - now > MaxDelay)

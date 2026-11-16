@@ -45,7 +45,7 @@ After adding a new operation, document it in `Saturn.Telegram.Bot/Help.md` in Ru
 All AI prompts and tool descriptions live as Markdown files in `Saturn.Telegram.Bot/Prompts/` (embedded into the assembly) and are read via the static `PromptLibrary` (`Saturn.Telegram.Bot/Services/Prompts/PromptLibrary.cs`). Never hardcode prompt text in C#.
 
 - `PromptLibrary.Get("Chat/CurrentSender", new { sender })` renders `Prompts/Chat/CurrentSender.md`. Placeholders are `{{name}}`, filled from an anonymous object or a dictionary; a missing or unused parameter throws.
-- `{{> Shared/ModerationAccess}}` includes another prompt file with the same parameters; `<!-- ... -->` comments are stripped, so use them to document a file's parameters.
+- `{{> Shared/Name}}` includes another prompt file (`Prompts/Shared/Name.md`) with the same parameters; `<!-- ... -->` comments are stripped, so use them to document a file's parameters.
 - Tools: `PromptLibrary.Tool("get_weather", schema, args)` builds the `ChatTool` from `Prompts/Tools/get_weather.md`. The JSON schema in code holds only types, enums and `required`. The text before the first `## heading` is the function description, and each `## param_name` section describes that property. Every property needs a section, and every section needs a property.
 
 ## Environment Variables

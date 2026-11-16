@@ -21,7 +21,9 @@ public class UserProfileChatTool : IChatTool
 
     public string FunctionName => "get_user_profile";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("get_user_profile", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("get_user_profile", new
     {
         type = "object",
         properties = new

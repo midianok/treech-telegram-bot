@@ -36,7 +36,9 @@ public class ReactionChatTool : IChatTool
 
     public string FunctionName => "react_to_message";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("react_to_message", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("react_to_message", new
     {
         type = "object",
         properties = new

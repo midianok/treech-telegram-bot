@@ -33,7 +33,9 @@ public class StickerChatTool : IChatTool
 
     public string FunctionName => "send_sticker";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("send_sticker", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("send_sticker", new
     {
         type = "object",
         properties = new

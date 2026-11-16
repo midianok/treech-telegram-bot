@@ -26,7 +26,9 @@ public class ChatHistoryChatTool : IChatTool
 
     public string FunctionName => "search_chat_history";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("search_chat_history", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("search_chat_history", new
     {
         type = "object",
         properties = new

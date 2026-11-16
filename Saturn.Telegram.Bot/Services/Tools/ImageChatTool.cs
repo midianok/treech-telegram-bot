@@ -47,7 +47,9 @@ public class ImageChatTool : IChatTool
 
     public string FunctionName => "generate_image";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("generate_image", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("generate_image", new
     {
         type = "object",
         properties = new

@@ -21,7 +21,9 @@ public class ListRemindersChatTool : IChatTool
 
     public string FunctionName => "list_reminders";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("list_reminders", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("list_reminders", new
     {
         type = "object",
         properties = new

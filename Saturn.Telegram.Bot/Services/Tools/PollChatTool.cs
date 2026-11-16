@@ -32,7 +32,9 @@ public class PollChatTool : IChatTool
 
     public string FunctionName => "create_poll";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("create_poll", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("create_poll", new
     {
         type = "object",
         properties = new

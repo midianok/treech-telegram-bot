@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,8 @@ namespace Saturn.Bot.Service.Operations.Ai;
 [ChatOnly("иди общайся в чат, хитрый пидарас")]
 public class ChatGenerationOperation : IOperation
 {
+    private static readonly string[] DayNames = ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"];
+
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly ISaveMessageService _saveMessageService;
@@ -134,6 +137,13 @@ public class ChatGenerationOperation : IOperation
                 : $"[{repliedSenderName}]: {repliedText}"));
         }
 
+        // Per-request notes go after the history, so everything above stays a stable prefix for the prompt cache
+        messages.Add(new SystemChatMessage(GetCurrentDateTimeNote()));
+        if (!ChatToolFactory.CanModerate(msg))
+        {
+            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/NoModeration")));
+        }
+
         var senderName = GetSenderName(msg.From);
         if (!string.IsNullOrEmpty(senderName))
         {
@@ -200,6 +210,26 @@ public class ChatGenerationOperation : IOperation
         }
 
         return images;
+    }
+
+    /// <summary>
+    /// The current date and time, so the model counts relative dates («завтра в 10», «вчера»)
+    /// without spending a tool round trip on it.
+    /// </summary>
+    private static string GetCurrentDateTimeNote()
+    {
+        ReminderFormatting.TryGetTimeZone(ReminderFormatting.DefaultTimeZone, out var timeZone);
+        var utcNow = DateTime.UtcNow;
+        var now = TimeZoneInfo.ConvertTimeFromUtc(utcNow, timeZone);
+        var offset = timeZone.GetUtcOffset(utcNow);
+        return PromptLibrary.Get("Chat/CurrentDateTime", new
+        {
+            date = now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            dayOfWeek = DayNames[(int)now.DayOfWeek],
+            time = now.ToString("HH:mm", CultureInfo.InvariantCulture),
+            timeZone = timeZone.Id,
+            utcOffset = $"{(offset < TimeSpan.Zero ? "-" : "+")}{offset:hh\\:mm}"
+        });
     }
 
     /// <summary>

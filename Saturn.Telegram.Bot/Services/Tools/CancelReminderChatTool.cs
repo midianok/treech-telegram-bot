@@ -26,7 +26,9 @@ public class CancelReminderChatTool : IChatTool
 
     public string FunctionName => "cancel_reminder";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("cancel_reminder", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("cancel_reminder", new
     {
         type = "object",
         properties = new

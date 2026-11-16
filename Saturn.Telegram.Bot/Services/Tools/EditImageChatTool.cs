@@ -47,7 +47,9 @@ public class EditImageChatTool : IChatTool
 
     public string FunctionName => "edit_image";
 
-    public ChatTool Definition { get; } = PromptLibrary.Tool("edit_image", new
+    public ChatTool Definition => ToolDefinition;
+
+    private static readonly ChatTool ToolDefinition = PromptLibrary.Tool("edit_image", new
     {
         type = "object",
         properties = new

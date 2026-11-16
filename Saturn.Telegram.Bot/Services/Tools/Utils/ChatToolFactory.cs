@@ -4,6 +4,7 @@ using Saturn.Bot.Service.Options;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db.Repositories.Abstractions;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 
 namespace Saturn.Bot.Service.Services.Tools.Utils;
 
@@ -51,33 +52,34 @@ public class ChatToolFactory
         var isAdmin = !string.IsNullOrEmpty(_adminUsername) &&
                       string.Equals(request.From?.Username, _adminUsername, StringComparison.OrdinalIgnoreCase);
 
-        IChatTool[] tools =
-        [
+        // Optional tools go last and in a fixed order, so the common prefix of the request stays the same for the prompt cache
+        var tools = new List<IChatTool>
+        {
             new ChatHistoryChatTool(_messageRepository, request.Chat.Id, _loggerFactory.CreateLogger<ChatHistoryChatTool>()),
             new UserProfileChatTool(_telegramBotClient, _aiService, _messageRepository, request.Chat.Id, _loggerFactory.CreateLogger<UserProfileChatTool>()),
             new ReactionChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<ReactionChatTool>()),
             new StickerChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<StickerChatTool>()),
             new ImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageGenerationQuota, context, _loggerFactory.CreateLogger<ImageChatTool>()),
             new PollChatTool(_telegramBotClient, context, _loggerFactory.CreateLogger<PollChatTool>()),
-            new MuteChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<MuteChatTool>()),
-            new UnmuteChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<UnmuteChatTool>()),
-            new BanChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<BanChatTool>()),
-            new UnbanChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<UnbanChatTool>()),
-            new KickChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<KickChatTool>()),
             new ReminderChatTool(_messageRepository, _reminderRepository, context, _loggerFactory.CreateLogger<ReminderChatTool>()),
             new ListRemindersChatTool(_reminderRepository, context),
             new CancelReminderChatTool(_reminderRepository, context, isAdmin, _loggerFactory.CreateLogger<CancelReminderChatTool>())
-        ];
+        };
 
-        if (context.Images.Count == 0)
+        if (CanModerate(request))
         {
-            return tools;
+            tools.Add(new ModerationChatTool(_telegramBotClient, _messageRepository, context, _loggerFactory.CreateLogger<ModerationChatTool>()));
         }
 
-        return
-        [
-            ..tools,
-            new EditImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageEditQuota, context, _loggerFactory.CreateLogger<EditImageChatTool>())
-        ];
+        if (context.Images.Count > 0)
+        {
+            tools.Add(new EditImageChatTool(_telegramBotClient, _aiService, _generationProgressService, _imageEditQuota, context, _loggerFactory.CreateLogger<EditImageChatTool>()));
+        }
+
+        return tools;
     }
+
+    /// <summary>Whether the moderation tool is offered: the requester is a moderator.</summary>
+    public static bool CanModerate(Message request) =>
+        request.From != null && ChatModeration.IsModerator(request.From.Id);
 }

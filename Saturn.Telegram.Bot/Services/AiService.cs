@@ -236,9 +236,9 @@ public class AiService : IAiService
             ? string.Join(", ", completion.ToolCalls.Select(c => c.FunctionName))
             : "none";
         _logger.LogInformation(
-            "AI response (iteration {Iteration}) in {Elapsed:F1} s: finish {FinishReason}, tokens in {InputTokens} / out {OutputTokens}, tool calls: {ToolCalls}, text: {Text}",
-            iteration, elapsed.TotalSeconds, completion.FinishReason, completion.Usage?.InputTokenCount, completion.Usage?.OutputTokenCount,
-            toolCalls, Truncate(completion.Content.FirstOrDefault()?.Text, MaxLoggedMessageLength));
+            "AI response (iteration {Iteration}) in {Elapsed:F1} s: finish {FinishReason}, tokens in {InputTokens} (cached {CachedTokens}) / out {OutputTokens}, tool calls: {ToolCalls}, text: {Text}",
+            iteration, elapsed.TotalSeconds, completion.FinishReason, completion.Usage?.InputTokenCount,
+            completion.Usage?.InputTokenDetails?.CachedTokenCount, completion.Usage?.OutputTokenCount, toolCalls, Truncate(completion.Content.FirstOrDefault()?.Text, MaxLoggedMessageLength));
     }
 
     private static string GetRole(ChatMessage message) => message switch
