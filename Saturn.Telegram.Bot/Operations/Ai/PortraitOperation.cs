@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenAI.Chat;
 using Saturn.Bot.Service.Services.Abstractions;
 using Saturn.Telegram.Db;
+using Saturn.Telegram.Db.Repositories.Abstractions;
 using Saturn.Telegram.Lib.Operation;
 using System.Collections.Concurrent;
 using System.Text;
@@ -18,20 +19,23 @@ public class PortraitOperation : IOperation
 {
     private const int MaxMessages = 300;
 
-    private static readonly ConcurrentDictionary<(long ChatId, long UserId), string> Cache = new();
+    private static readonly ConcurrentDictionary<(long ChatId, long UserId, Guid? AgentId), string> Cache = new();
 
     private readonly ITelegramBotClient _telegramBotClient;
     private readonly IAiService _aiService;
     private readonly IDbContextFactory<SaturnContext> _contextFactory;
+    private readonly IChatCachedRepository _chatCachedRepository;
 
     public PortraitOperation(
         ITelegramBotClient telegramBotClient,
         IAiService aiService,
-        IDbContextFactory<SaturnContext> contextFactory)
+        IDbContextFactory<SaturnContext> contextFactory,
+        IChatCachedRepository chatCachedRepository)
     {
         _telegramBotClient = telegramBotClient;
         _aiService = aiService;
         _contextFactory = contextFactory;
+        _chatCachedRepository = chatCachedRepository;
     }
 
     public bool Validate(Message msg, UpdateType type) =>
@@ -77,7 +81,9 @@ public class PortraitOperation : IOperation
             transcript.AppendLine(m.Text);
         }
 
-        var cacheKey = (msg.Chat.Id, targetUser.Id);
+        var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
+
+        var cacheKey = (msg.Chat.Id, targetUser.Id, chatEntity.AiAgentId);
         if (Cache.TryGetValue(cacheKey, out var cached))
         {
             await _telegramBotClient.SendMessage(msg.Chat, cached,
@@ -88,11 +94,18 @@ public class PortraitOperation : IOperation
         var prompt = PromptLibrary.Get("Portrait/Request", new { count = messages.Count, username, transcript });
         var systemPrompt = PromptLibrary.Get("Portrait/System");
 
-        var result = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing, () => _aiService.CompleteChatAsync(
-        [
-            new SystemChatMessage(systemPrompt),
-            new UserChatMessage(prompt)
-        ], сancellationToken), сancellationToken);
+        var chatMessages = new List<ChatMessage>();
+
+        if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
+        {
+            chatMessages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
+        }
+
+        chatMessages.Add(new SystemChatMessage(systemPrompt));
+        chatMessages.Add(new UserChatMessage(prompt));
+
+        var result = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
+            () => _aiService.CompleteChatAsync(chatMessages, сancellationToken), сancellationToken);
 
         Cache[cacheKey] = result;
 
