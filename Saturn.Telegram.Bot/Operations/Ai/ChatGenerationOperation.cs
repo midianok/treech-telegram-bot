@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
@@ -77,110 +78,27 @@ public class ChatGenerationOperation : IOperation
 
     public async Task OnMessageAsync(Message msg, UpdateType type, CancellationToken сancellationToken)
     {
-        var request = (msg.Text ?? msg.Caption)!.ToLower()
-            .Replace($"{_invokeCommand}, ", string.Empty)
-            .Replace($"{_invokeCommand} ", string.Empty);
+        var request = ExtractRequest(msg);
+        var senderName = GetSenderName(msg.From);
+        var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
+        var images = await DownloadImagesAsync(msg, сancellationToken);
 
         var messages = new List<ChatMessage>();
-
-        var chatEntity = await _chatCachedRepository.GetAsync(msg.Chat.Id);
-        if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
-        {
-            messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
-        }
-
-        messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/Behavior")));
-
-        var isReplyToBot = IsReplyToBot(msg);
-        if (isReplyToBot)
-        {
-            var messageChain = await _messageRepository.GetMessageChainAsync(msg.Chat.Id, msg.ReplyToMessage!.Id);
-            if (messageChain.Count > 0)
-            {
-                foreach (var chainMessage in messageChain.OrderBy(x => x.MessageDate))
-                {
-                    if (chainMessage.IsBot)
-                    {
-                        messages.Add(new AssistantChatMessage(chainMessage.Text ?? string.Empty));
-                        var toolCallsNote = GetToolCallsNote(chainMessage.AiToolCalls);
-                        if (toolCallsNote != null)
-                        {
-                            messages.Add(new SystemChatMessage(toolCallsNote));
-                        }
-
-                        continue;
-                    }
-
-                    var chainSenderName = GetSenderName(chainMessage.User);
-                    var text = string.IsNullOrEmpty(chainSenderName)
-                        ? chainMessage.Text
-                        : $"[{chainSenderName}]: {chainMessage.Text}";
-                    messages.Add(new UserChatMessage(text));
-                }
-
-                _logger.LogInformation("Reply to bot: loaded chain of {Count} messages", messageChain.Count);
-            }
-            else
-            {
-                _logger.LogInformation("Reply to bot: message {MessageId} not found in DB, using only the replied text",
-                    msg.ReplyToMessage.Id);
-                messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
-            }
-        }
-
-        var repliedText = msg.ReplyToMessage?.Text ?? msg.ReplyToMessage?.Caption;
-        if (!isReplyToBot && !string.IsNullOrWhiteSpace(repliedText))
-        {
-            var repliedSenderName = GetSenderName(msg.ReplyToMessage!.From);
-            messages.Add(new UserChatMessage(string.IsNullOrEmpty(repliedSenderName)
-                ? repliedText
-                : $"[{repliedSenderName}]: {repliedText}"));
-        }
-
-        // Per-request notes go after the history, so everything above stays a stable prefix for the prompt cache
-        messages.Add(new SystemChatMessage(GetCurrentDateTimeNote()));
-        if (!ChatToolFactory.CanModerate(msg))
-        {
-            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/NoModeration")));
-        }
-
-        var senderName = GetSenderName(msg.From);
-        if (!string.IsNullOrEmpty(senderName))
-        {
-            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/CurrentSender", new { sender = senderName })));
-        }
-
-        var requestText = string.IsNullOrEmpty(senderName) ? request : $"[{senderName}]: {request}";
-        var images = await DownloadImagesAsync(msg, сancellationToken);
-        if (images.Count > 0)
-        {
-            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/ImageAttached")));
-            messages.Add(new UserChatMessage(images
-                .Select(image =>
-                    ChatMessageContentPart.CreateImagePart(new BinaryData(image), "image/jpeg",
-                        ChatImageDetailLevel.Auto))
-                .Append(ChatMessageContentPart.CreateTextPart(requestText))));
-        }
-        else
-        {
-            messages.Add(new UserChatMessage(requestText));
-        }
+        AddSystemPrompts(messages, chatEntity);
+        await AddHistoryAsync(messages, msg);
+        AddRequestNotes(messages, msg, senderName);
+        AddRequest(messages, request, senderName, images);
 
         var toolContext = new ChatToolContext(msg, request, images);
         var tools = _tools.Concat(_chatToolFactory.Create(toolContext)).ToList();
+        
         _logger.LogInformation("Chat generation context: agent {Agent}, sender {Sender}, images {ImageCount}",
             chatEntity.AiAgent?.Name ?? "none", senderName, images.Count);
+        
         var aiResult = await _telegramBotClient.WithChatActionAsync(msg.Chat, ChatAction.Typing,
             () => _aiService.CompleteChatAsync(messages, tools, сancellationToken), сancellationToken);
 
-        var rawResult = aiResult.Text;
-        var result = rawResult.StripMarkdown();
-        if (result != rawResult)
-        {
-            _logger.LogInformation("Markdown stripped from the answer: {Before} -> {After} chars", rawResult.Length,
-                result.Length);
-        }
-
+        var result = StripMarkdown(aiResult.Text);
         if (string.IsNullOrWhiteSpace(result))
         {
             if (!toolContext.ActionTaken)
@@ -197,6 +115,113 @@ public class ChatGenerationOperation : IOperation
         await _saveMessageService.SaveMessageAsync(reply, aiResult.ToolCalls);
     }
 
+    private string ExtractRequest(Message msg) =>
+        (msg.Text ?? msg.Caption)!.ToLower()
+        .Replace($"{_invokeCommand}, ", string.Empty)
+        .Replace($"{_invokeCommand} ", string.Empty);
+
+    private static void AddSystemPrompts(List<ChatMessage> messages, ChatEntity chatEntity)
+    {
+        if (!string.IsNullOrEmpty(chatEntity.AiAgent?.Prompt))
+        {
+            messages.Add(new SystemChatMessage(chatEntity.AiAgent.Prompt));
+        }
+
+        messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/Behavior")));
+    }
+
+    private async Task AddHistoryAsync(List<ChatMessage> messages, Message msg)
+    {
+        if (IsReplyToBot(msg))
+        {
+            await AddBotReplyChainAsync(messages, msg);
+            return;
+        }
+
+        var repliedText = msg.ReplyToMessage?.Text ?? msg.ReplyToMessage?.Caption;
+        if (!string.IsNullOrWhiteSpace(repliedText))
+        {
+            messages.Add(new UserChatMessage(WithSender(GetSenderName(msg.ReplyToMessage!.From), repliedText)));
+        }
+    }
+
+    private async Task AddBotReplyChainAsync(List<ChatMessage> messages, Message msg)
+    {
+        var messageChain = await _messageRepository.GetMessageChainAsync(msg.Chat.Id, msg.ReplyToMessage!.Id);
+        if (messageChain.Count == 0)
+        {
+            _logger.LogInformation("Reply to bot: message {MessageId} not found in DB, using only the replied text",
+                msg.ReplyToMessage.Id);
+            messages.Add(new UserChatMessage(msg.ReplyToMessage.Text));
+            return;
+        }
+
+        foreach (var chainMessage in messageChain.OrderBy(x => x.MessageDate))
+        {
+            if (chainMessage.IsBot)
+            {
+                messages.Add(new AssistantChatMessage(chainMessage.Text ?? string.Empty));
+                var toolCallsNote = GetToolCallsNote(chainMessage.AiToolCalls);
+                if (toolCallsNote != null)
+                {
+                    messages.Add(new SystemChatMessage(toolCallsNote));
+                }
+
+                continue;
+            }
+
+            messages.Add(new UserChatMessage(WithSender(GetSenderName(chainMessage.User), chainMessage.Text)));
+        }
+
+        _logger.LogInformation("Reply to bot: loaded chain of {Count} messages", messageChain.Count);
+    }
+
+    private static void AddRequestNotes(List<ChatMessage> messages, Message msg, string senderName)
+    {
+        messages.Add(new SystemChatMessage(GetCurrentDateTimeNote()));
+        if (!ChatToolFactory.CanModerate(msg))
+        {
+            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/NoModeration")));
+        }
+
+        if (!string.IsNullOrEmpty(senderName))
+        {
+            messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/CurrentSender", new { sender = senderName })));
+        }
+    }
+
+    private static void AddRequest(List<ChatMessage> messages, string request, string senderName, IReadOnlyList<byte[]> images)
+    {
+        var requestText = WithSender(senderName, request);
+        if (images.Count == 0)
+        {
+            messages.Add(new UserChatMessage(requestText));
+            return;
+        }
+
+        messages.Add(new SystemChatMessage(PromptLibrary.Get("Chat/ImageAttached")));
+        messages.Add(new UserChatMessage(images
+            .Select(image =>
+                ChatMessageContentPart.CreateImagePart(new BinaryData(image), "image/jpeg", ChatImageDetailLevel.Auto))
+            .Append(ChatMessageContentPart.CreateTextPart(requestText))));
+    }
+
+    private string StripMarkdown(string rawResult)
+    {
+        var result = rawResult.StripMarkdown();
+        if (result != rawResult)
+        {
+            _logger.LogInformation("Markdown stripped from the answer: {Before} -> {After} chars", rawResult.Length,
+                result.Length);
+        }
+
+        return result;
+    }
+
+    [return: NotNullIfNotNull(nameof(text))]
+    private static string? WithSender(string senderName, string? text) => 
+        string.IsNullOrEmpty(senderName) ? text : $"[{senderName}]: {text}";
+
     private async Task<IReadOnlyList<byte[]>> DownloadImagesAsync(Message msg, CancellationToken сancellationToken)
     {
         var images = new List<byte[]>();
@@ -211,11 +236,7 @@ public class ChatGenerationOperation : IOperation
 
         return images;
     }
-
-    /// <summary>
-    /// The current date and time, so the model counts relative dates («завтра в 10», «вчера»)
-    /// without spending a tool round trip on it.
-    /// </summary>
+    
     private static string GetCurrentDateTimeNote()
     {
         ReminderFormatting.TryGetTimeZone(ReminderFormatting.DefaultTimeZone, out var timeZone);
@@ -231,11 +252,7 @@ public class ChatGenerationOperation : IOperation
             utcOffset = $"{(offset < TimeSpan.Zero ? "-" : "+")}{offset:hh\\:mm}"
         });
     }
-
-    /// <summary>
-    /// The history keeps only the text of past answers, so the model can't tell a real action from a claimed one
-    /// and starts imitating «поставил напоминание» without calling the tool. Tell it what was actually called.
-    /// </summary>
+    
     private static string? GetToolCallsNote(string? aiToolCalls)
     {
         if (aiToolCalls == null)
