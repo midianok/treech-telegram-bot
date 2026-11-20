@@ -29,7 +29,8 @@ public class ImageEditQuota
     private readonly IMemoryCache _memoryCache;
     private readonly string? _adminUsername;
 
-    public ImageEditQuota(ICoinRepository coinRepository, ISparkShop sparkShop, IMemoryCache memoryCache, IOptions<BotOptions> botOptions)
+    public ImageEditQuota(ICoinRepository coinRepository, ISparkShop sparkShop, IMemoryCache memoryCache,
+        IOptions<BotOptions> botOptions)
     {
         _coinRepository = coinRepository;
         _sparkShop = sparkShop;
@@ -41,7 +42,8 @@ public class ImageEditQuota
 
     public async Task<ImageEditCharge> TryChargeAsync(User user, string operation, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(_adminUsername) && string.Equals(user.Username, _adminUsername, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(_adminUsername) &&
+            string.Equals(user.Username, _adminUsername, StringComparison.OrdinalIgnoreCase))
         {
             return ImageEditCharge.Unlimited;
         }
@@ -49,7 +51,7 @@ public class ImageEditQuota
         var key = FreeEditKey(user.Id);
         if (!_memoryCache.TryGetValue(key, out _))
         {
-            _memoryCache.Set(key, true, FreeEditPeriod);
+            _memoryCache.Set(key, DateTimeOffset.UtcNow.Add(FreeEditPeriod), FreeEditPeriod);
             return ImageEditCharge.Free;
         }
 
@@ -59,7 +61,8 @@ public class ImageEditQuota
     }
 
     /// <summary>Gives the free edit or the coins back after a failed edit.</summary>
-    public async Task RefundAsync(User user, ImageEditCharge charge, string operation, CancellationToken cancellationToken)
+    public async Task RefundAsync(User user, ImageEditCharge charge, string operation,
+        CancellationToken cancellationToken)
     {
         switch (charge)
         {
@@ -70,6 +73,18 @@ public class ImageEditQuota
                 await _coinRepository.RefundAsync(user.Id, Cost, operation, cancellationToken);
                 break;
         }
+    }
+
+    /// <summary>Time left until the user's free edit is available again.</summary>
+    public TimeSpan GetFreeEditWait(User user)
+    {
+        if (!_memoryCache.TryGetValue(FreeEditKey(user.Id), out DateTimeOffset readyAt))
+        {
+            return TimeSpan.Zero;
+        }
+
+        var wait = readyAt - DateTimeOffset.UtcNow;
+        return wait > TimeSpan.Zero ? wait : TimeSpan.Zero;
     }
 
     public Task<long> GetBalanceAsync(User user, CancellationToken cancellationToken) =>

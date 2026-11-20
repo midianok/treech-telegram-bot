@@ -10,7 +10,8 @@ public sealed class GlobalCooldownAttribute : Attribute
     /// <summary>Maximum number of times the operation may be invoked across all users within one hour.</summary>
     public int MaxCallsPerHour { get; }
 
-    /// <summary>Optional reply text sent when the global limit is reached. Falls back to a default message when <c>null</c>.</summary>
+    /// <summary>Optional reply text sent when the global limit is reached. Falls back to a default message when <c>null</c>.
+    /// <c>{elapsed}</c> is replaced with the time left until the limit resets.</summary>
     public string? Message { get; }
 
     /// <param name="maxCallsPerHour">Allowed invocations per hour, shared across all users.</param>

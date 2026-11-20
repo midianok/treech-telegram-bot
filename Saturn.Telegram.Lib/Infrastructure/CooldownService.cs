@@ -12,7 +12,9 @@ namespace Saturn.Telegram.Lib.Infrastructure;
 public class CooldownService : ICooldownService
 {
     private const string DefaultCooldownMessage = "Слишком часто. Следующий раз можно через {elapsed}.";
-    private const string DefaultGlobalCooldownMessage = "Лимит вызовов на этот час исчерпан.";
+
+    private const string DefaultGlobalCooldownMessage =
+        "Лимит вызовов на этот час исчерпан. Сбросится через {elapsed}.";
 
     private readonly IMemoryCache _cache;
     private readonly ITelegramBotClient _botClient;
@@ -94,7 +96,8 @@ public class CooldownService : ICooldownService
             return false;
         }
 
-        var text = globalCooldown.Message ?? DefaultGlobalCooldownMessage;
+        var text = (globalCooldown.Message ?? DefaultGlobalCooldownMessage)
+            .Replace("{elapsed}", FormatDuration(NextHour(DateTimeOffset.UtcNow) - DateTimeOffset.UtcNow));
         await _botClient.SendMessage(msg.Chat, text,
             replyParameters: new ReplyParameters { MessageId = msg.Id });
         return true;
@@ -115,14 +118,16 @@ public class CooldownService : ICooldownService
     private GlobalCounter GetOrCreateGlobalCounter(IOperation operation)
     {
         var now = DateTimeOffset.UtcNow;
-        var nextHour = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, 0, 0, TimeSpan.Zero).AddHours(1);
         var cacheKey = BuildGlobalCacheKey(operation, now);
         return _cache.GetOrCreate(cacheKey, entry =>
         {
-            entry.AbsoluteExpiration = nextHour;
+            entry.AbsoluteExpiration = NextHour(now);
             return new GlobalCounter();
         })!;
     }
+
+    private static DateTimeOffset NextHour(DateTimeOffset now) =>
+        new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, 0, 0, TimeSpan.Zero).AddHours(1);
 
     private static GlobalCooldownAttribute? GetGlobalCooldown(IOperation operation) =>
         operation.GetAttribute<GlobalCooldownAttribute>();

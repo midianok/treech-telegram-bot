@@ -82,6 +82,7 @@ public class EditImageChatTool : IChatTool
         if (charge == ImageEditCharge.Denied)
         {
             var balance = await _quota.GetBalanceAsync(user, сancellationToken);
+            var wait = _quota.GetFreeEditWait(user);
             return ToolArguments.Result(new
             {
                 ok = false,
@@ -89,7 +90,8 @@ public class EditImageChatTool : IChatTool
                 note =
                     $"Картинку НЕ отредактировал: бесплатное редактирование на этот час у собеседника уже использовано, " +
                     $"а платное стоит {_quota.Cost} трич койнов, у него на балансе {balance}. " +
-                    "Ответь ему своими словами, что редактировать пока не будешь: можно подождать час или пополнить баланс командой «баланс». " +
+                    $"Следующее бесплатное редактирование будет через {Math.Ceiling(wait.TotalMinutes):0} мин. " +
+                    "Ответь ему своими словами, что редактировать пока не будешь: можно подождать до бесплатного или пополнить баланс командой «баланс». " +
                     "Не делай вид, что картинка будет"
             });
         }

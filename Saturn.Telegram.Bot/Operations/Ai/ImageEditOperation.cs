@@ -70,13 +70,18 @@ public class ImageEditOperation : IOperation
         if (msg.From == null) return;
 
         var text = msg.Text ?? msg.Caption;
-        var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase) ? CommandPrefix1 : CommandPrefix2;
+        var prefix = text!.StartsWith(CommandPrefix1, StringComparison.CurrentCultureIgnoreCase)
+            ? CommandPrefix1
+            : CommandPrefix2;
         var prompt = text[prefix.Length..].Trim();
 
         var charge = await _imageEditQuota.TryChargeAsync(msg.From, nameof(ImageEditOperation), сancellationToken);
         if (charge == ImageEditCharge.Denied)
         {
-            await _sparkShop.SendOfferAsync(msg, "Бесплатное редактирование на этот час использовано, а трич койнов не хватает.", сancellationToken);
+            var wait = _imageEditQuota.GetFreeEditWait(msg.From);
+            await _sparkShop.SendOfferAsync(msg,
+                $"Бесплатное редактирование на этот час использовано, а трич койнов не хватает. " +
+                $"Следующее бесплатное через {Math.Ceiling(wait.TotalMinutes):0} мин.", сancellationToken);
             return;
         }
 
@@ -110,7 +115,8 @@ public class ImageEditOperation : IOperation
         await ProcessEditAsync(msg, images.Take(MaxImages).ToList(), prompt, сancellationToken);
     }
 
-    private Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt, CancellationToken сancellationToken) =>
+    private Task ProcessEditAsync(Message msg, IReadOnlyList<byte[]> images, string prompt,
+        CancellationToken сancellationToken) =>
         _generationProgressService.RunAsync(
             msg,
             ProgressOptions,
@@ -121,7 +127,8 @@ public class ImageEditOperation : IOperation
                 var reply = await _telegramBotClient.SendPhoto(
                     msg.Chat.Id,
                     new InputFileStream(resultStream),
-                    replyParameters: new ReplyParameters { MessageId = msg.MessageId }, cancellationToken: сancellationToken);
+                    replyParameters: new ReplyParameters { MessageId = msg.MessageId },
+                    cancellationToken: сancellationToken);
 
                 await _saveMessageService.SaveMessageAsync(reply);
             },
